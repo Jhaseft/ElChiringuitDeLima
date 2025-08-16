@@ -1,7 +1,11 @@
-# Usar PHP 8.3 CLI para usar servidor embebido PHP (sin FPM)
+# ---------------------------------------
+# 1️⃣ Base PHP 8.3 CLI
+# ---------------------------------------
 FROM php:8.3-cli
 
-# Instalar dependencias del sistema y extensiones PHP necesarias para Laravel
+# ---------------------------------------
+# 2️⃣ Instalar dependencias del sistema y extensiones PHP necesarias
+# ---------------------------------------
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -17,37 +21,56 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql pgsql zip mbstring xml gd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalar Node.js 20 LTS y npm
+# ---------------------------------------
+# 3️⃣ Instalar Node.js 20 LTS + npm
+# ---------------------------------------
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g npm@latest
 
-# Instalar Composer globalmente
+# ---------------------------------------
+# 4️⃣ Instalar Composer globalmente
+# ---------------------------------------
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# ---------------------------------------
+# 5️⃣ Definir directorio de trabajo
+# ---------------------------------------
 WORKDIR /var/www/html
 
-# Copiar solo composer.json y composer.lock para cache de dependencias
+# ---------------------------------------
+# 6️⃣ Copiar solo composer.json y composer.lock para cache
+# ---------------------------------------
 COPY composer.json composer.lock ./
 
-# Instalar dependencias PHP (composer)
+# ---------------------------------------
+# 7️⃣ Instalar dependencias PHP
+# ---------------------------------------
 RUN php -d memory_limit=-1 /usr/bin/composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-# Ahora copiar el resto del proyecto
+# ---------------------------------------
+# 8️⃣ Copiar el resto del proyecto
+# ---------------------------------------
 COPY . .
 
-# Instalar dependencias JS
-RUN npm ci
+# ---------------------------------------
+# 9️⃣ Instalar dependencias JS y construir frontend
+# ---------------------------------------
+RUN npm ci \
+    && npm run build
 
-# Construir frontend React + Vite
-RUN npm run build
-
-# Ajustar permisos de storage y bootstrap/cache
+# ---------------------------------------
+# 🔹 Ajustar permisos para storage y cache de Laravel
+# ---------------------------------------
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Exponer puerto dinámico (Railway usa variable PORT)
+# ---------------------------------------
+# 🔹 Exponer puerto dinámico (Railway usa variable PORT)
+# ---------------------------------------
 EXPOSE 8080
 
-# Comando para iniciar el servidor PHP embebido usando el puerto que da Railway
+# ---------------------------------------
+# 🔹 Comando para iniciar servidor PHP embebido
+# ---------------------------------------
 CMD ["sh", "-c", "php -S 0.0.0.0:${PORT:-8080} -t public"]
