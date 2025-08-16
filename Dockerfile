@@ -27,11 +27,14 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copiar TODO el código al contenedor (incluye artisan y bootstrap)
-COPY . .
+# Copiar solo composer.json y composer.lock para cache de dependencias
+COPY composer.json composer.lock ./
 
 # Instalar dependencias PHP (composer)
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+RUN php -d memory_limit=-1 /usr/bin/composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+# Ahora copiar el resto del proyecto
+COPY . .
 
 # Instalar dependencias JS
 RUN npm ci
@@ -42,9 +45,6 @@ RUN npm run build
 # Ajustar permisos de storage y bootstrap/cache
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
-
-
-
 
 # Exponer puerto dinámico (Railway usa variable PORT)
 EXPOSE 8080
