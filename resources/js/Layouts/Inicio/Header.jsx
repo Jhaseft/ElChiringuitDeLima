@@ -11,44 +11,28 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
 
-  // 🔹 Links base (siempre iguales)
+  // 🔹 Links base
   const links = [
     { name: "Inicio", href: "/" },
     { name: "Nosotros", href: "/nosotros" },
     { name: "Contacto", href: "/contacto" },
   ];
 
-  // 🔹 Link de autenticación (solo uno)
-  const authLink = user
-    ? {
-        name: user.name,
-        subMenu: [
-          {
-            name: "Cerrar sesión",
-            href: route("logout"),
-            method: "post",
-            as: "button",
-          },
-        ],
-      }
-    : { name: "Iniciar sesión", href: route("login") };
-
   return (
-    <header className="bg-gradient-to-r from-white via-gray-50 to-white fixed top-0 left-0 w-full shadow-lg z-50">
-      <div className="max-w-7xl mx-auto px-4 flex justify-between items-center h-16">
+    <header className="bg-white/90 backdrop-blur-sm fixed top-0 left-0 w-full shadow-md z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
         {/* Logo */}
-        <a href="/">
+        <a href="/" className="flex items-center">
           <img
-            src="https://d500.epimg.net/cincodias/imagenes/2015/05/08/pyme/1431098283_691735_1431098420_noticia_normal.jpg"
+            src="https://ii.ct-stc.com/2/logos/empresas/2017/11/13/west-contact-services-1DE2B56679557874154159thumbnail.png"
             alt="Logo"
-            className="h-12 hover:scale-105 transition-transform duration-300"
+            className="h-12 w-auto hover:scale-105 transition-transform duration-300"
           />
         </a>
 
         {/* Navegación escritorio */}
         <DesktopNav
-          links={links}       // 👈 Solo links normales
-          authLink={authLink} // 👈 Auth separado
+          links={links}
           user={user}
           userMenu={userMenu}
           setUserMenu={setUserMenu}
@@ -58,7 +42,7 @@ export default function Header() {
         <div className="md:hidden">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="p-1 rounded hover:bg-gray-100 transition"
+            className="p-2 rounded-md hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             {menuOpen ? (
               <XMarkIcon className="h-8 w-8 text-gray-800 rotate-90 transition-transform duration-300" />
@@ -69,18 +53,9 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Fondo móvil */}
-      {menuOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
-          onClick={() => setMenuOpen(false)}
-        />
-      )}
-
-      {/* Navegación móvil */}
+      {/* Menú móvil */}
       <MobileNav
-        links={links}       // 👈 Solo links normales
-        authLink={authLink} // 👈 Auth separado
+        links={links}
         user={user}
         menuOpen={menuOpen}
         setMenuOpen={setMenuOpen}

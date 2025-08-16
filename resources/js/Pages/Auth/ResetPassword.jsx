@@ -1,7 +1,7 @@
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import InputError from '@/Components/ath/InputError';
+import InputLabel from '@/Components/ath/InputLabel';
+import PrimaryButton from '@/Components/ath/PrimaryButton';
+import TextInput from '@/Components/ath/TextInput';
 import GuestLayout from '@/Layouts/auth_dashboard/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
 
