@@ -7,6 +7,6 @@ export default function InicioLayout({ children }) {
       <Header />
       <main className="flex-1 pt-16">{children}</main>
       <BotonWhatsApp />
-    </div>
+    </div>    
   );
 }
