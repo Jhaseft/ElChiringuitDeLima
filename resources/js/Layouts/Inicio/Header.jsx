@@ -11,11 +11,27 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
 
+  // 🔹 Links base (siempre iguales)
   const links = [
     { name: "Inicio", href: "/" },
     { name: "Nosotros", href: "/nosotros" },
     { name: "Contacto", href: "/contacto" },
   ];
+
+  // 🔹 Link de autenticación (solo uno)
+  const authLink = user
+    ? {
+        name: user.name,
+        subMenu: [
+          {
+            name: "Cerrar sesión",
+            href: route("logout"),
+            method: "post",
+            as: "button",
+          },
+        ],
+      }
+    : { name: "Iniciar sesión", href: route("login") };
 
   return (
     <header className="bg-gradient-to-r from-white via-gray-50 to-white fixed top-0 left-0 w-full shadow-lg z-50">
@@ -31,8 +47,9 @@ export default function Header() {
 
         {/* Navegación escritorio */}
         <DesktopNav
-          links={links}
-          user={user} // Pasamos el usuario directamente
+          links={links}       // 👈 Solo links normales
+          authLink={authLink} // 👈 Auth separado
+          user={user}
           userMenu={userMenu}
           setUserMenu={setUserMenu}
         />
@@ -62,12 +79,12 @@ export default function Header() {
 
       {/* Navegación móvil */}
       <MobileNav
-        links={links}
-        user={user} // Pasamos el usuario directamente
+        links={links}       // 👈 Solo links normales
+        authLink={authLink} // 👈 Auth separado
+        user={user}
         menuOpen={menuOpen}
         setMenuOpen={setMenuOpen}
       />
-
     </header>
   );
 }

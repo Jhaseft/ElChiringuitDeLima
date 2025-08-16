@@ -1,3 +1,4 @@
+import { Link } from "@inertiajs/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 export default function DesktopNav({ links, user, userMenu, setUserMenu }) {
@@ -29,9 +30,9 @@ export default function DesktopNav({ links, user, userMenu, setUserMenu }) {
             className="text-gray-800 font-semibold hover:text-blue-600 transition"
           >
             {user.name || "Usuario"}
-          </button> 
+          </button>
 
-          {userMenu && ( 
+          {userMenu && (
             <div className="absolute right-0 mt-3 w-48 bg-white rounded-lg shadow-lg border animate-fade-slide z-50">
               <div className="absolute -top-2 right-5 w-4 h-4 bg-white rotate-45 border-l border-t"></div>
 
@@ -44,18 +45,15 @@ export default function DesktopNav({ links, user, userMenu, setUserMenu }) {
                 </button>
               </div>
 
-              <a
-                href="/perfil"
-                className="block px-4 py-2 text-gray-700 hover:bg-blue-50 transition"
-              >
-                Perfil
-              </a>
-              <a
-                href="/logout"
-                className="block px-4 py-2 text-gray-700 hover:bg-blue-50 transition"
+              {/* ✅ Solo botón de logout */}
+              <Link
+                href={route("logout")}
+                method="post"
+                as="button"
+                className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 transition"
               >
                 Cerrar Sesión
-              </a>
+              </Link>
             </div>
           )}
         </div>

@@ -1,3 +1,4 @@
+import { Link } from "@inertiajs/react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
 export default function MobileNav({ links, user, menuOpen, setMenuOpen }) {
@@ -40,18 +41,15 @@ export default function MobileNav({ links, user, menuOpen, setMenuOpen }) {
             <div className="text-base font-medium text-gray-800">{user.name}</div>
             <div className="text-sm font-medium text-gray-500">{user.email}</div>
 
-            <a
-              href="/perfil"
-              className="block text-lg text-gray-800 hover:text-blue-600 transition"
-            >
-              Perfil
-            </a>
-            <a
-              href="/logout"
-              className="block text-lg text-gray-800 hover:text-blue-600 transition"
+            {/* ✅ Solo botón de logout */}
+            <Link
+              href={route("logout")}
+              method="post"
+              as="button"
+              className="block w-full text-left text-lg text-gray-800 hover:text-blue-600 transition"
             >
               Cerrar Sesión
-            </a>
+            </Link>
           </>
         )}
       </div>
