@@ -1,4 +1,4 @@
-import PrimaryButton from '@/Components/ath/PrimaryButton';
+import PrimaryButton from '@/Components/auth/PrimaryButton';
 import GuestLayout from '@/Layouts/auth_dashboard/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 

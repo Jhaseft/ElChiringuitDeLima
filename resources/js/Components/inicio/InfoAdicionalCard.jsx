@@ -9,30 +9,43 @@ export default function InfoAdicionalCard() {
   ];
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 flex-1 flex flex-col gap-6">
+    <div className="bg-white rounded-2xl shadow-xl p-6 flex-1 flex flex-col gap-6 border border-gray-100">
+      {/* Sección principal */}
       <div className="text-center">
-        <p>¿Necesitas pagar a tus proveedores del extranjero? Hazlo fácilmente.</p>
-        <button className="bg-green-700 text-white py-2 px-4 rounded font-semibold mt-2 hover:bg-green-800 transition">
-          Envía dinero al extranjero
+        <p className="text-gray-700 text-sm sm:text-base font-medium">
+          ¿Necesitas pagar a tus proveedores del extranjero? 
+          <span className="text-green-700 font-semibold"> Hazlo fácilmente.</span>
+        </p>
+        <button className="bg-gradient-to-r from-green-700 to-green-500 text-white py-2 px-5 rounded-lg font-semibold mt-3 hover:scale-105 transition-all shadow-md">
+          🌍 Envía dinero al extranjero
         </button>
       </div>
 
+      {/* Beneficios */}
       <div>
-        <h3 className="font-semibold mb-2">¿Por qué elegirnos?</h3>
-        <ul className="list-disc list-inside text-gray-700 space-y-1">
-          <li>Transferencias seguras</li>
-          <li>Atención personalizada</li>
-          <li>Tasas competitivas</li>
+        <h3 className="font-semibold text-lg text-gray-800 mb-3 flex items-center gap-2">
+          ✅ ¿Por qué elegirnos?
+        </h3>
+        <ul className="list-disc list-inside text-gray-700 space-y-2 pl-2">
+          <li>Transferencias <span className="font-semibold">100% seguras</span></li>
+          <li>Atención <span className="font-semibold">personalizada y rápida</span></li>
+          <li>Tasas <span className="font-semibold">altamente competitivas</span></li>
         </ul>
       </div>
 
-      <div className="border-t pt-4">
-        <p className="text-red-600 font-semibold">¡Atención!</p>
-        <p className="text-gray-700 text-sm mb-2">
-          Personas inescrupulosas están usando números falsos. Solo comunícate con los oficiales autorizados.
+      {/* Alerta */}
+      <div className="border-t pt-5">
+        <p className="text-red-600 font-bold text-base flex items-center gap-1">
+          ⚠️ ¡Atención!
         </p>
-        <h4 className="font-semibold mb-2">Números Autorizados</h4>
-        <div className="grid grid-cols-2 gap-2">
+        <p className="text-gray-700 text-sm mb-3 leading-relaxed">
+          Personas inescrupulosas están usando números falsos. 
+          <span className="font-semibold text-red-600"> Solo comunícate con los oficiales autorizados.</span>
+        </p>
+
+        {/* Números autorizados */}
+        <h4 className="font-semibold text-gray-800 mb-3">📞 Números Autorizados</h4>
+        <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
           {numeros.map((num) => (
             <NumeroAutorizadoButton key={num} numero={num} />
           ))}

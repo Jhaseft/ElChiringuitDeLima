@@ -11,7 +11,7 @@ export default function Welcome() {
       <InicioLayout>
         <div className="flex flex-col gap-6">
           {/* Gráfico arriba */}
-          <div className="w-full bg-white rounded-xl shadow-lg p-4">
+          <div className="w-full bg-white flex rounded-xl shadow-lg p-4">
             <Grafico />
           </div>
 

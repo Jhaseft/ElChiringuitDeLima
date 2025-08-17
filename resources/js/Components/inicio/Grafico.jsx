@@ -1,5 +1,5 @@
 export default function NumeroAutorizadoButton() {
   return (
-    <p>hola aca pondremos el graficoddddddddddddddddddddddddddddddddddddddddddddddddddsssssssssssssssssssssssssssssssssssssss</p>
+    <p>Aca ira el grafico</p>
   );
 }

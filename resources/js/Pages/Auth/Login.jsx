@@ -1,100 +1,149 @@
-import Checkbox from '@/Components/ath/Checkbox';
-import InputError from '@/Components/ath/InputError';
-import InputLabel from '@/Components/ath/InputLabel';
-import PrimaryButton from '@/Components/ath/PrimaryButton';
-import TextInput from '@/Components/ath/TextInput';
-import GuestLayout from '@/Layouts/auth_dashboard/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from "@inertiajs/react";
+import BotonGoogle from "@/Components/auth/Botongoogle"; // 👈 importa el botón
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        email: '',
-        password: '',
+        email: "",
+        password: "",
         remember: false,
     });
 
     const submit = (e) => {
         e.preventDefault();
-
-        post(route('login'), {
-            onFinish: () => reset('password'),
+        post(route("login"), {
+            onFinish: () => reset("password"),
         });
     };
 
     return (
-        <GuestLayout>
-            <Head title="Log in" />
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6">
+            <Head title="Iniciar sesión" />
 
-            {status && (
-                <div className="mb-4 text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
-
-            <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="email" value="Email" />
-
-                    <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        className="mt-1 block w-full"
-                        autoComplete="username"
-                        isFocused={true}
-                        onChange={(e) => setData('email', e.target.value)}
+            <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
+                {/* Columna izquierda: Imagen */}
+                <div className="hidden md:flex md:w-1/2 bg-gray-100 relative">
+                    <img
+                        src="https://images.unsplash.com/photo-1507842217343-583bb7270b66"
+                        alt="Login"
+                        className="object-cover w-full h-full"
                     />
-
-                    <InputError message={errors.email} className="mt-2" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-8">
+                        <h2 className="text-3xl font-bold text-white">
+                            Bienvenido de nuevo 👋
+                        </h2>
+                        <p className="text-gray-200 mt-2">
+                            Ingresa a tu cuenta y continúa donde lo dejaste.
+                        </p>
+                    </div>
                 </div>
 
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
+                {/* Columna derecha: Formulario */}
+                <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+                    <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-6">
+                        Iniciar sesión
+                    </h1>
 
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="current-password"
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
-                </div>
-
-                <div className="mt-4 block">
-                    <label className="flex items-center">
-                        <Checkbox
-                            name="remember"
-                            checked={data.remember}
-                            onChange={(e) =>
-                                setData('remember', e.target.checked)
-                            }
-                        />
-                        <span className="ms-2 text-sm text-gray-600">
-                            Remember me
-                        </span>
-                    </label>
-                </div>
-
-                <div className="mt-4 flex items-center justify-end">
-                    {canResetPassword && (
-                        <Link
-                            href={route('password.request')}
-                            className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                        >
-                            Forgot your password?
-                        </Link>
+                    {status && (
+                        <div className="mb-4 text-sm font-medium text-green-600 bg-green-100 px-4 py-2 rounded-lg">
+                            {status}
+                        </div>
                     )}
 
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Log in
-                    </PrimaryButton>
+                    <form onSubmit={submit} className="space-y-5">
+                        {/* Email */}
+                        <div>
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                                Correo electrónico
+                            </label>
+                            <input
+                                id="email"
+                                type="email"
+                                name="email"
+                                value={data.email}
+                                onChange={(e) => setData("email", e.target.value)}
+                                required
+                                autoFocus
+                                className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200"
+                            />
+                            {errors.email && (
+                                <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+                            )}
+                        </div>
+
+                        {/* Password */}
+                        <div>
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                Contraseña
+                            </label>
+                            <input
+                                id="password"
+                                type="password"
+                                name="password"
+                                value={data.password}
+                                onChange={(e) => setData("password", e.target.value)}
+                                required
+                                className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200"
+                            />
+                            {errors.password && (
+                                <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+                            )}
+                        </div>
+
+                        {/* Remember me */}
+                        <div className="flex items-center">
+                            <input
+                                id="remember"
+                                type="checkbox"
+                                checked={data.remember}
+                                onChange={(e) => setData("remember", e.target.checked)}
+                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
+                                Recuérdame
+                            </label>
+                        </div>
+
+                        {/* Botón + link */}
+                        <div className="flex items-center justify-between">
+                            {canResetPassword && (
+                                <Link
+                                    href={route("password.request")}
+                                    className="text-sm text-indigo-600 hover:text-indigo-800"
+                                >
+                                    ¿Olvidaste tu contraseña?
+                                </Link>
+                            )}
+                            <button
+                                type="submit"
+                                disabled={processing}
+                                className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl shadow-md hover:bg-indigo-700 transition disabled:opacity-50"
+                            >
+                                Ingresar
+                            </button>
+                        </div>
+
+                        {/* Registro */}
+                        <p className="text-sm text-gray-600 text-center mt-4">
+                            ¿No tienes cuenta?{" "}
+                            <Link
+                                href={route("register")}
+                                className="text-indigo-600 font-medium hover:text-indigo-800"
+                            >
+                                Regístrate aquí
+                            </Link>
+                        </p>
+                    </form>
+
+                    {/* Divider + Google */}
+                    <div className="flex items-center my-6">
+                        <div className="flex-grow border-t border-gray-300"></div>
+                        <span className="mx-3 text-gray-500 text-sm">o continúa con</span>
+                        <div className="flex-grow border-t border-gray-300"></div>
+                    </div>
+
+                    <BotonGoogle />
                 </div>
-            </form>
-        </GuestLayout>
+            </div>
+        </div>
     );
 }
