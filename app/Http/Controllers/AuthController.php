@@ -14,10 +14,10 @@ class AuthController extends Controller
     public function redirectToGoogle()
     {
         return Socialite::driver('google')
-            ->scopes(['profile', 'email'])
+            ->scopes(['openid', 'profile', 'email'])
             ->redirect();
     }
- 
+
     public function handleGoogleCallback()
     {
         try {
