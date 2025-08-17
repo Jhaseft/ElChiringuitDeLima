@@ -23,6 +23,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// routes/api.php
+Route::get('/tasas', [TasaController::class, 'getBolivia']);
+
+
 // 👇 Rutas para login con Google
 Route::get('/auth/redirect', [AuthController::class, 'redirectToGoogle'])->name('google.login');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('google.callback');
