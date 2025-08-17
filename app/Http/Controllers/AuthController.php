@@ -17,7 +17,7 @@ class AuthController extends Controller
             ->scopes(['profile', 'email'])
             ->redirect();
     }
-
+ 
     public function handleGoogleCallback()
     {
         try {
