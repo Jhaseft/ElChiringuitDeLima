@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TasaController;
 use App\Http\Controllers\AuthController; 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -24,7 +25,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // routes/api.php
-Route::get('/tasas', [TasaController::class, 'getBolivia']);
+Route::get('/tasas', [TasaController::class, 'getExchangeRate']);
 
 
 // 👇 Rutas para login con Google

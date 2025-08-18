@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
 import {
   LineChart,
   Line,
@@ -7,52 +8,56 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 
 export default function Grafico({ setTasas }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Función para obtener la hora actual en formato HH:MM
+  // Formato hora HH:MM
   function getCurrentTime() {
     const now = new Date();
-    const hours = now.getHours().toString().padStart(2, "0");
-    const minutes = now.getMinutes().toString().padStart(2, "0");
-    return `${hours}:${minutes}`;
+    return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
   useEffect(() => {
-    function generarDatos() {
-      const fakeData = Array.from({ length: 6 }).map((_, i) => ({
-        time: getCurrentTime(),
-        buy: Math.floor(Math.random() * 10 + 6),
-        sale: Math.floor(Math.random() * 10 + 7),
-      }));
+    async function fetchData() {
+      try {
+        const res = await axios.get("/tasas");
+        const value = res.data.data.BOB.value;
 
-      setData(fakeData);
+        // Compra/Venta simulados
+        const compra = parseFloat(value).toFixed(2);
+        const venta = (parseFloat(value) + 0.02).toFixed(2);
 
-      if (setTasas) {
-        const last = fakeData[fakeData.length - 1];
-        setTasas({ buy: last.buy, sale: last.sale });
+        const newPoint = {
+          time: getCurrentTime(),
+          compra: Number(compra),
+          venta: Number(venta),
+        };
+
+        setData((prev) => [...prev.slice(-10), newPoint]);
+
+        if (setTasas) {
+          setTasas({ compra: Number(compra), venta: Number(venta) });
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error("Error al obtener tasas:", err);
       }
-
-      setLoading(false);
     }
 
-    // Generamos los datos al inicio
-    generarDatos();
-
-    // Actualizamos cada 5 segundos (5000 ms)
-    const interval = setInterval(generarDatos, 5000);
-
-    // Limpiar el intervalo al desmontar
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, [setTasas]);
 
   return (
-    <div className="w-full max-w-md mx-auto p-4 bg-white rounded-2xl shadow flex flex-col gap-3">
+    <div className="w-full max-w-md mx-auto p-4 bg-white rounded-2xl shadow-lg flex flex-col gap-3">
       <h2 className="text-base sm:text-lg md:text-xl font-bold text-center text-gray-800">
-        📊 Evolución de la tasa de cambio
+        📈 Evolución de la tasa PEN → BOB
       </h2>
 
       {loading && (
@@ -65,29 +70,43 @@ export default function Grafico({ setTasas }) {
         <div className="w-full h-56 sm:h-64 md:h-72">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="time" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
+              <defs>
+                <linearGradient id="colorCompra" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#16a34a" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="#16a34a" stopOpacity={0.2} />
+                </linearGradient>
+                <linearGradient id="colorVenta" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.2} />
+                </linearGradient>
+              </defs>
+
+              <CartesianGrid strokeDasharray="4 4" stroke="#e5e7eb" />
+              <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} domain={["auto", "auto"]} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#f9fafb",
+                  backgroundColor: "#fff",
                   border: "1px solid #e5e7eb",
                   borderRadius: "8px",
+                  fontSize: "0.85rem",
                 }}
               />
+              <Legend verticalAlign="top" height={36} />
+
               <Line
                 type="monotone"
-                dataKey="buy"
-                stroke="#16a34a"
-                strokeWidth={2}
+                dataKey="compra"
+                stroke="url(#colorCompra)"
+                strokeWidth={3}
                 dot={{ r: 3 }}
                 activeDot={{ r: 5 }}
               />
               <Line
                 type="monotone"
-                dataKey="sale"
-                stroke="#f59e0b"
-                strokeWidth={2}
+                dataKey="venta"
+                stroke="url(#colorVenta)"
+                strokeWidth={3}
                 dot={{ r: 3 }}
                 activeDot={{ r: 5 }}
               />

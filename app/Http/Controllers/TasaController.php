@@ -3,18 +3,21 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class TasaController extends Controller
 {
-   public function getBolivia() {
-    $token = env('BCP_PUBLIC_TOKEN');
-    $response = Http::withHeaders([
-        'Content-Type' => 'application/json; charset=utf-8'
-    ])->post('https://api.banco.com/api/Bcp/ExchangeRate', [
-        'country' => '840',
-        'publicToken' => $token
-    ]);
+    public function getExchangeRate()
+    {
+        $apiKey = env('CURRENCY_API_KEY');
+        $baseUrl = "https://api.currencyapi.com/v3/latest";
 
-    return $response->json();
-}
+        $response = Http::get($baseUrl, [
+            'apikey' => $apiKey,
+            'base_currency' => 'PEN', // Sol peruano
+            'currencies' => 'BOB'     // Boliviano
+        ]);
+
+        return $response->json();
+    }
 }
