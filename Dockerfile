@@ -1,4 +1,4 @@
-# Usar PHP 8.3 CLI para usar servidor embebido PHP (sin FPM)
+# Usar PHP 8.3 CLI
 FROM php:8.3-cli
 
 # Instalar dependencias del sistema y extensiones PHP necesarias para Laravel
@@ -27,7 +27,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copiar TODO el código al contenedor (incluye artisan y bootstrap)
+# Copiar todo el código
 COPY . .
 
 # Instalar dependencias PHP (composer)
@@ -39,15 +39,15 @@ RUN npm ci
 # Construir frontend React + Vite
 RUN npm run build
 
-# Ajustar permisos de storage y bootstrap/cache
-RUN chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+# Ajustar permisos
+RUN chown -R www-data:www-data storage bootstrap/cache public/build \
+    && chmod -R 775 storage bootstrap/cache public/build
 
-
-
-
-# Exponer puerto dinámico (Railway usa variable PORT)
+# Exponer puerto (Railway usa variable PORT)
 EXPOSE 8080
 
-# Comando para iniciar el servidor PHP embebido usando el puerto que da Railway
-CMD ["sh", "-c", "php -S 0.0.0.0:${PORT:-8080} -t public"]
+# Crear router.php para Laravel SPA
+RUN echo "<?php\nif (file_exists(__DIR__ . parse_url(\$_SERVER['REQUEST_URI'], PHP_URL_PATH))) {\n    return false;\n}\nrequire __DIR__ . '/index.php';" > public/router.php
+
+# Iniciar PHP CLI con router personalizado
+CMD ["sh", "-c", "php -S 0.0.0.0:${PORT:-8080} -t public public/router.php"]
