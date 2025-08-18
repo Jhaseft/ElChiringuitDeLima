@@ -11,8 +11,8 @@ export default function BotonGoogle() {
                        hover:shadow-md hover:bg-gray-50 
                        transition-all duration-200"
         >
-            <svg
-                className="w-5 h-5"
+            <svg 
+                className="w-5 h-5" 
                 viewBox="0 0 48 48"
                 xmlns="http://www.w3.org/2000/svg"
             >
