@@ -1,5 +1,5 @@
 // StepVideo.jsx
-import { Button } from "@/components/ui/button";
+import { Button } from "@/Components/ui/button";
 import { Camera, Video, StopCircle } from "lucide-react";
 
 export default function StepVideo({
