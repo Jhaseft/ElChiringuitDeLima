@@ -53,7 +53,7 @@ export default function Grafico({ setTasas }) {
   return (
     <div className="w-full max-w-md mx-auto p-4 bg-white rounded-2xl shadow-lg flex flex-col gap-3">
       <h2 className="text-base sm:text-lg md:text-xl font-bold text-center text-gray-800">
-        📈 Evolución de la tasa PEN → BOB
+        Evolución de la moneda
       </h2>
 
       {loading && (
