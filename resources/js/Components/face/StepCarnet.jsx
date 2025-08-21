@@ -1,6 +1,6 @@
 // StepCarnet.jsx
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/Components/ui/button";
 import { Camera, Upload, RefreshCcw } from "lucide-react";
 
 export default function StepCarnet({ videoRef, carnetBlob, setCarnetBlob, nextStep }) {
