@@ -5,7 +5,25 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
+         <!-- Favicon personalizado -->
+        <link rel="icon" href="{{ asset('/images/logo.jpg') }}" type="image/png">
 
+        <!-- ===========================
+             Meta Open Graph para redes sociales
+             =========================== -->
+        <meta property="og:title" content="Corte Beniano" />
+        <meta property="og:description" content="Cortes de Calidad " />
+        <meta property="og:image" content="{{ asset('/images/logo.jpg') }}" />
+        <meta property="og:url" content="{{ url('/') }}" />
+        <meta property="og:type" content="website" />
+
+        <!-- ===========================
+             Meta para Twitter
+             =========================== -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Carniceria Corte Beniano" />
+        <meta name="twitter:description" content="Cortes de Calidad Hechos Con Amor" />
+        <meta name="twitter:image" content="{{ asset('/images/logo.jpg') }}" />
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
