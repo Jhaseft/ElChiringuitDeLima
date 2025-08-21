@@ -1,57 +1,46 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Auth\LoginRequest;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-use Inertia\Response;
+use Laravel\Socialite\Facades\Socialite;
 
-class AuthenticatedSessionController extends Controller
+class AuthController extends Controller
 {
-    // Mostrar el formulario de login
-    public function create(): Response 
+    public function redirectToGoogle()
     {
-        return Inertia::render('Auth/Login', [
-            'canResetPassword' => Route::has('password.request'),
-            'status' => session('status'),
-        ]);
+        return Socialite::driver('google')->redirect();
     }
 
-    // Hacer login y redireccionar
-    public function store(LoginRequest $request): RedirectResponse
+    public function handleGoogleCallback()
     {
-        $request->authenticate();
+        $googleUser = Socialite::driver('google')->stateless()->user();
 
-        $request->session()->regenerate();
+        // Buscar usuario por email
+        $user = User::where('email', $googleUser->getEmail())->first();
 
-        $user = Auth::user();
+        if (!$user) {
+            $user = User::create([
+                'first_name'   => $googleUser->user['given_name'] ?? $googleUser->getName(),
+                'last_name'    => $googleUser->user['family_name'] ?? '',
+                'email'        => $googleUser->getEmail(),
+                'provider'     => 'google',
+                'provider_id'  => $googleUser->getId(),
+                'password'     => null,
+            ]);
 
-        // Verificar si el perfil está completo
-        if (empty($user->nationality) 
-            || empty($user->phone) 
-            || empty($user->accepted_terms_at) 
-            || empty($user->document_number)) {
-            return redirect()->route('complete-profile')
-                ->with('warning', 'Debes completar tu perfil antes de continuar.');
+            Auth::login($user);
+            return redirect()->route('complete-profile');
         }
 
+        // Si ya tiene perfil incompleto, redirigir
+        if (empty($user->nationality) || empty($user->phone) || empty($user->accepted_terms_at) || empty($user->document_number)) {
+            Auth::login($user);
+            return redirect()->route('complete-profile');
+        }
+
+        Auth::login($user);
         return redirect()->route('welcome');
-    }
-
-    // Hacer logout
-    public function destroy(Request $request): RedirectResponse
-    {
-        Auth::guard('web')->logout();
-
-        $request->session()->invalidate();
-
-        $request->session()->regenerateToken();
-
-        return redirect('/');
     }
 }
