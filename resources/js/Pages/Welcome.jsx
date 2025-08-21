@@ -13,7 +13,7 @@ const [tasas, setTasas] = useState({ buy: 6, sale: 7 }); // valores iniciales
 
   return (
     <>
-      <Head title="Inicio" />
+      <Head title="Transfer Cash" />
       <InicioLayout>
         <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto px-4">
           {/* Gráfico arriba */}

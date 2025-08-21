@@ -4,15 +4,15 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <title inertia>{{ config('app.name') }}</title>
          <!-- Favicon personalizado -->
         <link rel="icon" href="{{ asset('/images/logo.jpg') }}" type="image/png">
 
         <!-- ===========================
              Meta Open Graph para redes sociales
              =========================== -->
-        <meta property="og:title" content="Corte Beniano" />
-        <meta property="og:description" content="Cortes de Calidad " />
+        <meta property="og:title" content="Transfer Cash" />
+        <meta property="og:description" content="Cambios Rapidos Y seguros" />
         <meta property="og:image" content="{{ asset('/images/logo.jpg') }}" />
         <meta property="og:url" content="{{ url('/') }}" />
         <meta property="og:type" content="website" />
