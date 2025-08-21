@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import {
   LineChart,
   Line,
@@ -22,14 +21,11 @@ export default function Grafico({ setTasas }) {
   }
 
   useEffect(() => {
-    async function fetchData() {
+    function fetchData() {
       try {
-        const res = await axios.get("/tasas");
-        const value = res.data.data.BOB.value;
-
-        // Compra/Venta simulados
-        const compra = parseFloat(value).toFixed(2);
-        const venta = (parseFloat(value) + 0.02).toFixed(2);
+        // Valores aleatorios (simulación de compra/venta)
+        const compra = (6.8 + Math.random() * 0.2).toFixed(2); // ~6.80 - 7.00
+        const venta = (parseFloat(compra) + Math.random() * 0.05).toFixed(2); // un poco mayor
 
         const newPoint = {
           time: getCurrentTime(),
@@ -45,12 +41,12 @@ export default function Grafico({ setTasas }) {
 
         setLoading(false);
       } catch (err) {
-        console.error("Error al obtener tasas:", err);
+        console.error("Error al generar datos:", err);
       }
     }
 
     fetchData();
-    const interval = setInterval(fetchData, 10000);
+    const interval = setInterval(fetchData, 5000); // cada 5 segundos
     return () => clearInterval(interval);
   }, [setTasas]);
 

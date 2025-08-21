@@ -32,7 +32,7 @@ export default function DesktopNav({ links, user, userMenu, setUserMenu }) {
             onClick={() => setUserMenu(!userMenu)}
             className="flex items-center gap-1 text-gray-800 font-semibold hover:text-blue-600 transition-colors px-2 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
-            {user.name || "Usuario"}
+            {`${user.first_name} ${user.last_name}` || "Usuario"}
             {userMenu ? (
               <ChevronUpIcon className="w-4 h-4" />
             ) : (

@@ -2,44 +2,45 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Laravel\Socialite\Facades\Socialite;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
     public function redirectToGoogle()
     {
-        return Socialite::driver('google')
-            ->scopes(['openid', 'profile', 'email'])
-            ->redirect();
+        return Socialite::driver('google')->redirect();
     }
 
     public function handleGoogleCallback()
     {
-        try {
-            $googleUser = Socialite::driver('google')->stateless()->user();
+        $googleUser = Socialite::driver('google')->stateless()->user();
 
-            $user = User::firstOrCreate(
-                ['email' => $googleUser->email],
-                [
-                    'name'     => $googleUser->name ?? 'Usuario Google',
-                    'password' => Hash::make(Str::random(32)),
-                    'is_admin' => false,
-                ]
-            );
+        // Buscar usuario por email
+        $user = User::where('email', $googleUser->getEmail())->first();
+
+        if (!$user) {
+            $user = User::create([
+                'first_name'   => $googleUser->user['given_name'] ?? $googleUser->getName(),
+                'last_name'    => $googleUser->user['family_name'] ?? '',
+                'email'        => $googleUser->getEmail(),
+                'provider'     => 'google',
+                'provider_id'  => $googleUser->getId(),
+                'password'     => null,
+            ]);
 
             Auth::login($user);
-            session()->regenerate();
-
-            return redirect()->route('welcome')->with('status', 'Inicio de sesión con Google exitoso.');
-        } catch (\Exception $e) {
-            return redirect()->route('login')->withErrors([
-                'google' => 'Error al autenticar con Google. Intenta nuevamente.',
-            ]);
+            return redirect()->route('complete-profile');
         }
+
+        // Si ya tiene perfil incompleto, redirigir
+        if (empty($user->nationality) || empty($user->phone) || empty($user->document_number)) {
+            Auth::login($user);
+            return redirect()->route('complete-profile');
+        }
+
+        Auth::login($user);
+        return redirect()->route('welcome');
     }
 }

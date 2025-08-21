@@ -1,8 +1,9 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\TasaController;
-use App\Http\Controllers\AuthController; 
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FaceController; 
+use App\Http\Controllers\CompleteProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -14,9 +15,12 @@ Route::get('/', function () {
     ]);
 })->name('welcome');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+
+
+Route::middleware('auth')->group(function () {
+    Route::get('/complete-profile', [CompleteProfileController::class, 'index'])->name('complete-profile');
+    Route::post('/complete-profile', [CompleteProfileController::class, 'store'])->name('complete-profile.store');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -24,11 +28,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// routes/api.php
-Route::get('/tasas', [TasaController::class, 'getExchangeRate']);
+//----------------------------Llamada al KYC----------------//
+Route::get('/face', [FaceController::class, 'index'])->name('face.index');
 
-
-// 👇 Rutas para login con Google
+// -------------------- LOGIN GOOGLE -------------------- //
 Route::get('/auth/redirect', [AuthController::class, 'redirectToGoogle'])->name('google.login');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('google.callback');
 

@@ -7,7 +7,7 @@ export default function MobileNav({ links, user, menuOpen, setMenuOpen }) {
 
   return (
     <div
-      className={`absolute top-16 left-0 w-full bg-white border-t border-gray-200 shadow-xl overflow-hidden transition-all duration-300 md:hidden ${
+      className={`absolute top-2 left-0 w-full bg-white border-t border-gray-200 shadow-xl overflow-hidden transition-all duration-300 md:hidden ${
         menuOpen ? "max-h-96 animate-fade-slide" : "max-h-0"
       }`}
     >
@@ -40,7 +40,7 @@ export default function MobileNav({ links, user, menuOpen, setMenuOpen }) {
               onClick={() => setUserMenu(!userMenu)}
               className="flex items-center justify-between w-full px-3 py-2 text-gray-800 font-medium hover:text-white hover:bg-blue-600 rounded-lg border border-gray-200 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             >
-              {user.name || "Usuario"}
+              {`${user.first_name} ${user.last_name}` || "Usuario"}
               {userMenu ? (
                 <ChevronUpIcon className="w-5 h-5" />
               ) : (

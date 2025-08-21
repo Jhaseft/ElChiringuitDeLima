@@ -13,11 +13,18 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('first_name');
+            $table->string('last_name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
+            $table->string('phone')->nullable();
+            $table->string('nationality')->nullable();
+            $table->string('document_number')->nullable();
+            $table->string('password')->nullable(); // null si viene de Google
+            $table->string('provider')->default('local'); // local o google
+            $table->string('provider_id')->nullable(); // id de Google
+            $table->timestamp('accepted_terms_at')->nullable();
+            $table->string('terms_version')->nullable();
+            $table->enum('kyc_status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->timestamps();
         });
 

@@ -15,37 +15,37 @@ use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Display the registration view.
-     */
     public function create(): Response
     {
         return Inertia::render('Auth/Register');
     }
 
-    /**
-     * Handle an incoming registration request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'first_name'       => 'required|string|max:255',
+            'last_name'        => 'required|string|max:255',
+            'email'            => 'required|string|email|max:255|unique:users,email',
+            'phone'            => 'nullable|string|max:20|unique:users,phone',
+            'nationality'      => 'nullable|string|max:100',
+            'document_number'  => 'nullable|string|max:50|unique:users,document_number',
+            'password'         => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'first_name'       => $request->first_name,
+            'last_name'        => $request->last_name,
+            'email'            => $request->email,
+            'phone'            => $request->phone,
+            'nationality'      => $request->nationality,
+            'document_number'  => $request->document_number,
+            'password'         => Hash::make($request->password),
         ]);
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect(route('welcome', absolute: false));
+        return redirect()->route('welcome');
     }
 }

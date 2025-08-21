@@ -20,13 +20,13 @@ export default function Header() {
 
   return (
     <header className="bg-white/90 backdrop-blur-sm fixed top-0 left-0 w-full shadow-md z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-">
         {/* Logo */}
         <a href="/" className="flex items-center">
           <img
-            src="https://ii.ct-stc.com/2/logos/empresas/2017/11/13/west-contact-services-1DE2B56679557874154159thumbnail.png"
+            src="/images/logo.jpg"
             alt="Logo"
-            className="h-12 w-auto hover:scale-105 transition-transform duration-300"
+            className="h-20 w-auto hover:scale-105 transition-transform duration-300"
           />
         </a>
 
