@@ -89,19 +89,7 @@ export default function Login({ status, canResetPassword }) {
                             )}
                         </div>
 
-                        {/* Remember me */}
-                        <div className="flex items-center">
-                            <input
-                                id="remember"
-                                type="checkbox"
-                                checked={data.remember}
-                                onChange={(e) => setData("remember", e.target.checked)}
-                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                            />
-                            <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
-                                Recuérdame
-                            </label>
-                        </div>
+                       
 
                         {/* Botón + link */}
                         <div className="flex items-center justify-between">
