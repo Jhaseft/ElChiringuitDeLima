@@ -10,45 +10,55 @@ export default function CambioDivisasCard({ tasas }) {
   const [conversion, setConversion] = useState("");
   const [modo, setModo] = useState("BOBtoPEN");
 
-  // Tasa correcta: 1 BOB = X PEN
   const { compra = 0.54, venta = 0.54 } = tasas || {};
-const tasaBOBtoPEN = venta || 1.96; // 1 BOB → ? PEN
-const tasaPENtoBOB = compra || 1.94; // 1 PEN → ? BOB
+  const tasaBOBtoPEN = venta || 1.96;
+  const tasaPENtoBOB = compra || 1.94;
 
-const handleCambio = (valor) => {
-  setMonto(valor);
-  if (!valor || isNaN(valor)) {
-    setConversion("");
-    return;
-  }
+  const handleCambio = (valor) => {
+    setMonto(valor);
+    if (!valor || isNaN(valor)) {
+      setConversion("");
+      return;
+    }
+    if (modo === "BOBtoPEN") {
+      setConversion((valor / tasaBOBtoPEN).toFixed(2));
+    } else {
+      setConversion((valor * tasaPENtoBOB).toFixed(2));
+    }
+  };
 
-  if (modo === "BOBtoPEN") {
-    // 1 BOB → ? PEN
-    setConversion((valor / tasaBOBtoPEN).toFixed(2));
-  } else {
-    // 1 PEN → ? BOB
-    setConversion((valor * tasaPENtoBOB).toFixed(2));
-  }
-};
-
-const toggleModo = () => {
-  const nuevoModo = modo === "BOBtoPEN" ? "PENtoBOB" : "BOBtoPEN";
-  setModo(nuevoModo);
-
-  if (!monto || isNaN(monto)) {
-    setConversion("");
-    return;
-  }
-
-  if (nuevoModo === "BOBtoPEN") {
-    setConversion((monto / tasaBOBtoPEN).toFixed(2));
-  } else {
-    setConversion((monto * tasaPENtoBOB).toFixed(2));
-  }
-};
+  const toggleModo = () => {
+    const nuevoModo = modo === "BOBtoPEN" ? "PENtoBOB" : "BOBtoPEN";
+    setModo(nuevoModo);
+    if (!monto || isNaN(monto)) {
+      setConversion("");
+      return;
+    }
+    if (nuevoModo === "BOBtoPEN") {
+      setConversion((monto / tasaBOBtoPEN).toFixed(2));
+    } else {
+      setConversion((monto * tasaPENtoBOB).toFixed(2));
+    }
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-4 border border-gray-100 max-w-md w-full mx-auto sm:max-w-lg lg:max-w-xl">
+      
+      {/* Título y Logo */}
+      <div className="flex flex-col items-center mb-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 text-center">
+          TransferCash
+        </h1>
+        <p className="text-sm sm:text-base text-gray-500 text-center">
+          Cambio de forma rápida y segura
+        </p>
+        {/* Espacio para logo */}
+        <div className="my-3 w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
+          <img src="/images/logo.jpg" alt="Logo" className="my-3 w-20 h-20 object-contain rounded-full" />
+
+        </div>
+      </div>
+
       {/* Tasas arriba */}
       <div className="flex justify-between text-sm sm:text-base font-semibold">
         <span className="text-blue-700">
@@ -61,7 +71,6 @@ const toggleModo = () => {
 
       {/* Inputs */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
-        {/* Monto */}
         <div className="flex flex-col w-full">
           <label className="text-xs sm:text-sm font-semibold text-gray-600 mb-1 text-center">
             {modo === "BOBtoPEN" ? "TIENES BOLIVIANOS" : "TIENES SOLES"}
@@ -74,7 +83,6 @@ const toggleModo = () => {
           />
         </div>
 
-        {/* Botón swap */}
         <div className="flex justify-center my-3 sm:my-0">
           <button
             onClick={toggleModo}
@@ -84,7 +92,6 @@ const toggleModo = () => {
           </button>
         </div>
 
-        {/* Resultado */}
         <div className="flex flex-col w-full">
           <label className="text-xs sm:text-sm font-semibold text-gray-600 mb-1 text-center">
             {modo === "BOBtoPEN" ? "RECIBES SOLES" : "RECIBES BOLIVIANOS"}
