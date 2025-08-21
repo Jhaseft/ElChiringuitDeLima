@@ -7,7 +7,7 @@ export default function MobileNav({ links, user, menuOpen, setMenuOpen }) {
 
   return (
     <div
-      className={`absolute top-2 left-0 w-full bg-white border-t border-gray-200 shadow-xl overflow-hidden transition-all duration-300 md:hidden ${
+      className={`absolute top-18 left-0 w-full bg-white border-t border-gray-200 shadow-xl overflow-hidden transition-all duration-300 md:hidden ${
         menuOpen ? "max-h-96 animate-fade-slide" : "max-h-0"
       }`}
     >
