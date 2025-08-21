@@ -21,8 +21,8 @@
              Meta para Twitter
              =========================== -->
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Carniceria Corte Beniano" />
-        <meta name="twitter:description" content="Cortes de Calidad Hechos Con Amor" />
+        <meta name="twitter:title" content="Transfer Cash" />
+        <meta name="twitter:description" content="Cambios Rapidos Y seguros" />
         <meta name="twitter:image" content="{{ asset('/images/logo.jpg') }}" />
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
