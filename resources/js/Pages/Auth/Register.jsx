@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Head, useForm } from "@inertiajs/react";
 import BotonGoogle from "@/Components/auth/Botongoogle";
-import Stepper from "@/Components/auth/register/Stepper";
-import Step1Personal from "@/Components/auth/register/Step1Personal";
-import Step2Extras from "@/Components/auth/register/Step2Extras";
-import Step3Security from "@/Components/auth/register/Step3Security";
+import Stepper from "@/Components/register_and_complete/register/Stepper";
+import Step1Personal from "@/Components/register_and_complete/register/Step1Personal";
+import Step2Extras from "@/Components/register_and_complete/register/Step2Extras";
+import Step3Security from "@/Components/register_and_complete/register/Step3Security";
 
 /**
  * Componente principal del registro multistep.

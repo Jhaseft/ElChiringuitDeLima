@@ -1,6 +1,8 @@
+// CambioDivisasCard.jsx
 import { useState } from "react";
 import { usePage, Link } from "@inertiajs/react";
 import { RefreshCw } from "lucide-react";
+import ModalOperacion from "./ModalOperacion";
 
 export default function CambioDivisasCard({ tasas }) {
   const { auth } = usePage().props;
@@ -9,6 +11,8 @@ export default function CambioDivisasCard({ tasas }) {
   const [monto, setMonto] = useState("");
   const [conversion, setConversion] = useState("");
   const [modo, setModo] = useState("BOBtoPEN");
+  const [error, setError] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
 
   const { compra = 0.54, venta = 0.54 } = tasas || {};
   const tasaBOBtoPEN = venta || 1.96;
@@ -16,6 +20,7 @@ export default function CambioDivisasCard({ tasas }) {
 
   const handleCambio = (valor) => {
     setMonto(valor);
+    setError("");
     if (!valor || isNaN(valor)) {
       setConversion("");
       return;
@@ -41,9 +46,23 @@ export default function CambioDivisasCard({ tasas }) {
     }
   };
 
+  const iniciarOperacion = () => {
+    if (!monto || !conversion) {
+      setError("Debes ingresar un monto válido para iniciar la operación.");
+      return;
+    }
+
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
+
+    setModalOpen(true);
+    setError("");
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-4 border border-gray-100 max-w-md w-full mx-auto sm:max-w-lg lg:max-w-xl">
-      
       {/* Título y Logo */}
       <div className="flex flex-col items-center mb-4">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-800 text-center">
@@ -52,14 +71,12 @@ export default function CambioDivisasCard({ tasas }) {
         <p className="text-sm sm:text-base text-gray-500 text-center">
           Cambio de forma rápida y segura
         </p>
-        {/* Espacio para logo */}
         <div className="my-3 w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
           <img src="/images/logo.jpg" alt="Logo" className="my-3 w-20 h-20 object-contain rounded-full" />
-
         </div>
       </div>
 
-      {/* Tasas arriba */}
+      {/* Tasas */}
       <div className="flex justify-between text-sm sm:text-base font-semibold">
         <span className="text-blue-700">
           COMPRA: <span className="font-bold">{tasaPENtoBOB.toFixed(2)}</span>
@@ -107,13 +124,23 @@ export default function CambioDivisasCard({ tasas }) {
 
       {/* Botones */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-        <button className="bg-green-700 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-800 transition-all shadow-md">
+        <button
+          onClick={iniciarOperacion}
+          className="bg-green-700 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-800 transition-all shadow-md"
+        >
           INICIAR UNA OPERACIÓN
         </button>
         <button className="bg-green-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition-all shadow-md">
           CAMBIAR CON UN ASESOR
         </button>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm text-center shadow-sm">
+          {error}
+        </div>
+      )}
 
       {/* Login / Registro */}
       {!user && (
@@ -132,6 +159,16 @@ export default function CambioDivisasCard({ tasas }) {
           </Link>
         </div>
       )}
+
+      {/* Modal */}
+      <ModalOperacion
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        user={user}
+        monto={monto}
+        conversion={conversion}
+        modo={modo}
+      />
     </div>
   );
 }

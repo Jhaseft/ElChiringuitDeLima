@@ -1,4 +1,4 @@
-import PasswordRules from "@/Components/auth/register/PasswordRules";
+import PasswordRules from "@/Components/register_and_complete/register/PasswordRules";
 
 /**
  * Paso 2: Seguridad → Contraseña y confirmación con reglas.

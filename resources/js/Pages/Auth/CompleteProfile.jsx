@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useForm } from "@inertiajs/react";
-import Stepper from "@/Components/auth/complete-profile/Stepper";
-import Step1Personal from "@/Components/auth/complete-profile/Step1Personal";
-import Step2Security from "@/Components/auth/complete-profile/Step2Security";
-import Step3Terms from "@/Components/auth/complete-profile/Step3Terms";
+import Stepper from "@/Components/register_and_complete/complete-profile/Stepper";
+import Step1Personal from "@/Components/register_and_complete/complete-profile/Step1Personal";
+import Step2Security from "@/Components/register_and_complete/complete-profile/Step2Security";
+import Step3Terms from "@/Components/register_and_complete/complete-profile/Step3Terms";
 
 /**
  * Wizard para completar el perfil de un usuario ya registrado.
