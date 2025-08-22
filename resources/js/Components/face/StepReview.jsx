@@ -45,7 +45,7 @@ export default function StepReview({ carnetBlob, videoBlob, prevStep, loading, s
       <div className="flex flex-wrap justify-center gap-3 mt-4">
         <Button onClick={prevStep} className="bg-gray-400 hover:bg-gray-500">Atrás</Button>
         <Button onClick={handleSubmit} disabled={loading} className="bg-purple-600 hover:bg-purple-700">
-          {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verificando...</> : "Enviar a API"}
+          {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verificando...</> : "Verificar"}
         </Button>
       </div>
 
