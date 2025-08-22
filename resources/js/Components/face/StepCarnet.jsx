@@ -11,7 +11,6 @@ export default function StepCarnet({ carnetBlob, setCarnetBlob, nextStep }) {
   const [message, setMessage] = useState("Presiona Activar cámara para iniciar.");
   const [error, setError] = useState("");
 
-  // Detener cámara
   const stopCamera = () => {
     try {
       if (videoRef.current?.srcObject) {
@@ -33,7 +32,7 @@ export default function StepCarnet({ carnetBlob, setCarnetBlob, nextStep }) {
       v.addEventListener("loadedmetadata", onLoaded, { once: true });
     });
 
-  // Abre la cámara FRONTAL con fallbacks
+  // 🔹 Abrir cámara TRASERA (para carnet)
   const startCamera = async () => {
     stopCamera();
     setError("");
@@ -41,17 +40,17 @@ export default function StepCarnet({ carnetBlob, setCarnetBlob, nextStep }) {
     try {
       let mediaStream;
 
-      // 1) Intento ideal con frontal
+      // 1) Intento ideal con trasera
       try {
         mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "user" } },
+          video: { facingMode: { ideal: "environment" } }, // cámara trasera
           audio: false,
         });
       } catch {
-        // 2) Intento estricto con frontal
+        // 2) Intento estricto con trasera
         try {
           mediaStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user" },
+            video: { facingMode: "environment" },
             audio: false,
           });
         } catch {
@@ -68,14 +67,12 @@ export default function StepCarnet({ carnetBlob, setCarnetBlob, nextStep }) {
 
       if (!videoRef.current) return;
       videoRef.current.srcObject = mediaStream;
-      // iOS/Android necesitan esto para inline video
       videoRef.current.setAttribute("playsinline", "");
       videoRef.current.muted = true;
 
       await waitVideoReady();
       await videoRef.current.play();
 
-      // Detección de “frame en blanco”
       if (videoRef.current.videoWidth === 0 || videoRef.current.videoHeight === 0) {
         throw Object.assign(new Error("Sin frames"), { name: "StreamBlankError" });
       }
@@ -88,14 +85,13 @@ export default function StepCarnet({ carnetBlob, setCarnetBlob, nextStep }) {
       stopCamera();
       if (e.name === "NotAllowedError") setError("Permiso denegado. Habilita la cámara en Ajustes del navegador.");
       else if (e.name === "NotFoundError") setError("No se detectó ninguna cámara.");
-      else if (e.name === "OverconstrainedError") setError("La cámara frontal no está disponible en este dispositivo.");
+      else if (e.name === "OverconstrainedError") setError("La cámara trasera no está disponible en este dispositivo.");
       else if (e.name === "StreamBlankError") setError("La cámara no está enviando video. Cierra otras apps que usen la cámara e inténtalo de nuevo.");
       else setError("No se pudo activar la cámara.");
       setMessage("Presiona Activar cámara para reintentar.");
     }
   };
 
-  // Capturar foto
   const takePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
     const v = videoRef.current;
@@ -119,15 +115,13 @@ export default function StepCarnet({ carnetBlob, setCarnetBlob, nextStep }) {
     setMessage("Presiona Activar cámara para iniciar.");
   };
 
-  // Apaga cámara al desmontar
   useEffect(() => {
     return () => stopCamera();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4 max-w-md mx-auto">
-      <p className="font-semibold text-lg text-center">📄 Captura de documento (cámara frontal)</p>
+      <p className="font-semibold text-lg text-center">📄 Captura de documento (cámara trasera)</p>
 
       <div className="relative border bg-gray-900 aspect-[3/4] rounded-lg flex items-center justify-center">
         {!carnetBlob ? (
@@ -173,7 +167,6 @@ export default function StepCarnet({ carnetBlob, setCarnetBlob, nextStep }) {
         </Button>
       </div>
 
-      {/* Canvas oculto para captura */}
       <canvas ref={canvasRef} className="hidden" />
     </div>
   );
