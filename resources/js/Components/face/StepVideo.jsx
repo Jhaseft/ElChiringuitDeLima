@@ -6,66 +6,99 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const recordedChunks = useRef([]);
-  const [devices, setDevices] = useState([]);
-  const [selectedDeviceId, setSelectedDeviceId] = useState(null);
   const [recording, setRecording] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
+  const [stream, setStream] = useState(null);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    navigator.mediaDevices.enumerateDevices().then(devs => {
-      const cams = devs.filter(d => d.kind === "videoinput");
-      setDevices(cams);
-      setSelectedDeviceId(cams[0]?.deviceId || null);
-    });
-  }, []);
+  const [message, setMessage] = useState("Presiona Activar cámara para iniciar.");
 
   const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach(t => t.stop());
-      videoRef.current.srcObject = null;
-    }
+    try {
+      if (videoRef.current?.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach(t => t.stop());
+        videoRef.current.srcObject = null;
+      }
+      if (stream) stream.getTracks().forEach(t => t.stop());
+    } catch {}
+    setStream(null);
     setCameraActive(false);
   };
+
+  const waitVideoReady = () =>
+    new Promise((resolve) => {
+      const v = videoRef.current;
+      if (!v) return resolve();
+      if (v.readyState >= 1) return resolve();
+      const onLoaded = () => { v.removeEventListener("loadedmetadata", onLoaded); resolve(); };
+      v.addEventListener("loadedmetadata", onLoaded, { once: true });
+    });
 
   const startCamera = async () => {
     stopCamera();
     setError("");
+    setMessage("Iniciando cámara...");
     try {
-      let constraints = {
-        video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : { facingMode: "user" },
-        audio: true,
-      };
+      let s;
 
-      let stream;
+      // 1) Ideal frontal
       try {
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
-      } catch (err) {
-        // fallback si falla con deviceId
-        console.warn("Fallback a facingMode:user", err);
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+        s = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "user" } },
+          audio: true,
+        });
+      } catch {
+        // 2) Estricto frontal
+        try {
+          s = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user" },
+            audio: true,
+          });
+        } catch {
+          // 3) Último recurso: primera cámara disponible
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const cams = devices.filter(d => d.kind === "videoinput");
+          if (!cams.length) throw Object.assign(new Error("No hay cámaras"), { name: "NotFoundError" });
+          s = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: { exact: cams[0].deviceId } },
+            audio: true,
+          });
+        }
       }
 
-      videoRef.current.srcObject = stream;
+      if (!videoRef.current) return;
+      videoRef.current.srcObject = s;
+      videoRef.current.setAttribute("playsinline", "");
+      videoRef.current.muted = true; // evita feedback
+      await waitVideoReady();
       await videoRef.current.play();
+
+      if (videoRef.current.videoWidth === 0 || videoRef.current.videoHeight === 0) {
+        throw Object.assign(new Error("Sin frames"), { name: "StreamBlankError" });
+      }
+
+      setStream(s);
       setCameraActive(true);
+      setMessage("Cámara y micrófono activos. Puedes grabar.");
     } catch (e) {
       console.error(e);
-      if (e.name === "NotAllowedError") setError("⚠️ Permiso denegado. Activa la cámara en ajustes.");
-      else if (e.name === "NotFoundError") setError("⚠️ No se detectó ninguna cámara.");
-      else if (e.name === "OverconstrainedError") setError("⚠️ La cámara seleccionada no está disponible.");
-      else setError("❌ Error al activar la cámara.");
+      stopCamera();
+      if (e.name === "NotAllowedError") setError("Permiso denegado. Habilita la cámara/micrófono en Ajustes.");
+      else if (e.name === "NotFoundError") setError("No se detectó cámara o micrófono.");
+      else if (e.name === "OverconstrainedError") setError("La cámara frontal no está disponible en este dispositivo.");
+      else if (e.name === "StreamBlankError") setError("La cámara no envía video. Cierra otras apps que la usen e inténtalo de nuevo.");
+      else setError("No se pudo activar la cámara.");
+      setMessage("Presiona Activar cámara para reintentar.");
     }
   };
 
   const getSupportedMimeType = () => {
-    const types = [
+    const candidates = [
       "video/webm;codecs=vp9",
       "video/webm;codecs=vp8",
       "video/webm",
-      "video/mp4",
+      // "video/mp4", // Android Chrome rara vez lo soporta por MediaRecorder
     ];
-    return types.find(type => MediaRecorder.isTypeSupported(type)) || "";
+    return candidates.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
   };
 
   const startRecording = () => {
@@ -74,59 +107,55 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
     const mimeType = getSupportedMimeType();
 
     try {
-      mediaRecorderRef.current = new MediaRecorder(videoRef.current.srcObject, { mimeType });
+      mediaRecorderRef.current = new MediaRecorder(videoRef.current.srcObject, mimeType ? { mimeType } : undefined);
     } catch (err) {
       console.error("MediaRecorder error:", err);
       return alert("❌ Este navegador no soporta grabación de video.");
     }
 
-    mediaRecorderRef.current.ondataavailable = e => e.data.size > 0 && recordedChunks.current.push(e.data);
-    mediaRecorderRef.current.onstop = () => {
-      setVideoBlob(new Blob(recordedChunks.current, { type: mimeType || "video/webm" }));
+    mediaRecorderRef.current.ondataavailable = (e) => {
+      if (e.data.size > 0) recordedChunks.current.push(e.data);
     };
+    mediaRecorderRef.current.onstop = () => {
+      const type = mimeType || "video/webm";
+      setVideoBlob(new Blob(recordedChunks.current, { type }));
+      setMessage("Video grabado. Puedes reproducirlo o volver a grabar.");
+    };
+
     mediaRecorderRef.current.start();
     setRecording(true);
+    setMessage("Grabando...");
   };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && recording) {
       mediaRecorderRef.current.stop();
       setRecording(false);
-      stopCamera();
+      stopCamera(); // liberamos cámara después de grabar
     }
   };
 
+  // Apaga cámara al desmontar
+  useEffect(() => {
+    return () => stopCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4 max-w-md mx-auto">
-      <p className="font-semibold text-lg text-center">🎥 Video selfie</p>
+      <p className="font-semibold text-lg text-center">🎥 Video selfie (cámara frontal)</p>
 
-      {devices.length > 1 && (
-        <select
-          className="border rounded p-1 mb-2 w-full"
-          value={selectedDeviceId}
-          onChange={e => setSelectedDeviceId(e.target.value)}
-        >
-          {devices.map((d, i) => (
-            <option key={d.deviceId} value={d.deviceId}>
-              {d.label || `Cámara ${i + 1}`}
-            </option>
-          ))}
-        </select>
-      )}
-
-      <div className="border bg-gray-900 aspect-[3/4] rounded-lg flex items-center justify-center relative">
+      <div className="relative border bg-gray-900 aspect-[3/4] rounded-lg flex items-center justify-center">
         <video
           ref={videoRef}
           autoPlay
           muted
-          playsInline  // 🔑 necesario en iOS
+          playsInline
           className="w-full h-full object-cover"
         />
-        {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 text-white text-center p-2 rounded-lg">
-            {error}
-          </div>
-        )}
+        <div className="absolute inset-0 flex items-center justify-center px-3 text-center">
+          <p className="text-white text-sm">{error || message}</p>
+        </div>
       </div>
 
       <div className="flex justify-center gap-2 mt-2 flex-wrap">
