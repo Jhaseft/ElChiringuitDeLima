@@ -11,7 +11,7 @@ export default function StepReview({ carnetBlob, videoBlob, prevStep, loading, s
 
     try {
       setLoading(true);
-      const res = await axios.post("http://127.0.0.1:8001/registro-face/verify", formData, {
+      const res = await axios.post("https://apiface-production-767c.up.railway.app/registro-face/verify", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setResultado(res.data);

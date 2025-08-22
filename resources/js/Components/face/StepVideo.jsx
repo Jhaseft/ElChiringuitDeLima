@@ -1,4 +1,4 @@
-// StepVideo.jsx
+import { useState, useEffect } from "react";
 import { Button } from "@/Components/ui/button";
 import { Camera, Video, StopCircle } from "lucide-react";
 
@@ -13,23 +13,44 @@ export default function StepVideo({
   nextStep,
   prevStep,
 }) {
+  const [devices, setDevices] = useState([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState(null);
+
+  useEffect(() => {
+    navigator.mediaDevices.enumerateDevices().then(devs => {
+      const videoDevices = devs.filter(d => d.kind === "videoinput");
+      setDevices(videoDevices);
+
+      // Cámara frontal por defecto
+      const frontCamera = videoDevices.find(d => d.label.toLowerCase().includes("front"));
+      setSelectedDeviceId(frontCamera ? frontCamera.deviceId : videoDevices[0]?.deviceId || null);
+    });
+  }, []);
+
   const startCameraVideo = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    if (videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+    }
+
+    const constraints = {
+      video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : { facingMode: "user" },
+      audio: true,
+    };
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
     videoRef.current.srcObject = stream;
     await videoRef.current.play();
   };
 
   const startRecording = () => {
+    if (!videoRef.current.srcObject) return alert("⚠️ Primero activa la cámara para grabar.");
     recordedChunks.current = [];
-    const stream = videoRef.current.srcObject;
-    if (!stream) return alert("⚠️ Primero activa la cámara para grabar.");
-    mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: "video/webm" });
+    mediaRecorderRef.current = new MediaRecorder(videoRef.current.srcObject, { mimeType: "video/webm" });
     mediaRecorderRef.current.ondataavailable = (e) => {
       if (e.data.size > 0) recordedChunks.current.push(e.data);
     };
     mediaRecorderRef.current.onstop = () => {
-      const blob = new Blob(recordedChunks.current, { type: "video/webm" });
-      setVideoBlob(blob);
+      setVideoBlob(new Blob(recordedChunks.current, { type: "video/webm" }));
     };
     mediaRecorderRef.current.start();
     setRecording(true);
@@ -41,13 +62,30 @@ export default function StepVideo({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
+    <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4 max-w-md mx-auto">
       <p className="font-semibold text-lg text-center">🎥 Graba un video selfie</p>
-      
-      <div className="rounded-lg overflow-hidden border bg-gray-900 text-white flex items-center justify-center h-64">
-        {!videoBlob && !recording ? (
-          <p className="text-center px-4">Presione Iniciar Video para comenzar la grabación. Asegúrese de estar bien iluminado y sin ruidos.</p>
-        ) : null}
+
+      <div className="flex justify-center mb-2">
+        {devices.length > 1 && (
+          <select
+            className="border rounded p-1"
+            value={selectedDeviceId}
+            onChange={(e) => setSelectedDeviceId(e.target.value)}
+          >
+            {devices.map((d) => (
+              <option key={d.deviceId} value={d.deviceId}>
+                {d.label || "Cámara " + (devices.indexOf(d)+1)}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+
+      {/* Cuadro vertical más alto */}
+      <div className="rounded-lg overflow-hidden border bg-gray-900 flex items-center justify-center aspect-[3/4] w-full max-w-xs mx-auto relative">
+        {!videoBlob && !recording && (
+          <p className="text-center px-4 text-white">Presione Activar cámara para iniciar.</p>
+        )}
         <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
       </div>
 
@@ -57,6 +95,7 @@ export default function StepVideo({
             <Camera className="mr-2 h-4 w-4" /> Activar cámara + micrófono
           </Button>
         )}
+
         {!recording ? (
           <Button onClick={startRecording} className="bg-red-600 hover:bg-red-700 text-black">
             <Video className="mr-2 h-4 w-4" /> Iniciar Video
@@ -66,6 +105,7 @@ export default function StepVideo({
             <StopCircle className="mr-2 h-4 w-4" /> Detener Video
           </Button>
         )}
+
         <Button onClick={prevStep} className="bg-gray-400 hover:bg-gray-500">Atrás</Button>
         <Button onClick={nextStep} disabled={!videoBlob} className="bg-indigo-600 hover:bg-indigo-700">Siguiente</Button>
       </div>
