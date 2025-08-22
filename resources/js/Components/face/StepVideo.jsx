@@ -10,6 +10,7 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
   const [recording, setRecording] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     navigator.mediaDevices.enumerateDevices().then(devs => {
@@ -29,27 +30,59 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
 
   const startCamera = async () => {
     stopCamera();
+    setError("");
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true,
+      let constraints = {
+        video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : { facingMode: "user" },
         audio: true,
-      });
+      };
+
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err) {
+        // fallback si falla con deviceId
+        console.warn("Fallback a facingMode:user", err);
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+      }
+
       videoRef.current.srcObject = stream;
       await videoRef.current.play();
       setCameraActive(true);
     } catch (e) {
       console.error(e);
-      alert("❌ No se pudo activar la cámara.");
+      if (e.name === "NotAllowedError") setError("⚠️ Permiso denegado. Activa la cámara en ajustes.");
+      else if (e.name === "NotFoundError") setError("⚠️ No se detectó ninguna cámara.");
+      else if (e.name === "OverconstrainedError") setError("⚠️ La cámara seleccionada no está disponible.");
+      else setError("❌ Error al activar la cámara.");
     }
+  };
+
+  const getSupportedMimeType = () => {
+    const types = [
+      "video/webm;codecs=vp9",
+      "video/webm;codecs=vp8",
+      "video/webm",
+      "video/mp4",
+    ];
+    return types.find(type => MediaRecorder.isTypeSupported(type)) || "";
   };
 
   const startRecording = () => {
     if (!videoRef.current?.srcObject) return alert("⚠️ Primero activa la cámara.");
     recordedChunks.current = [];
-    mediaRecorderRef.current = new MediaRecorder(videoRef.current.srcObject, { mimeType: "video/webm" });
+    const mimeType = getSupportedMimeType();
+
+    try {
+      mediaRecorderRef.current = new MediaRecorder(videoRef.current.srcObject, { mimeType });
+    } catch (err) {
+      console.error("MediaRecorder error:", err);
+      return alert("❌ Este navegador no soporta grabación de video.");
+    }
+
     mediaRecorderRef.current.ondataavailable = e => e.data.size > 0 && recordedChunks.current.push(e.data);
     mediaRecorderRef.current.onstop = () => {
-      setVideoBlob(new Blob(recordedChunks.current, { type: "video/webm" }));
+      setVideoBlob(new Blob(recordedChunks.current, { type: mimeType || "video/webm" }));
     };
     mediaRecorderRef.current.start();
     setRecording(true);
@@ -81,8 +114,19 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
         </select>
       )}
 
-      <div className="border bg-gray-900 aspect-[3/4] rounded-lg flex items-center justify-center">
-        <video ref={videoRef} autoPlay muted className="w-full h-full object-cover" />
+      <div className="border bg-gray-900 aspect-[3/4] rounded-lg flex items-center justify-center relative">
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline  // 🔑 necesario en iOS
+          className="w-full h-full object-cover"
+        />
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 text-white text-center p-2 rounded-lg">
+            {error}
+          </div>
+        )}
       </div>
 
       <div className="flex justify-center gap-2 mt-2 flex-wrap">
@@ -105,7 +149,12 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
       </div>
 
       {videoBlob && (
-        <video src={URL.createObjectURL(videoBlob)} controls className="w-48 h-48 mt-2 mx-auto rounded-lg border" />
+        <video
+          src={URL.createObjectURL(videoBlob)}
+          controls
+          playsInline
+          className="w-48 h-48 mt-2 mx-auto rounded-lg border"
+        />
       )}
     </div>
   );
