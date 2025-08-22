@@ -4,120 +4,112 @@ import { Camera, Upload, RefreshCw } from "lucide-react";
 
 export default function StepCarnet({ carnetBlob, setCarnetBlob, nextStep }) {
   const videoRef = useRef(null);
-  const [devices, setDevices] = useState([]);
-  const [selectedDeviceId, setSelectedDeviceId] = useState(null);
+  const canvasRef = useRef(null);
+
   const [cameraActive, setCameraActive] = useState(false);
-  const [message, setMessage] = useState("Presiona el botón verde para activar la cámara");
+  const [stream, setStream] = useState(null);
+  const [error, setError] = useState("");
 
-  // listar cámaras
-  useEffect(() => {
-    navigator.mediaDevices.enumerateDevices().then(devs => {
-      const cams = devs.filter(d => d.kind === "videoinput");
-      setDevices(cams);
-      setSelectedDeviceId(cams[0]?.deviceId || null);
-    });
-  }, []);
-
-  const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach(t => t.stop());
-      videoRef.current.srcObject = null;
+  // Iniciar cámara
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" }, // "user" = frontal, "environment" = trasera
+        audio: false,
+      });
+      setStream(mediaStream);
+      setCameraActive(true);
+      setError("");
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (err) {
+      console.error("Error al activar la cámara:", err);
+      setError("No se pudo acceder a la cámara. Verifica permisos en tu dispositivo.");
     }
+  };
+
+  // Detener cámara
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    setStream(null);
     setCameraActive(false);
   };
 
-  const startCamera = async () => {
-    stopCamera();
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true,
-        audio: false,
-      });
-      videoRef.current.srcObject = stream;
-      await videoRef.current.play();
-      setCameraActive(true);
-      setMessage("Ajusta tu documento y presiona Capturar.");
-    } catch (e) {
-      console.error(e);
-      setMessage("❌ No se pudo activar la cámara.");
-    }
-  };
-
-  const captureCarnet = () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(videoRef.current, 0, 0);
-    canvas.toBlob(blob => {
-      if (blob) {
-        setCarnetBlob(blob);
-        stopCamera();
-        setMessage("✅ Foto capturada. Puedes volver a sacar otra.");
-      }
+  // Capturar foto
+  const takePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const context = canvasRef.current.getContext("2d");
+    canvasRef.current.width = videoRef.current.videoWidth;
+    canvasRef.current.height = videoRef.current.videoHeight;
+    context.drawImage(videoRef.current, 0, 0);
+    canvasRef.current.toBlob((blob) => {
+      setCarnetBlob(blob);
     }, "image/jpeg");
+    stopCamera();
   };
 
-  const retake = () => {
-    setCarnetBlob(null);
-    setMessage("Presiona el botón verde para activar la cámara.");
-  };
+  // Cuando desmonta, apagar cámara
+  useEffect(() => {
+    return () => stopCamera();
+  }, []);
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4 max-w-md mx-auto">
-      <p className="font-semibold text-lg text-center">📄 Captura de documento</p>
-
-      {devices.length > 1 && (
-        <select
-          className="border rounded p-1 mb-2 w-full"
-          value={selectedDeviceId}
-          onChange={e => setSelectedDeviceId(e.target.value)}
-        >
-          {devices.map((d, i) => (
-            <option key={d.deviceId} value={d.deviceId}>
-              {d.label || `Cámara ${i + 1}`}
-            </option>
-          ))}
-        </select>
+    <div className="flex flex-col items-center gap-4">
+      {/* VIDEO */}
+      {cameraActive && (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="w-full max-w-sm rounded-lg border"
+        />
       )}
 
-      <div className="relative border bg-gray-900 aspect-[3/4] rounded-lg flex items-center justify-center">
-        {!carnetBlob ? (
-          <>
-            <video ref={videoRef} autoPlay muted className="w-full h-full object-cover" />
-            <div className="absolute inset-0 flex items-center justify-center px-2 text-center">
-              <p className="text-white text-sm">{message}</p>
-            </div>
-          </>
-        ) : (
-          <img
-            src={URL.createObjectURL(carnetBlob)}
-            alt="Carnet"
-            className="w-full h-full object-cover"
-          />
-        )}
-      </div>
+      {/* CANVAS (oculto, solo para capturar) */}
+      <canvas ref={canvasRef} className="hidden"></canvas>
 
-      <div className="flex justify-center gap-2 mt-2 flex-wrap">
+      {/* MENSAJE DE ERROR */}
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+
+      {/* BOTONES */}
+      <div className="flex gap-3">
         {!cameraActive && !carnetBlob && (
-          <Button onClick={startCamera} className="bg-green-600 hover:bg-green-700">
-            <Camera className="mr-2 h-4 w-4" /> Activar cámara
+          <Button onClick={startCamera} className="flex items-center gap-2">
+            <Camera className="w-4 h-4" /> Activar Cámara
           </Button>
         )}
-        {cameraActive && !carnetBlob && (
-          <Button onClick={captureCarnet} className="bg-blue-600 hover:bg-blue-700">
-            <Upload className="mr-2 h-4 w-4" /> Capturar
+        {cameraActive && (
+          <Button onClick={takePhoto} className="flex items-center gap-2">
+            <Camera className="w-4 h-4" /> Tomar Foto
           </Button>
         )}
         {carnetBlob && (
-          <Button onClick={retake} className="bg-yellow-500 hover:bg-yellow-600">
-            <RefreshCw className="mr-2 h-4 w-4" /> Volver a sacar
-          </Button>
+          <>
+            <Button onClick={startCamera} className="flex items-center gap-2">
+              <RefreshCw className="w-4 h-4" /> Volver a Tomar
+            </Button>
+            <Button onClick={nextStep} className="flex items-center gap-2">
+              <Upload className="w-4 h-4" /> Siguiente
+            </Button>
+          </>
         )}
-        <Button onClick={nextStep} disabled={!carnetBlob} className="bg-indigo-600 hover:bg-indigo-700">
-          Siguiente
-        </Button>
       </div>
+
+      {/* VISTA PREVIA DE LA FOTO */}
+      {carnetBlob && (
+        <div className="mt-4">
+          <p className="text-gray-600 text-sm mb-2">Vista previa:</p>
+          <img
+            src={URL.createObjectURL(carnetBlob)}
+            alt="Vista previa carnet"
+            className="w-56 h-auto rounded-lg border"
+          />
+        </div>
+      )}
     </div>
   );
 }
