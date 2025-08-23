@@ -1,5 +1,5 @@
 import ApplicationLogo from '@/Components/auth/ApplicationLogo';
-import Dropdown from '@/Components/auth/vDropdown';
+import Dropdown from '@/Components/auth/Dropdown';
 import NavLink from '@/Components/auth/NavLink';
 import ResponsiveNavLink from '@/Components/auth/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
