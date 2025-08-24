@@ -4,7 +4,7 @@ import { RefreshCw } from "lucide-react";
 import ModalOperacion from "./ModalOperacion";
 import ErrorBanner from "./ErrorBanner";
 
-export default function CambioDivisasCard({ tasas }) {
+export default function CambioDivisasCard({ tasas,bancos }) {
   const { auth } = usePage().props;
   const user = auth?.user ?? null;
 
@@ -69,10 +69,10 @@ export default function CambioDivisasCard({ tasas }) {
     }
 
     if (!user.document_number || !user.nationality) {
-      window.location.href = "/complete-perfil";
+      window.location.href = "complete-profile";
       return;
     }
-
+ 
     if (user.nationality.toLowerCase() === "boliviano" && modo === "PENtoBOB") {
       setError("No puedes iniciar operaciones de PEN a BOB siendo boliviano.");
       return;
@@ -192,8 +192,10 @@ export default function CambioDivisasCard({ tasas }) {
           onClose={() => setModalOpen(false)}
           user={user}
           monto={monto}
+          tasa={tasaPENtoBOB}
           conversion={conversion}
           modo={modo}
+          bancos={bancos}
         />
       </div>
     </>

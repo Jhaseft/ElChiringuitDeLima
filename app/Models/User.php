@@ -45,4 +45,14 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'accepted_terms_at' => 'datetime',
     ];
+
+    public function accounts()
+{
+    return $this->hasMany(Account::class);
+}
+
+public function transfers()
+{
+    return $this->hasMany(Transfer::class);
+}
 }

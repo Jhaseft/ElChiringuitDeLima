@@ -5,7 +5,7 @@ export default function BankSelect({ options, value, onChange, placeholder = "Se
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
-  const selected = options.find((o) => o.name === value);
+  const selected = value || null; // value es el objeto completo { id, name, logo_url, country }
 
   useEffect(() => {
     const close = (e) => {
@@ -24,7 +24,7 @@ export default function BankSelect({ options, value, onChange, placeholder = "Se
       >
         {selected ? (
           <div className="flex items-center gap-2">
-            <img src={selected.logo} alt={selected.name} className="w-5 h-5 object-contain" />
+            {selected.logo_url && <img src={selected.logo_url} alt={selected.name} className="w-5 h-5 object-contain" />}
             <span>{selected.name}</span>
           </div>
         ) : (
@@ -37,19 +37,19 @@ export default function BankSelect({ options, value, onChange, placeholder = "Se
         <div className="absolute mt-1 w-full bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
           {options.map((opt) => (
             <button
-              key={opt.name}
+              key={opt.id}
               type="button"
               onClick={() => {
-                onChange(opt.name);
+                onChange(opt); // devuelve el objeto completo
                 setOpen(false);
               }}
               className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 ${
-                value === opt.name ? "bg-blue-50" : ""
+                selected?.id === opt.id ? "bg-blue-50" : ""
               }`}
             >
-              <img src={opt.logo} alt={opt.name} className="w-5 h-5 object-contain" />
+              {opt.logo_url && <img src={opt.logo_url} alt={opt.name} className="w-5 h-5 object-contain" />}
               <span className="flex-1 text-left">{opt.name}</span>
-              {value === opt.name && <Check size={16} />}
+              {selected?.id === opt.id && <Check size={16} />}
             </button>
           ))}
         </div>

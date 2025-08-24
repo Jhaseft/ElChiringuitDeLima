@@ -1,44 +1,84 @@
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Trash2, Plus } from "lucide-react";
 import ModalCuentaBancaria from "./ModalCuentaBancaria";
 import ModalCuentaDestino from "./ModalCuentaDestino";
 import ModalTransferencia from "./ModalTransferencia";
+import CuentaSelect from "./CuentaSelect";
 
-export default function ModalOperacion({ isOpen, onClose, user, monto, conversion, modo, tipoCambio }) {
+export default function ModalOperacion({ isOpen, onClose, user, monto, conversion, tasa, tipoCambio, bancos }) {
   const [juramento, setJuramento] = useState(false);
   const [terminos, setTerminos] = useState(false);
+  const [loading, setLoading] = useState(false);  // Estado para la pantalla de carga
 
-  // Estados de modales de cuentas
+  // Modales
   const [openCuentaOrigen, setOpenCuentaOrigen] = useState(false);
   const [openCuentaDestino, setOpenCuentaDestino] = useState(false);
-
-  // Estado del modal de transferencia
   const [openTransferencia, setOpenTransferencia] = useState(false);
 
-  // Datos guardados
+  // Cuentas seleccionadas
   const [cuentaOrigen, setCuentaOrigen] = useState(null);
   const [cuentaDestino, setCuentaDestino] = useState(null);
 
+  // Todas las cuentas del usuario
+  const [cuentasUsuario, setCuentasUsuario] = useState([]);
+  const [loadingCuentas, setLoadingCuentas] = useState(false);
+
+  // Traer cuentas cada vez que el usuario o el modal cambien
+  useEffect(() => {
+    if (!isOpen || !user?.id) return;
+
+    setLoadingCuentas(true);
+    fetch(`/operacion/listar-cuentas/${user.id}`)
+      .then(res => res.json())
+      .then(data => setCuentasUsuario(data))
+      .catch(err => console.error(err))
+      .finally(() => setLoadingCuentas(false));
+  }, [isOpen, user?.id]);
+
   if (!isOpen) return null;
+
+  // Filtrar cuentas por tipo
+  const cuentasOrigen = cuentasUsuario.filter(c => c.account_type === "origin");
+  const cuentasDestino = cuentasUsuario.filter(c => c.account_type === "destination");
+
+  // Función para eliminar cuenta
+  const eliminarCuenta = (cuenta) => {
+    if (!cuenta) return;
+    if (!confirm(`¿Seguro que quieres eliminar la cuenta ${cuenta.account_number}?`)) return;
+
+    setLoading(true);  // Iniciar carga
+
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    fetch(`/operacion/eliminar-cuenta/${cuenta.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': token,
+      },
+    })
+    .then(res => res.json())
+    .then(() => {
+      setCuentasUsuario(prev => prev.filter(c => c.id !== cuenta.id));
+      if (cuenta.account_type === 'origin') setCuentaOrigen(null);
+      if (cuenta.account_type === 'destination') setCuentaDestino(null);
+    })
+    .catch(err => console.error(err))
+    .finally(() => setLoading(false));  // Finalizar carga
+  };
 
   return (
     <>
-      {/* Fondo oscuro */}
       <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 px-2">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-4 md:p-6 relative animate-fadeIn max-h-[90vh] overflow-y-auto mt-11">
-          {/* Botón cerrar */}
-          <button
-            className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition"
-            onClick={onClose}
-          >
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative animate-fadeIn max-h-[90vh] overflow-y-auto mt-11">
+          {/* Cerrar */}
+          <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition" onClick={onClose}>
             <X size={22} />
           </button>
 
-          <h2 className="text-lg md:text-xl font-bold mb-6 text-center text-gray-800">
-            Registro de Operación
-          </h2>
+          <h2 className="text-lg md:text-xl font-bold mb-6 text-center text-gray-800">Registro de Operación</h2>
 
-          {/* Info operación */}
+          {/* Información */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm">
             <div className="border rounded-lg bg-gray-50 p-3">
               <p className="font-semibold text-gray-700">Monto</p>
@@ -50,69 +90,77 @@ export default function ModalOperacion({ isOpen, onClose, user, monto, conversio
             </div>
           </div>
 
-          {/* Tipo de persona */}
           <div className="mb-4">
-            <input
-              type="text"
-              readOnly
-              value="Persona Natural"
-              className="w-full border rounded-lg px-3 py-2 text-sm font-semibold bg-gray-100 text-gray-700"
-            />
+            <input type="text" readOnly value="Persona Natural" className="w-full border rounded-lg px-3 py-2 text-sm font-semibold bg-gray-100 text-gray-700" />
           </div>
 
           {/* Datos usuario */}
           <div className="mb-4 text-sm border p-3 rounded-lg bg-gray-50">
-            <p>
-              <strong>Nombre:</strong> {user.first_name} {user.last_name}
-            </p>
-            <p>
-              <strong>CI:</strong> {user.document_number || "N/A"}
-            </p>
+            <p><strong>Nombre:</strong> {user.first_name} {user.last_name}</p>
+            <p><strong>CI:</strong> {user.document_number || "N/A"}</p>
           </div>
 
-          {/* Cuenta origen */}
+          {/* Cuenta Origen */}
           <div className="mb-4">
             <p className="text-sm font-semibold mb-2">Cuenta Origen</p>
-            {!cuentaOrigen ? (
-              <button
-                onClick={() => setOpenCuentaOrigen(true)}
-                className="w-full border border-blue-500 text-blue-600 py-2 rounded-lg text-sm font-semibold hover:bg-blue-50 transition"
-              >
-                + Agregar cuenta bancaria
-              </button>
+            {loadingCuentas ? (
+              <p className="text-gray-500 text-sm">Cargando cuentas...</p>
             ) : (
-              <div className="border rounded-lg p-3 bg-gray-50 text-sm">
-                <p><strong>Banco:</strong> {cuentaOrigen.banco}</p>
-                <p><strong>Número:</strong> {cuentaOrigen.numeroCuenta}</p>
+              <div className="flex gap-2 items-center">
+                <CuentaSelect
+                  options={cuentasOrigen}
+                  value={cuentaOrigen}
+                  onChange={setCuentaOrigen}
+                  placeholder="Selecciona una cuenta"
+                  disabled={loading}  // Deshabilitar el select durante la carga
+                />
                 <button
                   onClick={() => setOpenCuentaOrigen(true)}
-                  className="text-xs text-blue-500 mt-2 hover:underline"
+                  className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition flex items-center justify-center"
+                  title="Agregar cuenta"
                 >
-                  Cambiar cuenta
+                  <Plus size={18} />
+                </button>
+                <button
+                  onClick={() => eliminarCuenta(cuentaOrigen)}
+                  className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition flex items-center justify-center"
+                  title="Eliminar cuenta seleccionada"
+                  disabled={!cuentaOrigen || loading}  // Deshabilitar durante la carga
+                >
+                  <Trash2 size={18} />
                 </button>
               </div>
             )}
           </div>
 
-          {/* Cuenta destino */}
+          {/* Cuenta Destino */}
           <div className="mb-4">
             <p className="text-sm font-semibold mb-2">Cuenta Destino</p>
-            {!cuentaDestino ? (
-              <button
-                onClick={() => setOpenCuentaDestino(true)}
-                className="w-full border border-green-500 text-green-600 py-2 rounded-lg text-sm font-semibold hover:bg-green-50 transition"
-              >
-                + Agregar cuenta bancaria
-              </button>
+            {loadingCuentas ? (
+              <p className="text-gray-500 text-sm">Cargando cuentas...</p>
             ) : (
-              <div className="border rounded-lg p-3 bg-gray-50 text-sm">
-                <p><strong>Banco:</strong> {cuentaDestino.banco}</p>
-                <p><strong>Número:</strong> {cuentaDestino.numeroCuenta}</p>
+              <div className="flex gap-2 items-center">
+                <CuentaSelect
+                  options={cuentasDestino}
+                  value={cuentaDestino}
+                  onChange={setCuentaDestino}
+                  placeholder="Selecciona una cuenta"
+                  disabled={loading}  // Deshabilitar el select durante la carga
+                />
                 <button
                   onClick={() => setOpenCuentaDestino(true)}
-                  className="text-xs text-green-600 mt-2 hover:underline"
+                  className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition flex items-center justify-center"
+                  title="Agregar cuenta"
                 >
-                  Cambiar cuenta
+                  <Plus size={18} />
+                </button>
+                <button
+                  onClick={() => eliminarCuenta(cuentaDestino)}
+                  className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition flex items-center justify-center"
+                  title="Eliminar cuenta seleccionada"
+                  disabled={!cuentaDestino || loading}  // Deshabilitar durante la carga
+                >
+                  <Trash2 size={18} />
                 </button>
               </div>
             )}
@@ -121,45 +169,22 @@ export default function ModalOperacion({ isOpen, onClose, user, monto, conversio
           {/* Políticas */}
           <div className="mb-4 text-xs text-gray-600 flex flex-col gap-2">
             <label className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                checked={juramento}
-                onChange={() => setJuramento(!juramento)}
-              />
-              <span>
-                Declaro bajo juramento que la información registrada es veraz y exacta.
-              </span>
+              <input type="checkbox" checked={juramento} onChange={() => setJuramento(!juramento)} />
+              <span>Declaro bajo juramento que la información registrada es veraz y exacta.</span>
             </label>
             <label className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                checked={terminos}
-                onChange={() => setTerminos(!terminos)}
-              />
-              <span>
-                Acepto los{" "}
-                <span className="text-blue-600 underline cursor-pointer">
-                  Términos y condiciones y la Política de privacidad
-                </span>
-              </span>
+              <input type="checkbox" checked={terminos} onChange={() => setTerminos(!terminos)} />
+              <span>Acepto los <span className="text-blue-600 underline cursor-pointer">Términos y condiciones y la Política de privacidad</span></span>
             </label>
           </div>
 
           {/* Botones */}
           <div className="flex flex-col md:flex-row md:justify-end gap-2">
-            <button
-              onClick={onClose}
-              className="bg-red-500 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-red-600 transition w-full md:w-auto"
-            >
-              Cancelar
-            </button>
+            <button onClick={onClose} className="bg-red-500 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-red-600 transition w-full md:w-auto">Cancelar</button>
             <button
               onClick={() => setOpenTransferencia(true)}
-              className={`bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 transition w-full md:w-auto ${!(juramento && terminos && cuentaOrigen && cuentaDestino)
-                ? "opacity-50 cursor-not-allowed"
-                : ""
-                }`}
-              disabled={!(juramento && terminos && cuentaOrigen && cuentaDestino)}
+              className={`bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 transition w-full md:w-auto ${!(juramento && terminos && cuentaOrigen && cuentaDestino) ? "opacity-50 cursor-not-allowed" : ""}`}
+              disabled={!(juramento && terminos && cuentaOrigen && cuentaDestino || loading)}  // Deshabilitar si está cargando
             >
               Siguiente
             </button>
@@ -167,28 +192,63 @@ export default function ModalOperacion({ isOpen, onClose, user, monto, conversio
         </div>
       </div>
 
-      {/* Modal cuenta origen */}
+      {/* Spinner de carga */}
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-16 h-16 border-4 border-t-blue-500 border-solid rounded-full animate-spin"></div>
+        </div>
+      )}
+
+      {/* Modales */}
       <ModalCuentaBancaria
         isOpen={openCuentaOrigen}
+        bancos={bancos}
         onClose={() => setOpenCuentaOrigen(false)}
         user={user}
         nationality={user.nationality}
-        onSave={(data) => setCuentaOrigen(data)}
+        accountType="origin"
+        onCuentaGuardada={(data) => {
+          const bancoSeleccionado = bancos.find(b => b.id === data.bank_id);
+          const cuentaConBanco = {
+            ...data,
+            bank_name: bancoSeleccionado?.name || "",
+            bank_logo: bancoSeleccionado?.logo_url || "",
+            owner_full_name: data.owner_full_name || null,
+            owner_document: data.owner_document || null,
+            owner_phone: data.owner_phone || null,
+          };
+          setCuentasUsuario(prev => [...prev, cuentaConBanco]);
+          setCuentaOrigen(cuentaConBanco);
+          setOpenCuentaOrigen(false);
+        }}
       />
-
-      {/* Modal cuenta destino */}
       <ModalCuentaDestino
         isOpen={openCuentaDestino}
+        bancos={bancos}
         onClose={() => setOpenCuentaDestino(false)}
+        user={user}
         nationality={user.nationality}
-        onSave={(data) => setCuentaDestino(data)}
+        accountType="destination"
+        onCuentaGuardada={(data) => {
+          const bancoSeleccionado = bancos.find(b => b.id === data.bank_id);
+          const cuentaConBanco = {
+            ...data,
+            bank_name: bancoSeleccionado?.name || "",
+            bank_logo: bancoSeleccionado?.logo_url || "",
+            owner_full_name: data.owner_full_name || null,
+            owner_document: data.owner_document || null,
+            owner_phone: data.owner_phone || null,
+          };
+          setCuentasUsuario(prev => [...prev, cuentaConBanco]);
+          setCuentaDestino(cuentaConBanco);
+          setOpenCuentaDestino(false);
+        }}
       />
-
-      {/* Modal transferencia */}
       <ModalTransferencia
         isOpen={openTransferencia}
         onClose={() => setOpenTransferencia(false)}
         user={user}
+        tasa={tasa}
         monto={monto}
         conversion={conversion}
         tipoCambio={tipoCambio}

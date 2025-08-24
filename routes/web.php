@@ -4,18 +4,30 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FaceController; 
 use App\Http\Controllers\CompleteProfileController;
+use App\Models\Bank;
+use App\Http\Controllers\OperacionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+    $bancos = Bank::all();
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
+         'bancos' => $bancos,
     ]);
 })->name('welcome');
+//
+Route::middleware(['web'])->group(function () {
+    Route::get('/operacion/listar-bancos', [OperacionController::class, 'listarBancos'])->name('operacion.listarBancos');
 
+    Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta'])->name('operacion.guardarCuenta');
+    Route::get('/operacion/listar-cuentas/{user_id}', [OperacionController::class, 'listarCuentas'])->name('operacion.listarCuentas');
+    Route::delete('/operacion/eliminar-cuenta/{id}', [OperacionController::class, 'eliminarCuenta'])->name('operacion.eliminarCuenta');
 
+    Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia'])->name('operacion.crearTransferencia');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/complete-profile', [CompleteProfileController::class, 'index'])->name('complete-profile');
