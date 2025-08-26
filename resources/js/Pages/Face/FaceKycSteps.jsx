@@ -1,7 +1,7 @@
 import { useState } from "react";
 import StepProgress from "@/Components/face/StepProgress";
 import DocumentTypePicker from "@/Components/face/DocumentTypePicker";
-import DocumentCapture from "@/Components/face/DocumentCapture";
+import DocumentCapture from "@/Components/face/StepCarnet";
 import StepVideo from "@/Components/face/StepVideo";
 import StepReview from "@/Components/face/StepReview";
 
