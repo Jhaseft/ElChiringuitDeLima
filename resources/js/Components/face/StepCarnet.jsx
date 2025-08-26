@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { Camera, RefreshCw, ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { Camera, RefreshCw, ArrowLeft, ArrowRight } from "lucide-react";
 
 export default function DocumentCapture({
-  docType,           // "ci" | "licencia" | "pasaporte"
+  docType, // "ci" | "licencia" | "pasaporte"
   docFrontBlob,
   docBackBlob,
   setDocFrontBlob,
@@ -16,6 +16,7 @@ export default function DocumentCapture({
   const [message, setMessage] = useState("Iniciando cámara...");
   const [error, setError] = useState("");
   const [side, setSide] = useState("front"); // "front" | "back"
+  const [step, setStep] = useState("ready"); // "ready" | "capturedFront" | "capturedBack"
 
   const needsBack = docType === "ci" || docType === "licencia";
 
@@ -45,24 +46,12 @@ export default function DocumentCapture({
   const startCamera = async () => {
     stopCamera();
     setError("");
-    setMessage("Iniciando cámara...");
+    setMessage("Activando cámara...");
     try {
-      let mediaStream;
-      try {
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
-          audio: false,
-        });
-      } catch {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const cams = devices.filter((d) => d.kind === "videoinput");
-        if (!cams.length) throw new Error("No hay cámaras");
-        mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: { exact: cams[0].deviceId } },
-          audio: false,
-        });
-      }
-
+      let mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" }, // siempre frontal
+        audio: false,
+      });
       if (!videoRef.current) return;
       videoRef.current.srcObject = mediaStream;
       videoRef.current.setAttribute("playsinline", "");
@@ -70,7 +59,11 @@ export default function DocumentCapture({
       await waitVideoReady();
       await videoRef.current.play();
       setStream(mediaStream);
-      setMessage("Ajusta tu documento dentro del marco y presiona Capturar.");
+      setMessage(
+        step === "ready"
+          ? "Ajusta tu documento dentro del marco y presiona Capturar."
+          : "Gira el documento y presiona Capturar para el reverso."
+      );
     } catch (e) {
       console.error(e);
       setError("No se pudo activar la cámara.");
@@ -86,43 +79,58 @@ export default function DocumentCapture({
     c.height = v.videoHeight || 1280;
     const ctx = c.getContext("2d");
     ctx.drawImage(v, 0, 0, c.width, c.height);
-    c.toBlob(
-      (blob) => {
-        if (!blob) return;
-        if (side === "front") {
-          setDocFrontBlob(blob);
-          if (needsBack) {
-            setSide("back");
-            setMessage("✅ Anverso capturado. Ahora captura el reverso.");
-            startCamera();
-          } else {
-            stopCamera();
-            setMessage("✅ Documento capturado.");
-          }
-        } else {
-          setDocBackBlob(blob);
+    c.toBlob((blob) => {
+      if (!blob) return;
+
+      if (side === "front") {
+        setDocFrontBlob(blob);
+        if (needsBack) {
           stopCamera();
-          setMessage("✅ Documento completo (anverso y reverso).");
+          setStep("capturedFront");
+          setMessage("✅ Anverso capturado. Ahora gira el documento y presiona Activar Cámara para el reverso.");
+        } else {
+          stopCamera();
+          setStep("capturedFront");
+          setMessage("✅ Documento capturado.");
         }
-      },
-      "image/jpeg",
-      0.92
-    );
+      } else {
+        setDocBackBlob(blob);
+        stopCamera();
+        setStep("capturedBack");
+        setMessage("✅ Documento completo (anverso y reverso).");
+      }
+    }, "image/jpeg", 0.92);
   };
 
   const retake = () => {
     if (side === "front") {
       setDocFrontBlob(null);
+      setStep("ready");
     } else {
       setDocBackBlob(null);
+      setStep("capturedFront");
     }
     setError("");
-    setMessage("Ajusta tu documento dentro del marco y presiona Capturar.");
+    setMessage(
+      side === "front"
+        ? "Ajusta tu documento dentro del marco y presiona Capturar."
+        : "Gira el documento y presiona Capturar para el reverso."
+    );
     startCamera();
+  };
+
+  const handleActivateCamera = () => {
+    if (step === "capturedFront" && needsBack) {
+      setSide("back");
+      startCamera();
+    } else if (step === "ready") {
+      startCamera();
+    }
   };
 
   useEffect(() => {
     setSide("front");
+    setStep("ready");
     startCamera();
     return () => stopCamera();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -169,6 +177,14 @@ export default function DocumentCapture({
             className="col-span-2 bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 px-4 py-3 rounded-xl shadow"
           >
             <Camera size={18} /> Capturar
+          </button>
+        )}
+        {(step === "capturedFront" && needsBack && !docBackBlob) && (
+          <button
+            onClick={handleActivateCamera}
+            className="col-span-2 bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2 px-4 py-3 rounded-xl shadow"
+          >
+            Activar Cámara
           </button>
         )}
         {((side === "front" && docFrontBlob) || (side === "back" && docBackBlob)) && (
