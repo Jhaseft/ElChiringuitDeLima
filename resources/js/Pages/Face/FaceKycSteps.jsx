@@ -1,55 +1,84 @@
-import { useRef, useState } from "react";
-import StepProgress from "../../Components/face/StepProgress";
-import StepCarnet from "../../Components/face/StepCarnet";
-import StepVideo from "../../Components/face/StepVideo";
-import StepReview from "../../Components/face/StepReview";
+import { useState } from "react";
+import StepProgress from "@/Components/face/StepProgress";
+import DocumentTypePicker from "@/Components/face/DocumentTypePicker";
+import DocumentCapture from "@/Components/face/DocumentCapture";
+import StepVideo from "@/Components/face/StepVideo";
+import StepReview from "@/Components/face/StepReview";
 
 export default function FaceKycSteps() {
-  const videoRef = useRef(null);
-  const mediaRecorderRef = useRef(null);
-  const recordedChunks = useRef([]);
-
   const [step, setStep] = useState(1);
-  const [carnetBlob, setCarnetBlob] = useState(null);
+
+  // Tipo de documento
+  const [docType, setDocType] = useState("ci"); // "ci" | "licencia" | "pasaporte"
+
+  // Capturas del documento (anverso / reverso)
+  const [docFrontBlob, setDocFrontBlob] = useState(null);
+  const [docBackBlob, setDocBackBlob] = useState(null); // null si pasaporte
+
+  // Video selfie
   const [videoBlob, setVideoBlob] = useState(null);
-  const [recording, setRecording] = useState(false);
+
+  // Resultado de backend
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState(null);
 
-  const nextStep = () => setStep((prev) => Math.min(prev + 1, 3));
-  const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
+  const totalSteps = 4; // 1) tipo, 2) doc, 3) video, 4) revisión
+
+  const nextStep = () => setStep((s) => Math.min(s + 1, totalSteps));
+  const prevStep = () => {
+    setStep((s) => {
+      if (s === 2) {
+        // Limpia capturas al volver a escoger documento
+        setDocFrontBlob(null);
+        setDocBackBlob(null);
+      }
+      return Math.max(s - 1, 1);
+    });
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 bg-gradient-to-br from-indigo-50 to-purple-50 space-y-6">
       <div className="w-full max-w-3xl">
-        <StepProgress step={step} totalSteps={3} />
+        <StepProgress
+          step={step}
+          totalSteps={totalSteps}
+          labels={["Documento", "Captura", "Video", "Revisión"]}
+        />
 
         {step === 1 && (
-          <StepCarnet
-            videoRef={videoRef}
-            carnetBlob={carnetBlob}
-            setCarnetBlob={setCarnetBlob}
-            nextStep={nextStep}
+          <DocumentTypePicker
+            value={docType}
+            onChange={setDocType}
+            onNext={nextStep}
           />
         )}
 
         {step === 2 && (
+          <DocumentCapture
+            docType={docType}
+            docFrontBlob={docFrontBlob}
+            docBackBlob={docBackBlob}
+            setDocFrontBlob={setDocFrontBlob}
+            setDocBackBlob={setDocBackBlob}
+            onNext={nextStep}
+            onBack={prevStep}
+          />
+        )}
+
+        {step === 3 && (
           <StepVideo
-            videoRef={videoRef}
-            mediaRecorderRef={mediaRecorderRef}
-            recordedChunks={recordedChunks}
             videoBlob={videoBlob}
             setVideoBlob={setVideoBlob}
-            recording={recording}
-            setRecording={setRecording}
             nextStep={nextStep}
             prevStep={prevStep}
           />
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <StepReview
-            carnetBlob={carnetBlob}
+            docType={docType}
+            docFrontBlob={docFrontBlob}
+            docBackBlob={docBackBlob}
             videoBlob={videoBlob}
             prevStep={prevStep}
             loading={loading}
