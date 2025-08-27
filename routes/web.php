@@ -8,10 +8,6 @@ use App\Http\Controllers\OperacionController;
 use App\Models\Bank;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\VerifyEmail;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 // Página principal
@@ -51,27 +47,8 @@ Route::get('/auth/redirect', [AuthController::class, 'redirectToGoogle'])->name(
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('google.callback');
 
 // -------------------- REGISTRO PROVISIONAL Y ENVÍO DE EMAIL -------------------- //
-Route::post('/register-provisional', function (\Illuminate\Http\Request $request) {
-    $request->validate([
-        'first_name' => 'required|string|max:255',
-        'last_name' => 'required|string|max:255',
-        'email' => 'required|string|email|max:255|unique:users,email',
-        'phone' => 'nullable|string|max:20|unique:users,phone',
-        'nationality' => 'nullable|string|max:100',
-        'document_number' => 'nullable|string|max:50|unique:users,document_number',
-        'password' => ['required', 'confirmed'],
-    ]);
 
-    $token = Str::random(64);
-    Cache::put('register:' . $token, $request->all(), now()->addMinutes(30));
-
-    $url = route('email.verify', ['token' => $token]);
-
-    // Enviar correo
-    Mail::to($request->email)->send(new VerifyEmail($url));
-
-    return "Correo de verificación enviado. Revisa tu inbox para continuar.";
-})->name('register.provisional');
+Route::post('/register-provisional', [RegisteredUserController::class, 'store']);
 
 // Ruta que crea el usuario después de verificar
 Route::get('/verify-email/{token}', function ($token) {
