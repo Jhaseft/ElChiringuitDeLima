@@ -1,4 +1,4 @@
-// ModalOperacion.jsx  (reemplaza tu versión actual)
+// ModalOperacion.jsx
 import { useState, useEffect } from "react";
 import { X, Trash2, Plus } from "lucide-react";
 import ModalCuentaBancaria from "./ModalCuentaBancaria";
@@ -11,20 +11,16 @@ export default function ModalOperacion({ isOpen, onClose, user, monto, conversio
   const [terminos, setTerminos] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Modales
   const [openCuentaOrigen, setOpenCuentaOrigen] = useState(false);
   const [openCuentaDestino, setOpenCuentaDestino] = useState(false);
   const [openTransferencia, setOpenTransferencia] = useState(false);
 
-  // Cuentas seleccionadas
   const [cuentaOrigen, setCuentaOrigen] = useState(null);
   const [cuentaDestino, setCuentaDestino] = useState(null);
 
-  // Todas las cuentas del usuario
   const [cuentasUsuario, setCuentasUsuario] = useState([]);
   const [loadingCuentas, setLoadingCuentas] = useState(false);
 
-  // Traer cuentas cuando el usuario cambie (o al abrir)
   useEffect(() => {
     if (!user?.id) return;
 
@@ -65,41 +61,40 @@ export default function ModalOperacion({ isOpen, onClose, user, monto, conversio
       .finally(() => setLoading(false));
   };
 
-  // Manejo del botón Siguiente con validación de KYC y next param
   const handleSiguiente = () => {
     if (loading) return;
     if (!(juramento && terminos && cuentaOrigen && cuentaDestino)) return;
 
-    // Si KYC pendiente -> mandar al flujo KYC con next (para volver después)
     if (user.kyc_status === "pending" || user.kyc_status === "rejected") {
-      // muestra un toast simple (alert) y redirige con next
       alert("Debes completar tu KYC antes de continuar con la operación.");
-      // envia next para que KYC pueda redirigir de vuelta al terminar
       const next = encodeURIComponent(window.location.pathname + window.location.search);
       window.location.href = `/face?next=${next}`;
       return;
     }
 
-    // Si KYC activo, abrir modal transferencia
     setOpenTransferencia(true);
   };
 
   return (
     <>
-      <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 px-2">
+      {/* Fondo del modal con z-index alto */}
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-2">
+        {/* Card del modal */}
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative animate-fadeIn max-h-[90vh] overflow-y-auto mt-11">
+          {/* Botón cerrar */}
           <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition" onClick={onClose}>
             <X size={22} />
           </button>
 
           <h2 className="text-lg md:text-xl font-bold mb-6 text-center text-gray-800">Registro de Operación</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm">
-            <div className="border rounded-lg bg-gray-50 p-3">
+          {/* Monto y Conversión */}
+          <div className="flex flex-wrap gap-4 mb-4 text-sm">
+            <div className="flex-1 min-w-[140px] border rounded-lg bg-gray-50 p-3">
               <p className="font-semibold text-gray-700">Monto</p>
               <p className="text-gray-800">{monto}</p>
             </div>
-            <div className="border rounded-lg bg-gray-50 p-3">
+            <div className="flex-1 min-w-[140px] border rounded-lg bg-gray-50 p-3">
               <p className="font-semibold text-gray-700">Conversión</p>
               <p className="text-gray-800">{conversion}</p>
             </div>
@@ -117,16 +112,16 @@ export default function ModalOperacion({ isOpen, onClose, user, monto, conversio
 
           {/* Cuenta Origen */}
           <div className="mb-4">
-            <p className="text-sm font-semibold mb-2">Cuenta Origen</p>
+            <p className="text-sm font-semibold mb-2">Numero de Cuenta Origen</p>
             {loadingCuentas ? (
               <p className="text-gray-500 text-sm">Cargando cuentas...</p>
             ) : (
-              <div className="flex gap-2 items-center">
+              <div className="flex  gap-2 items-center">
                 <CuentaSelect
                   options={cuentasOrigen}
                   value={cuentaOrigen}
                   onChange={setCuentaOrigen}
-                  placeholder="Selecciona una cuenta"
+                  placeholder="Selecciona o Agregue una cuenta"
                   disabled={loading}
                 />
                 <button onClick={() => setOpenCuentaOrigen(true)} className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition flex items-center justify-center" title="Agregar cuenta">
@@ -141,16 +136,16 @@ export default function ModalOperacion({ isOpen, onClose, user, monto, conversio
 
           {/* Cuenta Destino */}
           <div className="mb-4">
-            <p className="text-sm font-semibold mb-2">Cuenta Destino</p>
+            <p className="text-sm font-semibold mb-2">Numero de Cuenta Destino</p>
             {loadingCuentas ? (
               <p className="text-gray-500 text-sm">Cargando cuentas...</p>
             ) : (
-              <div className="flex gap-2 items-center">
+              <div className="flex  gap-2 items-center">
                 <CuentaSelect
                   options={cuentasDestino}
                   value={cuentaDestino}
                   onChange={setCuentaDestino}
-                  placeholder="Selecciona una cuenta"
+                  placeholder="Selecciona o Agregue una cuenta"
                   disabled={loading}
                 />
                 <button onClick={() => setOpenCuentaDestino(true)} className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 transition flex items-center justify-center" title="Agregar cuenta">
@@ -191,67 +186,43 @@ export default function ModalOperacion({ isOpen, onClose, user, monto, conversio
 
       {/* Spinner de carga */}
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50">
           <div className="w-16 h-16 border-4 border-t-blue-500 border-solid rounded-full animate-spin"></div>
         </div>
       )}
 
-      {/* Modales */}
-      <ModalCuentaBancaria
-        isOpen={openCuentaOrigen}
-        bancos={bancos}
-        onClose={() => setOpenCuentaOrigen(false)}
-        user={user}
-        nationality={user.nationality}
-        accountType="origin"
-        onCuentaGuardada={(data) => {
-          const bancoSeleccionado = bancos.find(b => b.id === data.bank_id);
-          const cuentaConBanco = {
-            ...data,
-            bank_name: bancoSeleccionado?.name || "",
-            bank_logo: bancoSeleccionado?.logo_url || "",
-            owner_full_name: data.owner_full_name || null,
-            owner_document: data.owner_document || null,
-            owner_phone: data.owner_phone || null,
-          };
-          setCuentasUsuario(prev => [...prev, cuentaConBanco]);
-          setCuentaOrigen(cuentaConBanco);
-          setOpenCuentaOrigen(false);
-        }}
-      />
-      <ModalCuentaDestino
-        isOpen={openCuentaDestino}
-        bancos={bancos}
-        onClose={() => setOpenCuentaDestino(false)}
-        user={user}
-        nationality={user.nationality}
-        accountType="destination"
-        onCuentaGuardada={(data) => {
-          const bancoSeleccionado = bancos.find(b => b.id === data.bank_id);
-          const cuentaConBanco = {
-            ...data,
-            bank_name: bancoSeleccionado?.name || "",
-            bank_logo: bancoSeleccionado?.logo_url || "",
-            owner_full_name: data.owner_full_name || null,
-            owner_document: data.owner_document || null,
-            owner_phone: data.owner_phone || null,
-          };
-          setCuentasUsuario(prev => [...prev, cuentaConBanco]);
-          setCuentaDestino(cuentaConBanco);
-          setOpenCuentaDestino(false);
-        }}
-      />
-      <ModalTransferencia
-        isOpen={openTransferencia}
-        onClose={() => setOpenTransferencia(false)}
-        user={user}
-        tasa={tasa}
-        monto={monto}
-        conversion={conversion}
-        tipoCambio={tipoCambio}
-        cuentaOrigen={cuentaOrigen}
-        cuentaDestino={cuentaDestino}
-      />
+      {/* Modales hijos */}
+      <ModalCuentaBancaria isOpen={openCuentaOrigen} bancos={bancos} onClose={() => setOpenCuentaOrigen(false)} user={user} nationality={user.nationality} accountType="origin" onCuentaGuardada={(data) => {
+        const bancoSeleccionado = bancos.find(b => b.id === data.bank_id);
+        const cuentaConBanco = {
+          ...data,
+          bank_name: bancoSeleccionado?.name || "",
+          bank_logo: bancoSeleccionado?.logo_url || "",
+          owner_full_name: data.owner_full_name || null,
+          owner_document: data.owner_document || null,
+          owner_phone: data.owner_phone || null,
+        };
+        setCuentasUsuario(prev => [...prev, cuentaConBanco]);
+        setCuentaOrigen(cuentaConBanco);
+        setOpenCuentaOrigen(false);
+      }} />
+
+      <ModalCuentaDestino isOpen={openCuentaDestino} bancos={bancos} onClose={() => setOpenCuentaDestino(false)} user={user} nationality={user.nationality} accountType="destination" onCuentaGuardada={(data) => {
+        const bancoSeleccionado = bancos.find(b => b.id === data.bank_id);
+        const cuentaConBanco = {
+          ...data,
+          bank_name: bancoSeleccionado?.name || "",
+          bank_logo: bancoSeleccionado?.logo_url || "",
+          owner_full_name: data.owner_full_name || null,
+          owner_document: data.owner_document || null,
+          owner_phone: data.owner_phone || null,
+        };
+        setCuentasUsuario(prev => [...prev, cuentaConBanco]);
+        setCuentaDestino(cuentaConBanco);
+        setOpenCuentaDestino(false);
+      }} />
+
+      <ModalTransferencia isOpen={openTransferencia} onClose={() => setOpenTransferencia(false)} user={user} tasa={tasa} monto={monto} conversion={conversion} tipoCambio={tipoCambio} cuentaOrigen={cuentaOrigen} cuentaDestino={cuentaDestino} />
     </>
   );
 }
