@@ -78,7 +78,7 @@ export default function ModalOperacion({ isOpen, onClose, user, monto, conversio
   return (
     <>
       {/* Fondo del modal con z-index alto */}
-      <div className="fixed inset-0 z-[10] flex items-center justify-center bg-black/50 px-2">
+      <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 px-2">
         {/* Card del modal */}
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative animate-fadeIn max-h-[90vh] overflow-y-auto mt-11">
           {/* Botón cerrar */}

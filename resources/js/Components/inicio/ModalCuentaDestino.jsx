@@ -130,7 +130,7 @@ export default function ModalCuentaDestino({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-2">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 px-2">
       {/* Overlay de cargando */}
       {loading && (
         <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/60 text-white">
