@@ -73,7 +73,7 @@ export default function DocumentCapture({
   const activateCameraStream = async () => {
     try {
       let mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "side" },
+        video: { facingMode: "enviroment" },
         audio: false,
       });
       if (!videoRef.current) return;

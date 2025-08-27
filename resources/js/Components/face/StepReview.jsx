@@ -1,11 +1,10 @@
 import axios from "axios";
 import { Loader2 } from "lucide-react";
 
-
 export default function StepReview({
   docType,
   docFrontBlob,
-  docBackBlob,
+  docBackBlob, // Solo para visualización
   videoBlob,
   prevStep,
   loading,
@@ -14,17 +13,14 @@ export default function StepReview({
   setResultado,
 }) {
   const handleSubmit = async () => {
-    if (!docFrontBlob || !videoBlob) return alert("⚠️ Debes capturar documento y video.");
-
+    if (!docFrontBlob || !videoBlob)
+      return alert("⚠️ Debes capturar documento y video.");
 
     const formData = new FormData();
-    // Compatibilidad retro: el backend esperaba "carnet" (usamos el frente)
+    // Solo se envía el frontal
     formData.append("carnet", docFrontBlob, "documento_frente.jpg");
-    // En caso de doble cara, también enviamos reverso como campo opcional
-    if (docBackBlob) formData.append("carnet_back", docBackBlob, "documento_reverso.jpg");
     formData.append("doc_type", docType);
     formData.append("video", videoBlob, "video.webm");
-
 
     try {
       setLoading(true);
@@ -41,15 +37,18 @@ export default function StepReview({
       setLoading(false);
     }
   };
+
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
       <p className="font-semibold text-lg text-center">Revisa tus capturas</p>
 
-
+      {/* Visualización de documento */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {docFrontBlob && (
           <div>
-            <p className="text-sm font-medium mb-1">{docType === "pasaporte" ? "Pasaporte" : "Anverso"}</p>
+            <p className="text-sm font-medium mb-1">
+              {docType === "pasaporte" ? "Pasaporte" : "Anverso"}
+            </p>
             <img
               src={URL.createObjectURL(docFrontBlob)}
               alt="Documento anverso"
@@ -57,29 +56,39 @@ export default function StepReview({
             />
           </div>
         )}
+
         {docBackBlob && (
           <div>
             <p className="text-sm font-medium mb-1">Reverso</p>
             <img
               src={URL.createObjectURL(docBackBlob)}
               alt="Documento reverso"
-              className="rounded-lg border shadow w-full h-auto object-cover"
+              className="rounded-lg border shadow w-full h-auto object-cover opacity-80"
             />
           </div>
         )}
       </div>
 
-
+      {/* Video selfie */}
       {videoBlob && (
         <div className="mt-2">
           <p className="text-sm font-medium mb-1">Video selfie</p>
-          <video src={URL.createObjectURL(videoBlob)} controls className="rounded-lg border shadow w-full h-auto object-cover" />
+          <video
+            src={URL.createObjectURL(videoBlob)}
+            controls
+            className="rounded-lg border shadow w-full h-auto object-cover"
+          />
         </div>
       )}
 
-
+      {/* Botones */}
       <div className="flex flex-wrap justify-center gap-3 mt-4">
-        <button onClick={prevStep} className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg">Atrás</button>
+        <button
+          onClick={prevStep}
+          className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg"
+        >
+          Atrás
+        </button>
         <button
           onClick={handleSubmit}
           disabled={loading}
@@ -89,7 +98,7 @@ export default function StepReview({
         </button>
       </div>
 
-
+      {/* Resultado */}
       {resultado && (
         <div className="mt-4 p-4 border rounded-lg bg-gray-100 shadow-inner">
           <h3 className="font-semibold text-lg mb-2">Resultado de verificación</h3>
@@ -99,10 +108,5 @@ export default function StepReview({
         </div>
       )}
     </div>
-
-
-
-
-
   );
 }
