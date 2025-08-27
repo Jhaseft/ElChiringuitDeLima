@@ -1,7 +1,7 @@
 # Usar PHP 8.3 CLI
 FROM php:8.3-cli
 
-# Instalar dependencias del sistema y extensiones PHP necesarias para Laravel
+# Instalar dependencias del sistema y extensiones PHP necesarias para Laravel y SMTP
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -14,7 +14,10 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     zip \
     curl \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql pgsql zip mbstring xml gd \
+    openssl \
+    ca-certificates \
+    libssl-dev \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql pgsql zip mbstring xml gd sockets \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Instalar Node.js 20 LTS y npm
@@ -25,6 +28,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 # Instalar Composer globalmente
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Establecer directorio de trabajo
 WORKDIR /var/www/html
 
 # Copiar todo el código
