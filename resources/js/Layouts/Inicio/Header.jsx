@@ -24,7 +24,7 @@ export default function Header() {
         {/* Logo */}
         <a href="/" className="flex items-center">
           <img
-            src="/images/logo.jpg"
+            src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756305635/logo_n6nqqr.jpg"
             alt="Logo"
             className="h-20 w-auto hover:scale-105 transition-transform duration-300"
           />
