@@ -1,10 +1,12 @@
+// StepReview.jsx
 import axios from "axios";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
 export default function StepReview({
   docType,
   docFrontBlob,
-  docBackBlob, // Solo para visualización
+  docBackBlob,
   videoBlob,
   prevStep,
   loading,
@@ -12,37 +14,119 @@ export default function StepReview({
   resultado,
   setResultado,
 }) {
+  const [message, setMessage] = useState(null);
+  const [problems, setProblems] = useState([]);
+
+  const getCsrfToken = () => {
+    const el = document.querySelector('meta[name="csrf-token"]');
+    return el?.getAttribute("content");
+  };
+
   const handleSubmit = async () => {
     if (!docFrontBlob || !videoBlob)
       return alert("⚠️ Debes capturar documento y video.");
 
     const formData = new FormData();
-    // Solo se envía el frontal
     formData.append("carnet", docFrontBlob, "documento_frente.jpg");
     formData.append("doc_type", docType);
     formData.append("video", videoBlob, "video.webm");
 
     try {
       setLoading(true);
+
+      // 1️⃣ Llamamos a la API externa
       const res = await axios.post(
         "https://apiface-production-767c.up.railway.app/registro-face/verify",
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
+
+      // Guardamos la respuesta para debug
       setResultado(res.data);
+
+      // 2️⃣ Enviamos el resultado a nuestro backend
+      const csrf = getCsrfToken();
+      const backendRes = await axios.post(
+        "/face/verify",
+        { resultado: res.data },
+        {
+          headers: {
+            "X-CSRF-TOKEN": csrf,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = backendRes.data;
+
+      // Guardamos mensajes y sugerencias
+      setMessage(data.mensaje || "ℹ️ Verificación realizada.");
+      setProblems(data.sugerencias || []);
+
+      if (data.status === "success" || data.kyc_status === "active") {
+        // Redirigimos si fue exitoso
+        setTimeout(() => {
+          const params = new URLSearchParams(window.location.search);
+          const next = params.get("next");
+          window.location.href = next || "/";
+        }, 1200);
+      }
     } catch (err) {
       console.error(err);
-      alert("❌ Error en la verificación KYC");
+      alert("❌ Error en la verificación KYC. Intenta nuevamente.");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Mostrar resultado en UI
+  const renderResultado = () => {
+    if (!resultado) return null;
+
+    return (
+      <div className="mt-4 p-4 border rounded-lg bg-gray-100 shadow-inner space-y-2">
+        <h3 className="font-semibold text-lg">Resultado de verificación</h3>
+
+        {message && (
+          <p className="text-sm">
+            <strong>📢 Mensaje:</strong> {message}
+          </p>
+        )}
+
+        {resultado.score !== undefined && (
+          <p className="text-sm">
+            <strong>⭐ Score:</strong> {resultado.score}
+          </p>
+        )}
+
+        {problems.length > 0 && (
+          <div>
+            <strong className="text-sm">⚠️ Sugerencias:</strong>
+            <ul className="list-disc ml-5 text-sm text-red-600">
+              {problems.map((p, i) => (
+                <li key={i}>{p}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* JSON crudo para debug */}
+        <details className="mt-3">
+          <summary className="cursor-pointer text-xs text-gray-500">
+            Ver JSON completo
+          </summary>
+          <pre className="text-xs bg-white rounded-md p-2 overflow-auto max-h-60 border">
+            {JSON.stringify(resultado, null, 2)}
+          </pre>
+        </details>
+      </div>
+    );
   };
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
       <p className="font-semibold text-lg text-center">Revisa tus capturas</p>
 
-      {/* Visualización de documento */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {docFrontBlob && (
           <div>
@@ -69,7 +153,6 @@ export default function StepReview({
         )}
       </div>
 
-      {/* Video selfie */}
       {videoBlob && (
         <div className="mt-2">
           <p className="text-sm font-medium mb-1">Video selfie</p>
@@ -81,7 +164,6 @@ export default function StepReview({
         </div>
       )}
 
-      {/* Botones */}
       <div className="flex flex-wrap justify-center gap-3 mt-4">
         <button
           onClick={prevStep}
@@ -98,15 +180,7 @@ export default function StepReview({
         </button>
       </div>
 
-      {/* Resultado */}
-      {resultado && (
-        <div className="mt-4 p-4 border rounded-lg bg-gray-100 shadow-inner">
-          <h3 className="font-semibold text-lg mb-2">Resultado de verificación</h3>
-          <pre className="text-sm bg-white rounded-md p-2 overflow-auto max-h-60 border">
-            {JSON.stringify(resultado, null, 2)}
-          </pre>
-        </div>
-      )}
+      {renderResultado()}
     </div>
   );
 }

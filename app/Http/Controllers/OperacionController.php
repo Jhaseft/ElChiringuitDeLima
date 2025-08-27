@@ -94,86 +94,96 @@ $accounts = $accounts->map(function ($a) {
     }
 
    public function crearTransferencia(Request $request)
-    {
-        $validated = $request->validate([
-            'user_id'                     => ['required','exists:users,id'],
-            'origin_account_number'       => ['required','string','exists:accounts,account_number'],
-            'destination_account_number'  => ['required','string','different:origin_account_number','exists:accounts,account_number'],
-            'amount'                      => ['required','numeric','min:0.01'],    // monto depositado por el cliente
-            'exchange_rate'               => ['required','numeric','min:0.0001'],  // tasa (t_cambio)
-            'converted_amount'            => ['nullable','numeric','min:0'],       // monto a enviar en la otra moneda (opcional)
-            'comprobante'                 => ['nullable','file','mimes:jpg,jpeg,png,pdf','max:5120'],
-        ]);
+{
+    // 1️⃣ Obtener el usuario autenticado (más seguro que recibir user_id del frontend)
+    $user = $request->user();
 
-        // Guardar transferencia
-        $transfer = Transfer::create([
-            'user_id'                    => $request->user_id,
-            'origin_account_number'      => $request->origin_account_number,
-            'destination_account_number' => $request->destination_account_number,
-            'amount'                     => $request->amount,
-            'exchange_rate'              => $request->exchange_rate,
-            'status'                     => 'pending',
-        ]);
-
-        // Comprobante (opcional) -> se adjunta solo al admin
-        $comprobantePath = null;
-        if ($request->hasFile('comprobante')) {
-            $comprobantePath = $request->file('comprobante')->store('comprobantes', 'public');
-        }
-
-        // Cargar relaciones (equivalente a JOIN)
-        $transfer->load([
-            'originAccount.bank',
-            'originAccount.owner',
-            'destinationAccount.bank',
-            'destinationAccount.owner',
-            'user',
-        ]);
-
-        // Número de operación tipo OP-00001
-        $transferNumber = 'OP-' . str_pad($transfer->id, 5, '0', STR_PAD_LEFT);
-
-        // Monedas según nacionalidad
-        $nationality = strtolower($transfer->user->nationality ?? '');
-        if ($nationality === 'boliviano') {
-            $depositCurrency = 'BOB';
-            $receiveCurrency = 'PEN';
-        } elseif ($nationality === 'peruano') {
-            $depositCurrency = 'PEN';
-            $receiveCurrency = 'BOB';
-        } else {
-            // Fallback: BOB -> PEN
-            $depositCurrency = 'BOB';
-            $receiveCurrency = 'PEN';
-        }
-
-        // Monto a enviar (si no vino, lo calculamos como amount * tasa)
-        $convertedAmount = $request->filled('converted_amount')
-            ? (float)$request->converted_amount
-            : round((float)$transfer->amount * (float)$transfer->exchange_rate, 2);
-
-        // Datos compactados para los correos
-        $payload = [
-            'transfer'        => $transfer,
-            'transferNumber'  => $transferNumber,
-            'depositCurrency' => $depositCurrency,
-            'receiveCurrency' => $receiveCurrency,
-            'convertedAmount' => $convertedAmount,
-            'comprobantePath' => $comprobantePath,
-        ];
-
-        // Correo al ADMIN (detallado, con comprobante adjunto)
-        Mail::to("jhasesaat@gmail.com")
-            ->send(new \App\Mail\NuevaTransferenciaAdmin($payload));
-
-        // Correo al USUARIO (resumen)
-        Mail::to($transfer->user->email)
-            ->send(new \App\Mail\NuevaTransferenciaUsuario($payload));
-
+    // 2️⃣ Seguridad extra: revisar KYC
+    if ($user->kyc_status !== 'verified') {
         return response()->json([
-            'transfer'        => $transfer,
-            'transfer_number' => $transferNumber,
-        ]);
+            'message' => 'Debes completar la verificación KYC antes de crear una transferencia.'
+        ], 403); // 403 = Forbidden
     }
+
+    // 3️⃣ Validar campos (ya no pedimos user_id porque viene del auth)
+    $validated = $request->validate([
+        'origin_account_number'       => ['required','string','exists:accounts,account_number'],
+        'destination_account_number'  => ['required','string','different:origin_account_number','exists:accounts,account_number'],
+        'amount'                      => ['required','numeric','min:0.01'],
+        'exchange_rate'               => ['required','numeric','min:0.0001'],
+        'converted_amount'            => ['nullable','numeric','min:0'],
+        'comprobante'                 => ['nullable','file','mimes:jpg,jpeg,png,pdf','max:5120'],
+    ]);
+
+    // 4️⃣ Guardar transferencia
+    $transfer = Transfer::create([
+        'user_id'                    => $user->id, // ✅ se asegura que sea del usuario autenticado
+        'origin_account_number'      => $request->origin_account_number,
+        'destination_account_number' => $request->destination_account_number,
+        'amount'                     => $request->amount,
+        'exchange_rate'              => $request->exchange_rate,
+        'status'                     => 'pending',
+    ]);
+
+    // 5️⃣ Comprobante (opcional)
+    $comprobantePath = null;
+    if ($request->hasFile('comprobante')) {
+        $comprobantePath = $request->file('comprobante')->store('comprobantes', 'public');
+    }
+
+    // 6️⃣ Cargar relaciones
+    $transfer->load([
+        'originAccount.bank',
+        'originAccount.owner',
+        'destinationAccount.bank',
+        'destinationAccount.owner',
+        'user',
+    ]);
+
+    // 7️⃣ Número de operación tipo OP-00001
+    $transferNumber = 'OP-' . str_pad($transfer->id, 5, '0', STR_PAD_LEFT);
+
+    // 8️⃣ Monedas según nacionalidad
+    $nationality = strtolower($user->nationality ?? '');
+    if ($nationality === 'boliviano') {
+        $depositCurrency = 'BOB';
+        $receiveCurrency = 'PEN';
+    } elseif ($nationality === 'peruano') {
+        $depositCurrency = 'PEN';
+        $receiveCurrency = 'BOB';
+    } else {
+        $depositCurrency = 'BOB';
+        $receiveCurrency = 'PEN';
+    }
+
+    // 9️⃣ Calcular monto convertido
+    $convertedAmount = $request->filled('converted_amount')
+        ? (float)$request->converted_amount
+        : round((float)$transfer->amount * (float)$transfer->exchange_rate, 2);
+
+    // 🔟 Datos compactados para mails
+    $payload = [
+        'transfer'        => $transfer,
+        'transferNumber'  => $transferNumber,
+        'depositCurrency' => $depositCurrency,
+        'receiveCurrency' => $receiveCurrency,
+        'convertedAmount' => $convertedAmount,
+        'comprobantePath' => $comprobantePath,
+    ];
+
+    // 1️⃣1️⃣ Notificación a ADMIN
+    Mail::to("jhasesaat@gmail.com")
+        ->send(new \App\Mail\NuevaTransferenciaAdmin($payload));
+
+    // 1️⃣2️⃣ Notificación al USUARIO
+    Mail::to($user->email)
+        ->send(new \App\Mail\NuevaTransferenciaUsuario($payload));
+
+    return response()->json([
+        'transfer'        => $transfer,
+        'transfer_number' => $transferNumber,
+    ]);
+}
+
 
 }

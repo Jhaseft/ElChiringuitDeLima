@@ -73,7 +73,7 @@ export default function DocumentCapture({
   const activateCameraStream = async () => {
     try {
       let mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: { facingMode: "user" },
         audio: false,
       });
       if (!videoRef.current) return;
@@ -167,7 +167,7 @@ export default function DocumentCapture({
                 {error || message}
               </p>
             </div>
-            <div className="absolute h-60 w-full border-2 border-green-400 rounded-lg pointer-events-none animate-pulse" />
+            <div className="absolute h-56 w-72 border-2 border-green-400 rounded-lg pointer-events-none animate-pulse" />
           </>
         ) : (
           <img

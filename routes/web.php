@@ -30,8 +30,14 @@ Route::middleware(['web'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    //---------------------------Completar perfil para los de googel----------------------------//
+    //recibe info
     Route::get('/complete-profile', [CompleteProfileController::class, 'index'])->name('complete-profile');
+    //procesa la info y lo mete al usuario a la bd
     Route::post('/complete-profile', [CompleteProfileController::class, 'store'])->name('complete-profile.store');
+    //----------------------------Llamada al KYC----------------//
+  Route::get('/face', [FaceController::class, 'index'])->name('face.index'); // muestra Inertia page
+    Route::post('/face/verify', [FaceController::class, 'verify'])->name('face.verify'); // recibe resultado y actualiza DB
 });
 
 Route::middleware('auth')->group(function () {
@@ -40,8 +46,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-//----------------------------Llamada al KYC----------------//
-Route::get('/face', [FaceController::class, 'index'])->name('face.index');
+
 
 // -------------------- LOGIN GOOGLE -------------------- //
 Route::get('/auth/redirect', [AuthController::class, 'redirectToGoogle'])->name('google.login');
