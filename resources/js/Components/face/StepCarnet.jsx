@@ -71,41 +71,24 @@ export default function DocumentCapture({
   };
 
   const activateCameraStream = async () => {
-  try {
-    let mediaStream;
     try {
-      // Intentamos cámara trasera por facingMode correcto
-      mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { exact: "environment" } },
+      let mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
         audio: false,
       });
-    } catch {
-      // Fallback: buscamos cualquier cámara trasera disponible
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const backCams = devices.filter(
-        (d) => d.kind === "videoinput" && d.label.toLowerCase().includes("back")
-      );
-      if (!backCams.length) throw new Error("No hay cámara trasera disponible");
-      mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: { exact: backCams[0].deviceId } },
-        audio: false,
-      });
+      if (!videoRef.current) return;
+      videoRef.current.srcObject = mediaStream;
+      videoRef.current.setAttribute("playsinline", "");
+      videoRef.current.muted = true;
+      await waitVideoReady();
+      await videoRef.current.play();
+      setStream(mediaStream);
+    } catch (e) {
+      console.error(e);
+      setError("❌ No se pudo activar la cámara.");
+      setMessage("");
     }
-
-    if (!videoRef.current) return;
-    videoRef.current.srcObject = mediaStream;
-    videoRef.current.setAttribute("playsinline", "");
-    videoRef.current.muted = true;
-    await waitVideoReady();
-    await videoRef.current.play();
-    setStream(mediaStream);
-  } catch (e) {
-    console.error(e);
-    setError("❌ No se pudo activar la cámara.");
-    setMessage("");
-  }
-};
-
+  };
 
   const takePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
