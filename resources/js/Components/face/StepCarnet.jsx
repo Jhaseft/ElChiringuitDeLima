@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Camera, RefreshCw, ArrowLeft, ArrowRight } from "lucide-react";
+import { Camera, RefreshCw, ArrowLeft, ArrowRight, Info } from "lucide-react";
 
 export default function DocumentCapture({
   docType, // "ci" | "licencia" | "pasaporte"
@@ -15,8 +15,8 @@ export default function DocumentCapture({
   const [stream, setStream] = useState(null);
   const [message, setMessage] = useState("Iniciando cámara...");
   const [error, setError] = useState("");
-  const [side, setSide] = useState("front"); // "front" | "back"
-  const [step, setStep] = useState("ready"); // "ready" | "capturedFront" | "capturedBack"
+  const [side, setSide] = useState("front");
+  const [step, setStep] = useState("capturing");
 
   const needsBack = docType === "ci" || docType === "licencia";
 
@@ -46,10 +46,34 @@ export default function DocumentCapture({
   const startCamera = async () => {
     stopCamera();
     setError("");
-    setMessage("Activando cámara...");
+    setMessage(
+      side === "front"
+        ? "📄 Ajusta tu documento dentro del marco y presiona Capturar."
+        : "Preparándote para el reverso..."
+    );
+
+    if (side === "back") {
+      let countdown = 3;
+      setMessage(`📄 Ahora tomarás foto del reverso en ${countdown}...`);
+      const interval = setInterval(() => {
+        countdown--;
+        if (countdown > 0) {
+          setMessage(`📄 Ahora tomarás foto del reverso en ${countdown}...`);
+        } else {
+          clearInterval(interval);
+          setMessage("📄 Ajusta el reverso dentro del marco y presiona Capturar.");
+          activateCameraStream();
+        }
+      }, 1000);
+    } else {
+      activateCameraStream();
+    }
+  };
+
+  const activateCameraStream = async () => {
     try {
       let mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" }, // siempre frontal
+        video: { facingMode: "user" },
         audio: false,
       });
       if (!videoRef.current) return;
@@ -59,14 +83,9 @@ export default function DocumentCapture({
       await waitVideoReady();
       await videoRef.current.play();
       setStream(mediaStream);
-      setMessage(
-        step === "ready"
-          ? "Ajusta tu documento dentro del marco y presiona Capturar."
-          : "Gira el documento y presiona Capturar para el reverso."
-      );
     } catch (e) {
       console.error(e);
-      setError("No se pudo activar la cámara.");
+      setError("❌ No se pudo activar la cámara.");
       setMessage("");
     }
   };
@@ -79,67 +98,56 @@ export default function DocumentCapture({
     c.height = v.videoHeight || 1280;
     const ctx = c.getContext("2d");
     ctx.drawImage(v, 0, 0, c.width, c.height);
-    c.toBlob((blob) => {
-      if (!blob) return;
+    c.toBlob(
+      (blob) => {
+        if (!blob) return;
 
-      if (side === "front") {
-        setDocFrontBlob(blob);
-        if (needsBack) {
-          stopCamera();
-          setStep("capturedFront");
-          setMessage("✅ Anverso capturado. Ahora gira el documento y presiona Activar Cámara para el reverso.");
+        if (side === "front") {
+          setDocFrontBlob(blob);
+          if (needsBack) {
+            stopCamera();
+            setSide("back");
+            setMessage("✅ Frontal capturado. Ahora el reverso.");
+            setTimeout(() => startCamera(), 2000);
+          } else {
+            stopCamera();
+            setStep("captured");
+            setMessage("✅ Documento capturado.");
+          }
         } else {
+          setDocBackBlob(blob);
           stopCamera();
-          setStep("capturedFront");
-          setMessage("✅ Documento capturado.");
+          setStep("captured");
+          setMessage("✅ Documento completo (anverso y reverso).");
         }
-      } else {
-        setDocBackBlob(blob);
-        stopCamera();
-        setStep("capturedBack");
-        setMessage("✅ Documento completo (anverso y reverso).");
-      }
-    }, "image/jpeg", 0.92);
+      },
+      "image/jpeg",
+      0.92
+    );
   };
 
   const retake = () => {
-    if (side === "front") {
-      setDocFrontBlob(null);
-      setStep("ready");
-    } else {
-      setDocBackBlob(null);
-      setStep("capturedFront");
-    }
+    setDocFrontBlob(null);
+    setDocBackBlob(null);
+    setSide("front");
+    setStep("capturing");
     setError("");
-    setMessage(
-      side === "front"
-        ? "Ajusta tu documento dentro del marco y presiona Capturar."
-        : "Gira el documento y presiona Capturar para el reverso."
-    );
+    setMessage("📄 Ajusta tu documento dentro del marco y presiona Capturar.");
     startCamera();
-  };
-
-  const handleActivateCamera = () => {
-    if (step === "capturedFront" && needsBack) {
-      setSide("back");
-      startCamera();
-    } else if (step === "ready") {
-      startCamera();
-    }
   };
 
   useEffect(() => {
     setSide("front");
-    setStep("ready");
+    setStep("capturing");
     startCamera();
     return () => stopCamera();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docType]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6 space-y-5 max-w-md mx-auto border border-gray-200">
+    <div className="bg-white rounded-2xl shadow-2xl p-6 space-y-6 max-w-lg mx-auto border border-gray-200">
       {/* Header */}
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center text-center">
         <span className="text-sm text-gray-500 mb-1">Captura de documento</span>
         <p className="font-semibold text-xl text-gray-800 flex items-center gap-2">
           {docType === "pasaporte" ? "Pasaporte" : side === "front" ? "Anverso" : "Reverso"}
@@ -155,10 +163,11 @@ export default function DocumentCapture({
           <>
             <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
             <div className="absolute inset-0 flex items-center justify-center px-3 text-center">
-              <p className="text-white text-sm bg-black/40 rounded-lg px-2 py-1">{error || message}</p>
+              <p className="text-white text-sm bg-black/60 rounded-lg px-3 py-2">
+                {error || message}
+              </p>
             </div>
-            {/* Overlay frame */}
-            <div className="absolute inset-6 border-2 border-green-400 rounded-lg pointer-events-none animate-pulse" />
+            <div className="absolute h-60 w-full border-2 border-green-400 rounded-lg pointer-events-none animate-pulse" />
           </>
         ) : (
           <img
@@ -169,35 +178,44 @@ export default function DocumentCapture({
         )}
       </div>
 
+      {/* Recomendaciones KYC */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
+        <div className="flex items-center gap-2 text-blue-700 font-semibold">
+          <Info size={18} /> Recomendaciones KYC
+        </div>
+        <ul className="list-disc list-inside text-sm text-blue-800 space-y-1">
+          <li>Coloca el documento completo dentro del marco.</li>
+          <li>Usa buena iluminación y evita reflejos.</li>
+          <li>No cubras datos con las manos.</li>
+          <li>Fondo uniforme y sin distracciones.</li>
+          <li>Verifica que el texto sea legible.</li>
+        </ul>
+      </div>
+
       {/* Buttons */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-        {((side === "front" && !docFrontBlob) || (side === "back" && !docBackBlob)) && (
-          <button
-            onClick={takePhoto}
-            className="col-span-2 bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 px-4 py-3 rounded-xl shadow"
-          >
-            <Camera size={18} /> Capturar
-          </button>
-        )}
-        {(step === "capturedFront" && needsBack && !docBackBlob) && (
-          <button
-            onClick={handleActivateCamera}
-            className="col-span-2 bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2 px-4 py-3 rounded-xl shadow"
-          >
-            Activar Cámara
-          </button>
-        )}
-        {((side === "front" && docFrontBlob) || (side === "back" && docBackBlob)) && (
+        {step === "capturing" &&
+          ((side === "front" && !docFrontBlob) || (side === "back" && !docBackBlob)) && (
+            <button
+              onClick={takePhoto}
+              className="col-span-2 bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 px-4 py-3 rounded-xl shadow-lg"
+            >
+              <Camera size={18} /> Capturar
+            </button>
+          )}
+
+        {step === "captured" && (
           <button
             onClick={retake}
-            className="col-span-2 bg-yellow-500 hover:bg-yellow-600 text-white flex items-center justify-center gap-2 px-4 py-3 rounded-xl shadow"
+            className="col-span-2 bg-yellow-500 hover:bg-yellow-600 text-white flex items-center justify-center gap-2 px-4 py-3 rounded-xl shadow-lg"
           >
             <RefreshCw size={18} /> Repetir
           </button>
         )}
+
         <button
           onClick={onBack}
-          className="bg-gray-300 hover:bg-gray-400 text-gray-800 flex items-center justify-center gap-2 px-3 py-3 rounded-xl shadow"
+          className="bg-gray-200 hover:bg-gray-300 text-gray-800 flex items-center justify-center gap-2 px-3 py-3 rounded-xl shadow"
         >
           <ArrowLeft size={18} /> Atrás
         </button>

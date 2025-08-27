@@ -23,8 +23,10 @@ export default function FaceKycSteps() {
   const [resultado, setResultado] = useState(null);
 
   const totalSteps = 4; // 1) tipo, 2) doc, 3) video, 4) revisión
-
+  
+  //avanza es pasos pero maximo hasta 4
   const nextStep = () => setStep((s) => Math.min(s + 1, totalSteps));
+  //volver en pasos
   const prevStep = () => {
     setStep((s) => {
       if (s === 2) {
