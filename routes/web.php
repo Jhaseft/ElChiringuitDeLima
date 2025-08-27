@@ -4,52 +4,97 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FaceController; 
 use App\Http\Controllers\CompleteProfileController;
-use App\Models\Bank;
 use App\Http\Controllers\OperacionController;
+use App\Models\Bank;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\VerifyEmail;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
+// Página principal
 Route::get('/', function () {
     $bancos = Bank::all();
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
-         'bancos' => $bancos,
+        'bancos' => $bancos,
     ]);
 })->name('welcome');
-//
+
+// Operaciones
 Route::middleware(['web'])->group(function () {
     Route::get('/operacion/listar-bancos', [OperacionController::class, 'listarBancos'])->name('operacion.listarBancos');
-
     Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta'])->name('operacion.guardarCuenta');
     Route::get('/operacion/listar-cuentas/{user_id}', [OperacionController::class, 'listarCuentas'])->name('operacion.listarCuentas');
     Route::delete('/operacion/eliminar-cuenta/{id}', [OperacionController::class, 'eliminarCuenta'])->name('operacion.eliminarCuenta');
-
     Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia'])->name('operacion.crearTransferencia');
 });
 
+// Perfil y KYC
 Route::middleware('auth')->group(function () {
-    //---------------------------Completar perfil para los de googel----------------------------//
-    //recibe info
     Route::get('/complete-profile', [CompleteProfileController::class, 'index'])->name('complete-profile');
-    //procesa la info y lo mete al usuario a la bd
     Route::post('/complete-profile', [CompleteProfileController::class, 'store'])->name('complete-profile.store');
-    //----------------------------Llamada al KYC----------------//
-  Route::get('/face', [FaceController::class, 'index'])->name('face.index'); // muestra Inertia page
-    Route::post('/face/verify', [FaceController::class, 'verify'])->name('face.verify'); // recibe resultado y actualiza DB
-});
 
-Route::middleware('auth')->group(function () {
+    Route::get('/face', [FaceController::class, 'index'])->name('face.index');
+    Route::post('/face/verify', [FaceController::class, 'verify'])->name('face.verify');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-
-
-// -------------------- LOGIN GOOGLE -------------------- //
+// Login Google
 Route::get('/auth/redirect', [AuthController::class, 'redirectToGoogle'])->name('google.login');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('google.callback');
+
+// -------------------- REGISTRO PROVISIONAL Y ENVÍO DE EMAIL -------------------- //
+Route::post('/register-provisional', function (\Illuminate\Http\Request $request) {
+    $request->validate([
+        'first_name' => 'required|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users,email',
+        'phone' => 'nullable|string|max:20|unique:users,phone',
+        'nationality' => 'nullable|string|max:100',
+        'document_number' => 'nullable|string|max:50|unique:users,document_number',
+        'password' => ['required', 'confirmed'],
+    ]);
+
+    $token = Str::random(64);
+    Cache::put('register:' . $token, $request->all(), now()->addMinutes(30));
+
+    $url = route('email.verify', ['token' => $token]);
+
+    Mail::to($request->email)->send(new VerifyEmail($url));
+
+    return "Correo de verificación enviado. Revisa tu inbox para continuar.";
+});
+
+// Ruta que crea el usuario después de verificar
+Route::get('/verify-email/{token}', function ($token) {
+    $data = Cache::get('register:' . $token);
+
+    if (!$data) {
+        return 'El enlace ha expirado o es inválido.';
+    }
+
+    $user = \App\Models\User::create([
+        'first_name' => $data['first_name'],
+        'last_name' => $data['last_name'],
+        'email' => $data['email'],
+        'phone' => $data['phone'] ?? null,
+        'nationality' => $data['nationality'] ?? null,
+        'document_number' => $data['document_number'] ?? null,
+        'password' => \Illuminate\Support\Facades\Hash::make($data['password']),
+    ]);
+
+    Cache::forget('register:' . $token);
+
+    \Illuminate\Support\Facades\Auth::login($user);
+
+    return redirect('/')->with('success', 'Cuenta verificada y creada correctamente!');
+})->name('email.verify');
 
 require __DIR__.'/auth.php';

@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\VerifyEmail;
 
 class RegisteredUserController extends Controller
 {
@@ -20,32 +24,30 @@ class RegisteredUserController extends Controller
         return Inertia::render('Auth/Register');
     }
 
-    public function store(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'first_name'       => 'required|string|max:255',
-            'last_name'        => 'required|string|max:255',
-            'email'            => 'required|string|email|max:255|unique:users,email',
-            'phone'            => 'nullable|string|max:20|unique:users,phone',
-            'nationality'      => 'nullable|string|max:100',
-            'document_number'  => 'nullable|string|max:50|unique:users,document_number',
-            'password'         => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+    public function store(Request $request)
+{
+    $request->validate([
+        'first_name' => 'required|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users,email',
+        'phone' => 'nullable|string|max:20|unique:users,phone',
+        'nationality' => 'nullable|string|max:100',
+        'document_number' => 'nullable|string|max:50|unique:users,document_number',
+        'password' => ['required', 'confirmed', Rules\Password::defaults()],
+    ]);
 
-        $user = User::create([
-            'first_name'       => $request->first_name,
-            'last_name'        => $request->last_name,
-            'email'            => $request->email,
-            'phone'            => $request->phone,
-            'nationality'      => $request->nationality,
-            'document_number'  => $request->document_number,
-            'password'         => Hash::make($request->password),
-        ]);
+    // Crear token temporal
+    $token = Str::random(64);
 
-        event(new Registered($user));
+    // Guardar datos del registro en cache por 30 min
+    Cache::put('register:' . $token, $request->all(), now()->addMinutes(30));
 
-        Auth::login($user);
+    // Generar enlace firmado
+    $url = route('email.verify', ['token' => $token]);
 
-        return redirect()->route('welcome');
-    }
+    // Enviar correo
+    Mail::to($request->email)->send(new VerifyEmail($url));
+
+    return response()->json(['message' => 'Correo de verificación enviado. Revisa tu inbox para continuar.']);
+}
 }

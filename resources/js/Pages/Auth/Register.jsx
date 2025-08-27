@@ -8,10 +8,11 @@ import Step3Security from "@/Components/register_and_complete/register/Step3Secu
 
 /**
  * Componente principal del registro multistep.
- * Administra el estado del formulario y la navegación entre pasos.
  */
 export default function Register() {
   const [step, setStep] = useState(1);
+  const [message, setMessage] = useState(""); // mensaje global de error
+  const [loading, setLoading] = useState(false); // estado de pantalla de carga
 
   const { data, setData, post, processing, errors, reset } = useForm({
     first_name: "",
@@ -25,7 +26,6 @@ export default function Register() {
     accepted_terms: false,
   });
 
-  // Reglas de validación de contraseña
   const passwordRules = {
     length: data.password.length >= 8,
     upper: /[A-Z]/.test(data.password),
@@ -35,7 +35,6 @@ export default function Register() {
     match: data.password === data.password_confirmation && data.password.length > 0,
   };
 
-  /** Validación para deshabilitar botón "Siguiente" */
   const isNextDisabled = () => {
     if (step === 1) return !data.first_name || !data.last_name || !data.email;
     if (step === 2) return !data.phone || !data.nationality || !data.document_number;
@@ -43,55 +42,69 @@ export default function Register() {
     return false;
   };
 
-  /** Avanza al siguiente paso */
   const nextStep = () => {
     if (!isNextDisabled()) setStep(step + 1);
   };
 
-  /** Retrocede al paso anterior */
   const prevStep = () => setStep(step - 1);
 
-  /** Envío final del formulario */
   const submit = (e) => {
     e.preventDefault();
     if (step < 3) {
       nextStep();
     } else {
-      post(route("register"), {
-        onFinish: () => reset("password", "password_confirmation"),
-        onError: () => console.log(errors),
-      });
+      setMessage(""); // limpiar mensaje previo
+      setLoading(true); // mostrar overlay de carga
+      post('/register-provisional', {
+    data,
+    onFinish: () => {
+        setLoading(false);
+        setMessage('Correo enviado. Revisa tu bandeja y confirma para completar el registro luego vuelve e inciia sesion.');
+        reset('password', 'password_confirmation');
+    },
+    onError: (errs) => {
+        const allErrors = Object.values(errs).flat().join(' ');
+        setMessage(allErrors || 'Hubo un error al enviar el correo.');
+        setLoading(false);
+    },
+});
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-4 sm:px-6">
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-4 sm:px-6">
       <Head title="Crear cuenta" />
 
+      {/* Overlay de carga */}
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl p-6 flex flex-col items-center space-y-4 shadow-lg">
+            <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+            <p className="text-gray-700 font-semibold">Enviando correo de verificación...</p>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden p-8 sm:p-12">
-        <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-8">
+        <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-4">
           Crear una cuenta
         </h1>
+
+        {/* Mensaje global de error */}
+        {message && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {message}
+          </div>
+        )}
 
         {/* Stepper */}
         <Stepper step={step} />
 
         {/* Formulario multistep */}
         <form onSubmit={submit} className="space-y-6">
-          {step === 1 && (
-            <Step1Personal data={data} setData={setData} errors={errors} />
-          )}
-          {step === 2 && (
-            <Step2Extras data={data} setData={setData} errors={errors} />
-          )}
-          {step === 3 && (
-            <Step3Security
-              data={data}
-              setData={setData}
-              errors={errors}
-              passwordRules={passwordRules}
-            />
-          )}
+          {step === 1 && <Step1Personal data={data} setData={setData} errors={errors} />}
+          {step === 2 && <Step2Extras data={data} setData={setData} errors={errors} />}
+          {step === 3 && <Step3Security data={data} setData={setData} errors={errors} passwordRules={passwordRules} />}
 
           {/* Botones */}
           <div className="flex justify-between mt-4">
@@ -99,14 +112,15 @@ export default function Register() {
               <button
                 type="button"
                 onClick={prevStep}
-                className="px-4 py-2 rounded-xl border border-gray-300"
+                disabled={loading}
+                className="px-4 py-2 rounded-xl border border-gray-300 disabled:opacity-50"
               >
                 Atrás
               </button>
             )}
             <button
               type="submit"
-              disabled={processing || isNextDisabled()}
+              disabled={processing || isNextDisabled() || loading}
               className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl shadow-md hover:bg-indigo-700 transition disabled:opacity-50"
             >
               {step < 3 ? "Siguiente" : "Registrarse"}
@@ -119,6 +133,18 @@ export default function Register() {
           <BotonGoogle />
         </div>
       </div>
+
+      {/* Loader CSS */}
+      <style>{`
+        .loader {
+          border-top-color: #4f46e5;
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
