@@ -81,7 +81,7 @@ export default function ModalTransferencia({
   const conversionTexto = isBoliviano ? `${conversion} PEN` : `${conversion} BOB`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-2">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 px-2">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto mt-11">
         <button
           className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition"
