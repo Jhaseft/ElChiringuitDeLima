@@ -12,6 +12,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.23",
         "laravel/tinker": "^2.10.1",
+        "symfony/mailgun-mailer": "^7.3",
         "tightenco/ziggy": "^2.5"
     },
     "require-dev": {

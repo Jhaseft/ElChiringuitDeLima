@@ -1,24 +1,40 @@
+# Logs
 *.log
+
+# Mac / Windows
 .DS_Store
+Thumbs.db
+
+# Environment files (no subir al repositorio por seguridad)
 .env
 .env.backup
 .env.production
+
+# IDE / editor folders
+/.idea
+/.vscode
+/.fleet
+/.zed
+/.nova
+
+# PHP / Composer
+/vendor
+/auth.json
+Homestead.json
+Homestead.yaml
 .phpactor.json
 .phpunit.result.cache
-/.fleet
-/.idea
-/.nova
 /.phpunit.cache
-/.vscode
-/.zed
-/auth.json
+
+# Node modules
 /node_modules
-/public/build
+
+# Vite / Laravel Mix (assets compilados) 
+# Necesario subir a Hostinger porque no hay Node.js en el servidor
+# /public/build     ← comentado para subir los assets
 /public/hot
+
+# Laravel storage
 /public/storage
 /storage/*.key
 /storage/pail
-/vendor
-Homestead.json
-Homestead.yaml
-Thumbs.db
