@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FaceController; 
 use App\Http\Controllers\CompleteProfileController;
 use App\Http\Controllers\OperacionController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Models\Bank;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
