@@ -67,10 +67,11 @@ Route::post('/register-provisional', function (\Illuminate\Http\Request $request
 
     $url = route('email.verify', ['token' => $token]);
 
+    // Enviar correo
     Mail::to($request->email)->send(new VerifyEmail($url));
 
     return "Correo de verificación enviado. Revisa tu inbox para continuar.";
-});
+})->name('register.provisional');
 
 // Ruta que crea el usuario después de verificar
 Route::get('/verify-email/{token}', function ($token) {

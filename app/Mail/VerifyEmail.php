@@ -20,7 +20,6 @@ class VerifyEmail extends Mailable
     public function build()
     {
         return $this->subject('Verifica tu correo')
-                    ->markdown('emails.verify-email')
-                    ->with(['url' => $this->url]);
+                    ->markdown('emails.verify-email'); // revisa que exista resources/views/emails/verify-email.blade.php
     }
 }
