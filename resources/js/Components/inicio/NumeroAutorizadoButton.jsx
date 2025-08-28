@@ -1,7 +1,17 @@
+import { MessageCircle } from "lucide-react";
+
 export default function NumeroAutorizadoButton({ numero }) {
+  const link = `https://wa.me/${numero}?text=Hola,%20necesito%20información`;
+
   return (
-    <button className="bg-green-700 text-white py-1 px-2 rounded text-sm hover:bg-green-800 transition">
-      {numero} Chat
-    </button>
+    <a
+      href={link}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center justify-center gap-2 bg-green-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition text-sm font-medium"
+    >
+      <MessageCircle size={18} />
+      {numero}
+    </a>
   );
 }

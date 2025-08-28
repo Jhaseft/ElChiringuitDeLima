@@ -20,7 +20,23 @@ Route::get('/', function () {
         'bancos' => $bancos,
     ]);
 })->name('welcome');
+//contacto
+Route::get('/contacto', function () {
+    return Inertia::render('Contacto');
+});
+//politicas
+Route::get('/politicas', function () {
 
+    return Inertia::render('politicasypriv');
+
+});
+//Nosotros
+
+Route::get('/nosotros', function () {
+
+    return Inertia::render('Nosotros');
+
+});
 // Operaciones
 Route::middleware(['web'])->group(function () {
     Route::get('/operacion/listar-bancos', [OperacionController::class, 'listarBancos'])->name('operacion.listarBancos');
@@ -67,6 +83,8 @@ Route::get('/verify-email/{token}', function ($token) {
         'nationality' => $data['nationality'] ?? null,
         'document_number' => $data['document_number'] ?? null,
         'password' => \Illuminate\Support\Facades\Hash::make($data['password']),
+        'accepted_terms_at' => now(),          // momento de aceptación
+        
     ]);
 
     Cache::forget('register:' . $token);

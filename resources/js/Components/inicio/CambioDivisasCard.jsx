@@ -4,7 +4,7 @@ import { RefreshCw } from "lucide-react";
 import ModalOperacion from "./ModalOperacion";
 import ErrorBanner from "./ErrorBanner";
 
-export default function CambioDivisasCard({ tasas,bancos }) {
+export default function CambioDivisasCard({ tasas, bancos }) {
   const { auth } = usePage().props;
   const user = auth?.user ?? null;
 
@@ -18,13 +18,23 @@ export default function CambioDivisasCard({ tasas,bancos }) {
   const tasaBOBtoPEN = venta || 1.96;
   const tasaPENtoBOB = compra || 1.94;
 
-  const handleCambio = (valor) => {
-    setMonto(valor);
-    setError("");
-    if (!valor || isNaN(valor)) {
+  const handleCambio = (valorStr) => {
+    const valor = parseFloat(valorStr);
+    if (isNaN(valor)) {
+      setMonto("");
       setConversion("");
       return;
     }
+
+    if (valor < 0) {
+      setMonto("");
+      setConversion("");
+      setError("⚠️ El monto no puede ser negativo.");
+      return;
+    }
+
+    setMonto(valor);
+    setError("");
     if (modo === "BOBtoPEN") {
       setConversion((valor / tasaBOBtoPEN).toFixed(2));
     } else {
@@ -35,25 +45,14 @@ export default function CambioDivisasCard({ tasas,bancos }) {
   const toggleModo = () => {
     const nuevoModo = modo === "BOBtoPEN" ? "PENtoBOB" : "BOBtoPEN";
     setModo(nuevoModo);
-    setError("");
 
-    if (user?.nationality) {
-      if (user.nationality.toLowerCase() === "boliviano" && nuevoModo === "PENtoBOB") {
-        setError("⚠️ Como boliviano solo podrás iniciar operaciones de BOB a PEN.");
+    // recalcular
+    if (monto && !isNaN(monto)) {
+      if (nuevoModo === "BOBtoPEN") {
+        setConversion((monto / tasaBOBtoPEN).toFixed(2));
+      } else {
+        setConversion((monto * tasaPENtoBOB).toFixed(2));
       }
-      if (user.nationality.toLowerCase() === "peruano" && nuevoModo === "BOBtoPEN") {
-        setError("⚠️ Como peruano solo podrás iniciar operaciones de PEN a BOB.");
-      }
-    }
-
-    if (!monto || isNaN(monto)) {
-      setConversion("");
-      return;
-    }
-    if (nuevoModo === "BOBtoPEN") {
-      setConversion((monto / tasaBOBtoPEN).toFixed(2));
-    } else {
-      setConversion((monto * tasaPENtoBOB).toFixed(2));
     }
   };
 
@@ -69,16 +68,16 @@ export default function CambioDivisasCard({ tasas,bancos }) {
     }
 
     if (!user.document_number || !user.nationality) {
-      window.location.href = "complete-profile";
+      window.location.href = "/complete-profile";
       return;
     }
- 
+
     if (user.nationality.toLowerCase() === "boliviano" && modo === "PENtoBOB") {
-      setError("No puedes iniciar operaciones de PEN a BOB siendo boliviano.");
+      setError("⚠️ No puedes iniciar operaciones de PEN a BOB siendo boliviano.");
       return;
     }
     if (user.nationality.toLowerCase() === "peruano" && modo === "BOBtoPEN") {
-      setError("No puedes iniciar operaciones de BOB a PEN siendo peruano.");
+      setError("⚠️ No puedes iniciar operaciones de BOB a PEN siendo peruano.");
       return;
     }
 
@@ -88,29 +87,26 @@ export default function CambioDivisasCard({ tasas,bancos }) {
 
   return (
     <>
-      {/* Error en pantalla grande */}
-      <ErrorBanner message={error} onClose={() => setError("")} />
+      {error && (
+        <ErrorBanner message={error} onClose={() => setError("")} />
+      )}
 
-      <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-4 border border-gray-100 max-w-md w-full mx-auto sm:max-w-lg lg:max-w-xl mt-16">
-        {/* Título y Logo */}
-        <div className="flex flex-col items-center mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 text-center">
-            TransferCashes
-          </h1>
-          <p className="text-sm sm:text-base text-gray-500 text-center">
-            Cambio de forma rápida y segura y buena
+      <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col gap-5 border border-gray-100 transition hover:shadow-2xl hover:scale-[1.01] duration-300 relative">
+        {/* Título */}
+        <div className="flex flex-col items-center mb-2">
+          <h1 className="text-2xl font-bold text-gray-800">TransferCash</h1>
+          <p className="text-sm text-gray-500 text-center">
+            Cambio de divisas rápido, seguro y confiable
           </p>
-          <div className="my-3 w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
-            <img
-              src="/images/logo.jpg"
-              alt="Logo"
-              className="my-3 w-20 h-20 object-contain rounded-full"
-            />
-          </div>
+          <img
+            src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756305635/logo_n6nqqr.jpg"
+            alt="Logo"
+            className="mt-3 w-20 h-20 object-contain rounded-full border border-gray-200 shadow-sm"
+          />
         </div>
 
         {/* Tasas */}
-        <div className="flex justify-between text-sm sm:text-base font-semibold">
+        <div className="flex justify-between text-base font-semibold px-2">
           <span className="text-blue-700">
             COMPRA: <span className="font-bold">{tasaPENtoBOB.toFixed(2)}</span>
           </span>
@@ -120,51 +116,52 @@ export default function CambioDivisasCard({ tasas,bancos }) {
         </div>
 
         {/* Inputs */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex flex-col w-full">
-            <label className="text-xs sm:text-sm font-semibold text-gray-600 mb-1 text-center">
+            <label className="text-sm font-medium text-gray-600 mb-1 text-center">
               {modo === "BOBtoPEN" ? "TIENES BOLIVIANOS" : "TIENES SOLES"}
             </label>
             <input
               type="number"
+              min="0"
               value={monto}
               onChange={(e) => handleCambio(e.target.value)}
-              className="border rounded-lg px-3 py-2 text-sm text-center font-semibold focus:ring-2 focus:ring-green-500 focus:outline-none shadow-sm w-full"
+              className="border rounded-lg px-3 py-2 text-center font-semibold focus:ring-2 focus:ring-green-500 focus:outline-none shadow-sm"
             />
           </div>
 
-          <div className="flex justify-center my-3 sm:my-0">
+          <div className="flex justify-center">
             <button
               onClick={toggleModo}
-              className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition shadow-sm"
+              className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition shadow-md"
             >
-              <RefreshCw className="w-5 h-5 text-gray-700" />
+              <RefreshCw className="w-6 h-6 text-gray-700" />
             </button>
           </div>
 
           <div className="flex flex-col w-full">
-            <label className="text-xs sm:text-sm font-semibold text-gray-600 mb-1 text-center">
+            <label className="text-sm font-medium text-gray-600 mb-1 text-center">
               {modo === "BOBtoPEN" ? "RECIBES SOLES" : "RECIBES BOLIVIANOS"}
             </label>
             <input
               type="text"
               value={conversion}
               readOnly
-              className="border rounded-lg px-3 py-2 text-sm text-center font-semibold bg-gray-50 shadow-sm w-full"
+              className="border rounded-lg px-3 py-2 text-center font-semibold bg-gray-50 shadow-sm"
             />
           </div>
         </div>
 
         {/* Botones */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
           <button
             onClick={iniciarOperacion}
-            className="bg-green-700 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-800 transition-all shadow-md"
+            className="bg-green-700 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-800 shadow-md transition-all"
           >
-            INICIAR UNA OPERACIÓN
+            Iniciar Operación
           </button>
-          <button className="bg-green-600 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition-all shadow-md">
-            CAMBIAR CON UN ASESOR
+          <button className="bg-gradient-to-r from-green-600 to-green-500 text-white py-2 rounded-lg text-sm font-semibold hover:opacity-90 shadow-md">
+            Cambiar con Asesor
           </button>
         </div>
 
@@ -173,31 +170,37 @@ export default function CambioDivisasCard({ tasas,bancos }) {
           <div className="flex flex-col sm:flex-row gap-2 justify-center mt-2">
             <Link
               href="/login"
-              className="flex-1 text-center py-2 rounded-lg text-sm font-semibold border border-green-500 text-green-600 hover:bg-green-50 transition"
+              className="flex-1 text-center py-2 rounded-lg text-sm font-semibold border border-green-600 text-green-600 hover:bg-green-50 transition"
             >
               Iniciar sesión
             </Link>
             <Link
               href="/register"
-              className="flex-1 text-center py-2 rounded-lg text-sm font-semibold bg-green-500 text-white hover:bg-green-600 transition"
+              className="flex-1 text-center py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition"
             >
               Registrarse
             </Link>
           </div>
         )}
 
-        {/* Modal */}
-        <ModalOperacion
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          user={user}
-          monto={monto}
-          tasa={tasaPENtoBOB}
-          conversion={conversion}
-          modo={modo}
-          bancos={bancos}
-        />
       </div>
+
+
+       {/* Modal */}
+        {modalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
+            <ModalOperacion
+              isOpen={modalOpen}
+              onClose={() => setModalOpen(false)}
+              user={user}
+              monto={monto}
+              tasa={tasaPENtoBOB}
+              conversion={conversion}
+              modo={modo}
+              bancos={bancos}
+            />
+          </div>
+        )}
     </>
   );
 }

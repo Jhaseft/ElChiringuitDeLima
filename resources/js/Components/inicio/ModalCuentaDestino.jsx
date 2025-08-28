@@ -224,9 +224,9 @@ export default function ModalCuentaDestino({
                 disabled={loading}
               />
               Acepto los{" "}
-              <span className="text-blue-600 underline cursor-pointer">
+              <a href="/politicas" className="text-blue-600 underline cursor-pointer">
                 Términos y condiciones y la Política de privacidad
-              </span>
+              </a>
             </label>
           </div>
 

@@ -1,6 +1,5 @@
 import { X, Copy, Loader2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
-import QRCode from "react-qr-code";
 
 export default function ModalTransferencia({
   isOpen,
@@ -135,73 +134,74 @@ export default function ModalTransferencia({
                 <span className="text-green-600">{montoTexto}</span>
               </p>
 
+              {/* Boliviano → CUERE (espacio para imagen) */}
               {isBoliviano && (
                 <div className="flex flex-col items-center gap-2">
-                  <p className="font-semibold">Escanea el QR para transferir</p>
+                  <p className="font-semibold">Escanea el CUERE para transferir</p>
                   <div className="bg-white p-2 rounded-lg shadow">
-                    <QRCode value={`Transferencia BOB ${monto}`} size={140} />
+                    {/* 🚨 Aquí SOLO pones tu imagen de CUERE */}
+                    <img
+                      src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756359417/qr_hgokvi.jpg" // <-- aquí pones el link del CUERE
+                      alt="CUERE Bolivia"
+                      className="w-40 h-40 object-contain"
+                    />
                   </div>
                 </div>
               )}
 
+              {/* Peruano → Yape & Plin */}
               {isPeruano && (
                 <div className="flex flex-col gap-4 mt-4">
-                  {/* Card BCP */}
+                  {/* Yape */}
                   <div className="flex items-center gap-3 border rounded-lg p-3 shadow-sm">
-                    {/* Imagen */}
                     <div className="flex-shrink-0">
                       <img
-                        src="/bancos/bcp.png"
-                        alt="BCP"
-                        className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain"
+                        src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756359619/yape-logo-png_seeklogo-504685_tns3su.png"
+                        alt="Yape"
+                        className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
                       />
                     </div>
-                    {/* Info */}
-                    <div className="text-left text-xs sm:text-sm md:text-base flex-1">
-                      <p className="font-bold text-gray-800">BCP</p>
+                    <div className="text-left text-sm flex-1">
+                      <p className="font-bold text-gray-800">Yape Perú</p>
                       <p className="flex items-center gap-2">
-                        Cuenta:{" "}
-                        <span className="font-mono">{cuentaDestino?.account_number}</span>
+                        Número: <span className="font-mono">947847817</span>
                         <button
-                          onClick={() => copyToClipboard(cuentaDestino?.account_number)}
+                          onClick={() => copyToClipboard("947847817")}
                           className="text-blue-600 hover:text-blue-800"
                         >
                           <Copy size={14} />
                         </button>
                       </p>
-                      <p className="text-gray-700">Titular: {cuentaDestino?.holder_name}</p>
+                      <p className="text-gray-700">Titular: Huguier Lee Sánchez Del Castillo</p>
                     </div>
                   </div>
 
-                  {/* Card Interbank */}
+                  {/* Plin */}
                   <div className="flex items-center gap-3 border rounded-lg p-3 shadow-sm">
-                    {/* Imagen */}
                     <div className="flex-shrink-0">
                       <img
-                        src="/bancos/interbank.png"
-                        alt="Interbank"
-                        className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain"
+                        src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756359595/plin_fi3i8u.png"
+                        alt="Plin"
+                        className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
                       />
                     </div>
-                    {/* Info */}
-                    <div className="text-left text-xs sm:text-sm md:text-base flex-1">
-                      <p className="font-bold text-gray-800">Interbank</p>
+                    <div className="text-left text-sm flex-1">
+                      <p className="font-bold text-gray-800">Plin Perú</p>
                       <p className="flex items-center gap-2">
-                        Cuenta: <span className="font-mono">4203007400062</span>
+                        Número: <span className="font-mono">947847817</span>
                         <button
-                          onClick={() => copyToClipboard("4203007400062")}
+                          onClick={() => copyToClipboard("947847817")}
                           className="text-blue-600 hover:text-blue-800"
                         >
                           <Copy size={14} />
                         </button>
                       </p>
-                      <p className="text-gray-700">Titular: CELL SHOP SAC</p>
+                      <p className="text-gray-700">Titular: Huguier Lee Sánchez Del Castillo</p>
                     </div>
                   </div>
                 </div>
               )}
             </div>
-
 
             {/* Subir comprobante */}
             <div className="mb-4">
@@ -221,7 +221,6 @@ export default function ModalTransferencia({
               )}
             </div>
 
-            {/* Errores */}
             {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
 
             {/* Botones */}
@@ -260,7 +259,7 @@ export default function ModalTransferencia({
         )}
       </div>
 
-      {/* Overlay de carga bloqueante */}
+      {/* Overlay de carga */}
       {loading && (
         <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/60">
           <Loader2 className="animate-spin text-white mb-4" size={48} />

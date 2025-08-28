@@ -48,6 +48,6 @@ class RegisteredUserController extends Controller
     // Enviar correo
     Mail::to($request->email)->send(new VerifyEmail($url));
 
-    return response()->json(['message' => 'Correo de verificación enviado. Revisa tu inbox para continuar.']);
+    return redirect('/');
 }
 }
