@@ -68,10 +68,14 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
     }
   };
 
-  const getSupportedMimeType = () => {
-    const candidates = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
-    return candidates.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
-  };
+const getSupportedMimeType = () => {
+  const candidates = [
+    "video/webm;codecs=vp8,opus",
+    "video/webm;codecs=vp8",
+    "video/webm"
+  ];
+  return candidates.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
+};
 
   const startRecording = () => {
     if (!videoRef.current?.srcObject) return;
