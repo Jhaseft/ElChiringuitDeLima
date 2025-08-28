@@ -14,44 +14,46 @@ export default function Grafico({ setTasas }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Formato hora HH:MM
-  function getCurrentTime() {
-    const now = new Date();
-    return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  }
-
   useEffect(() => {
-    function fetchData() {
+    async function fetchData() {
       try {
-        // Valores aleatorios (simulación de compra/venta)
-        const compra = (6.8 + Math.random() * 0.2).toFixed(2); // ~6.80 - 7.00
-        const venta = (parseFloat(compra) + Math.random() * 0.05).toFixed(2); // un poco mayor
+        const res = await fetch("/api/tipo-cambio/historial"); // tu endpoint que devuelve historial
+        const json = await res.json();
 
-        const newPoint = {
-          time: getCurrentTime(),
-          compra: Number(compra),
-          venta: Number(venta),
-        };
+        // Mapear los datos para Recharts
+        const formattedData = json.map((item) => ({
+          time: new Date(item.fecha_actualizacion).toLocaleString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            day: "2-digit",
+            month: "2-digit",
+          }),
+          compra: Number(item.compra),
+          venta: Number(item.venta),
+        }));
 
-        setData((prev) => [...prev.slice(-10), newPoint]);
+        setData(formattedData);
 
-        if (setTasas) {
-          setTasas({ compra: Number(compra), venta: Number(venta) });
+        // Enviar última tasa al padre si se necesita
+        if (setTasas && formattedData.length > 0) {
+          const last = formattedData[formattedData.length - 1];
+          setTasas({ compra: last.compra, venta: last.venta });
         }
 
         setLoading(false);
       } catch (err) {
-        console.error("Error al generar datos:", err);
+        console.error("Error al obtener historial:", err);
+        setLoading(false);
       }
     }
 
     fetchData();
-    const interval = setInterval(fetchData, 5000); // cada 5 segundos
+    const interval = setInterval(fetchData, 30000); // actualizar cada 30 segundos
     return () => clearInterval(interval);
   }, [setTasas]);
 
   return (
-    <div className="w-full max-w-md mx-auto p-4 bg-white rounded-2xl shadow-lg flex flex-col gap-3">
+    <div className="w-full max-w-lg mx-auto p-4 bg-white rounded-2xl shadow-lg flex flex-col gap-3">
       <h2 className="text-base sm:text-lg md:text-xl font-bold text-center text-gray-800">
         Evolución de la moneda
       </h2>

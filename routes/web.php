@@ -6,6 +6,8 @@ use App\Http\Controllers\FaceController;
 use App\Http\Controllers\CompleteProfileController;
 use App\Http\Controllers\OperacionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\AdminAuthController;
+use App\Http\Controllers\TipoCambioController;
 use App\Models\Bank;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -93,5 +95,17 @@ Route::get('/verify-email/{token}', function ($token) {
 
     return redirect('/')->with('success', 'Cuenta verificada y creada correctamente!');
 })->name('email.verify');
+
+Route::prefix('admin')->group(function () {
+    Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
+    Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.post');
+    Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+
+    Route::middleware('auth:admin')->group(function () {
+    Route::get('/tipo-cambio', [TipoCambioController::class, 'index']);
+    Route::post('/tipo-cambio', [TipoCambioController::class, 'update']);
+        });
+});
+Route::get('/api/tipo-cambio/historial', [TipoCambioController::class, 'historial']);
 
 require __DIR__.'/auth.php';

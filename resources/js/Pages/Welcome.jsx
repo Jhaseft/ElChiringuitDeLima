@@ -17,7 +17,7 @@ export default function Welcome({ bancos }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <CambioDivisasCard tasas={tasas} bancos={bancos} />
            <InfoAdicionalCard />
-          </div>
+          </div> 
           
 
           {/* Gráfico abajo */}
