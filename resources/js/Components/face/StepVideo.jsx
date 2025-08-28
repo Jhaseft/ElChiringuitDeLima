@@ -39,6 +39,10 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
     setMessage("Iniciando cámara...");
     try {
       let s;
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("MediaDevices no soportado");
+      }
+
       try {
         s = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user" },
@@ -47,18 +51,21 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
       } catch {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const cams = devices.filter((d) => d.kind === "videoinput");
-        if (!cams.length) throw new Error("No hay cámaras");
+        if (!cams.length) throw new Error("No hay cámaras disponibles");
         s = await navigator.mediaDevices.getUserMedia({
           video: { deviceId: { exact: cams[0].deviceId } },
           audio: true,
         });
       }
+
       if (!videoRef.current) return;
       videoRef.current.srcObject = s;
       videoRef.current.setAttribute("playsinline", "");
       videoRef.current.muted = true;
+
       await waitVideoReady();
-      await videoRef.current.play();
+      try { await videoRef.current.play(); } catch {}
+
       setStream(s);
       setMessage("Cámara y micrófono activos. Pulsa grabar cuando estés listo.");
     } catch (e) {
@@ -68,29 +75,46 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
     }
   };
 
-const getSupportedMimeType = () => {
-  const candidates = [
-    "video/webm;codecs=vp8,opus",
-    "video/webm;codecs=vp8",
-    "video/webm"
-  ];
-  return candidates.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
-};
+  const getSupportedMimeType = () => {
+    const candidates = [
+      "video/webm;codecs=vp8,opus",
+      "video/webm;codecs=vp8",
+      "video/webm",
+      "video/mp4"
+    ];
+    return candidates.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
+  };
 
-  const startRecording = () => {
+  const startRecording = async () => {
     if (!videoRef.current?.srcObject) return;
+
+    stopCamera(); // Reinicia la cámara para evitar problemas de captura
+    await startCamera();
+
     recordedChunks.current = [];
     const mimeType = getSupportedMimeType();
-    mediaRecorderRef.current = new MediaRecorder(
-      videoRef.current.srcObject,
-      mimeType ? { mimeType } : undefined
-    );
+    try {
+      mediaRecorderRef.current = new MediaRecorder(
+        videoRef.current.srcObject,
+        mimeType ? { mimeType } : undefined
+      );
+    } catch (err) {
+      console.error("MediaRecorder no soportado:", err);
+      setError("❌ Este dispositivo no soporta grabación de video.");
+      return;
+    }
+
     mediaRecorderRef.current.ondataavailable = (e) => {
-      if (e.data.size > 0) recordedChunks.current.push(e.data);
+      if (e.data && e.data.size > 0) recordedChunks.current.push(e.data);
     };
-    mediaRecorderRef.current.onstop = () =>
-      setVideoBlob(new Blob(recordedChunks.current, { type: mimeType || "video/webm" }));
-    mediaRecorderRef.current.start();
+
+    mediaRecorderRef.current.onstop = () => {
+      const blobType = mimeType || "video/webm";
+      const blob = new Blob(recordedChunks.current, { type: blobType });
+      setVideoBlob(blob);
+    };
+
+    mediaRecorderRef.current.start(100); // Captura cada 100ms para mejor compatibilidad
     setRecording(true);
     setMessage("🎥 Grabando... Habla claramente frente a la cámara.");
   };
@@ -111,12 +135,10 @@ const getSupportedMimeType = () => {
 
   return (
     <div className="bg-white rounded-2xl shadow-2xl p-6 space-y-6 max-w-lg mx-auto border border-gray-200">
-      {/* Header */}
       <p className="font-semibold text-lg text-center text-gray-800 flex items-center justify-center gap-2">
         🎥 Video selfie (cámara frontal)
       </p>
 
-      {/* Video area */}
       <div className="relative border-2 border-dashed border-indigo-400 bg-gray-900 aspect-[3/4] rounded-xl flex items-center justify-center overflow-hidden shadow-inner">
         <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
         <div className="absolute bottom-2 inset-x-0 flex justify-center px-3 text-center">
@@ -126,7 +148,6 @@ const getSupportedMimeType = () => {
         </div>
       </div>
 
-      {/* Recomendaciones */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
         <div className="flex items-center gap-2 text-blue-700 font-semibold">
           <Info size={18} /> Recomendaciones para el video
@@ -140,7 +161,6 @@ const getSupportedMimeType = () => {
         </ul>
       </div>
 
-      {/* Buttons */}
       <div className="flex justify-center gap-3 flex-wrap">
         {!recording ? (
           <button
@@ -176,7 +196,6 @@ const getSupportedMimeType = () => {
         </button>
       </div>
 
-      {/* Preview */}
       {videoBlob && (
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-600 mb-2">Vista previa del video</p>

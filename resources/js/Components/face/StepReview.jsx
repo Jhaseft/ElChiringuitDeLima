@@ -1,7 +1,7 @@
 // StepReview.jsx
 import axios from "axios";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function StepReview({
   docType,
@@ -16,10 +16,26 @@ export default function StepReview({
 }) {
   const [message, setMessage] = useState(null);
   const [problems, setProblems] = useState([]);
+  const [frontURL, setFrontURL] = useState(null);
+  const [backURL, setBackURL] = useState(null);
+  const [videoURL, setVideoURL] = useState(null);
+
+  // Crear URLs para mostrar blobs y liberar memoria después
+  useEffect(() => {
+    if (docFrontBlob) setFrontURL(URL.createObjectURL(docFrontBlob));
+    if (docBackBlob) setBackURL(URL.createObjectURL(docBackBlob));
+    if (videoBlob) setVideoURL(URL.createObjectURL(videoBlob));
+
+    return () => {
+      frontURL && URL.revokeObjectURL(frontURL);
+      backURL && URL.revokeObjectURL(backURL);
+      videoURL && URL.revokeObjectURL(videoURL);
+    };
+  }, [docFrontBlob, docBackBlob, videoBlob]);
 
   const getCsrfToken = () => {
     const el = document.querySelector('meta[name="csrf-token"]');
-    return el?.getAttribute("content");
+    return el?.getAttribute("content") || "";
   };
 
   const handleSubmit = async () => {
@@ -29,22 +45,22 @@ export default function StepReview({
     const formData = new FormData();
     formData.append("carnet", docFrontBlob, "documento_frente.jpg");
     formData.append("doc_type", docType);
-    formData.append("video", videoBlob, "video.webm");
+    // Cambiamos a mp4 para compatibilidad
+    formData.append("video", videoBlob, "video.mp4");
 
     try {
       setLoading(true);
 
-      // 1️⃣ Llamamos a la API externa
+      // 1️⃣ Llamada a API externa
       const res = await axios.post(
         "https://apiface-production-767c.up.railway.app/registro-face/verify",
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        formData
+        // No forzamos Content-Type, axios lo gestiona
       );
 
-      // Guardamos la respuesta para debug
       setResultado(res.data);
 
-      // 2️⃣ Enviamos el resultado a nuestro backend
+      // 2️⃣ Enviamos resultado a nuestro backend
       const csrf = getCsrfToken();
       const backendRes = await axios.post(
         "/face/verify",
@@ -59,12 +75,10 @@ export default function StepReview({
 
       const data = backendRes.data;
 
-      // Guardamos mensajes y sugerencias
       setMessage(data.mensaje || "ℹ️ Verificación realizada.");
       setProblems(data.sugerencias || []);
 
       if (data.status === "success" || data.kyc_status === "active") {
-        // Redirigimos si fue exitoso
         setTimeout(() => {
           const params = new URLSearchParams(window.location.search);
           const next = params.get("next");
@@ -79,7 +93,6 @@ export default function StepReview({
     }
   };
 
-  // Mostrar resultado en UI
   const renderResultado = () => {
     if (!resultado) return null;
 
@@ -110,7 +123,6 @@ export default function StepReview({
           </div>
         )}
 
-        {/* JSON crudo para debug */}
         <details className="mt-3">
           <summary className="cursor-pointer text-xs text-gray-500">
             Ver JSON completo
@@ -128,24 +140,24 @@ export default function StepReview({
       <p className="font-semibold text-lg text-center">Revisa tus capturas</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {docFrontBlob && (
+        {frontURL && (
           <div>
             <p className="text-sm font-medium mb-1">
               {docType === "pasaporte" ? "Pasaporte" : "Anverso"}
             </p>
             <img
-              src={URL.createObjectURL(docFrontBlob)}
+              src={frontURL}
               alt="Documento anverso"
               className="rounded-lg border shadow w-full h-auto object-cover"
             />
           </div>
         )}
 
-        {docBackBlob && (
+        {backURL && (
           <div>
             <p className="text-sm font-medium mb-1">Reverso</p>
             <img
-              src={URL.createObjectURL(docBackBlob)}
+              src={backURL}
               alt="Documento reverso"
               className="rounded-lg border shadow w-full h-auto object-cover opacity-80"
             />
@@ -153,11 +165,11 @@ export default function StepReview({
         )}
       </div>
 
-      {videoBlob && (
+      {videoURL && (
         <div className="mt-2">
           <p className="text-sm font-medium mb-1">Video selfie</p>
           <video
-            src={URL.createObjectURL(videoBlob)}
+            src={videoURL}
             controls
             className="rounded-lg border shadow w-full h-auto object-cover"
           />
