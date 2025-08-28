@@ -8,118 +8,79 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
   const [recording, setRecording] = useState(false);
   const [stream, setStream] = useState(null);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("Iniciando cámara...");
-  const [debug, setDebug] = useState(""); // debug visible
+  const [message, setMessage] = useState("Pulsa 'Iniciar cámara'");
+  const [debug, setDebug] = useState("");
 
   const stopCamera = () => {
-    try {
-      if (videoRef.current?.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach((t) => t.stop());
-        videoRef.current.srcObject = null;
-      }
-      if (stream) stream.getTracks().forEach((t) => t.stop());
-    } catch {}
-    setStream(null);
-  };
-
-  const waitVideoReady = () =>
-    new Promise((resolve) => {
-      const v = videoRef.current;
-      if (!v) return resolve();
-      if (v.readyState >= 3) return resolve(); // suficiente para grabar
-      const onLoaded = () => {
-        v.removeEventListener("loadedmetadata", onLoaded);
-        resolve();
-      };
-      v.addEventListener("loadedmetadata", onLoaded, { once: true });
-    });
-
-  const startCamera = async () => {
-    stopCamera();
-    setError("");
-    setMessage("Iniciando cámara...");
-    setDebug("");
-    try {
-      let s;
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("MediaDevices no soportado");
-      }
-
-      try {
-        s = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" },
-          audio: true,
-        });
-      } catch {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const cams = devices.filter((d) => d.kind === "videoinput");
-        if (!cams.length) throw new Error("No hay cámaras disponibles");
-        s = await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: { exact: cams[0].deviceId } },
-          audio: true,
-        });
-      }
-
-      if (!videoRef.current) return;
-      videoRef.current.srcObject = s;
-      videoRef.current.setAttribute("playsinline", "");
-      videoRef.current.muted = true;
-
-      await waitVideoReady();
-      try { await videoRef.current.play(); } catch (e) {
-        console.error("video.play() fallo:", e);
-        setDebug(`Error video.play(): ${e.message}`);
-      }
-
-      setStream(s);
-      setMessage("Cámara y micrófono activos. Pulsa grabar cuando estés listo.");
-    } catch (e) {
-      console.error(e);
-      setError("❌ No se pudo activar la cámara.");
-      setMessage("");
-      setDebug(e.message);
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      setStream(null);
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
     }
   };
 
   const getSupportedMimeType = () => {
     const candidates = [
+      "video/mp4",
       "video/webm;codecs=vp8,opus",
       "video/webm;codecs=vp8",
       "video/webm",
-      "video/mp4",
     ];
     return candidates.find(
       (t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)
     ) || "";
   };
 
-  const startRecording = async () => {
+  const startCamera = async () => {
+    setError("");
+    setMessage("Iniciando cámara...");
+    setDebug("");
+
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Tu navegador no soporta cámara");
+      }
+
+      const s = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: true,
+      });
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = s;
+        videoRef.current.muted = true;
+        videoRef.current.setAttribute("playsinline", "");
+
+        try { await videoRef.current.play(); } 
+        catch (e) { console.warn("video.play() falló:", e); }
+
+        setStream(s);
+        setMessage("Cámara lista. Pulsa 'Grabar'.");
+      }
+    } catch (err) {
+      console.error("Error cámara:", err);
+      setError("❌ No se pudo iniciar la cámara.");
+      setDebug(err.name + ": " + err.message);
+    }
+  };
+
+  const startRecording = () => {
     if (!videoRef.current?.srcObject) {
       setError("❌ La cámara no está activa.");
       return;
     }
 
+    const mimeType = getSupportedMimeType();
+    if (!mimeType) {
+      setError("❌ Ningún formato de video soportado.");
+      return;
+    }
+
     try {
-      await waitVideoReady(); // asegurar video listo
-
       recordedChunks.current = [];
-      const mimeType = getSupportedMimeType();
-      if (!mimeType) {
-        setError("❌ Ningún formato de video soportado en este dispositivo.");
-        return;
-      }
-
-      try {
-        mediaRecorderRef.current = new MediaRecorder(
-          videoRef.current.srcObject,
-          { mimeType }
-        );
-      } catch (err) {
-        console.error("MediaRecorder fallo:", err);
-        setError("❌ MediaRecorder no pudo iniciarse.");
-        setDebug(err.message);
-        return;
-      }
+      mediaRecorderRef.current = new MediaRecorder(videoRef.current.srcObject, { mimeType });
 
       mediaRecorderRef.current.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) recordedChunks.current.push(e.data);
@@ -133,12 +94,12 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
 
       mediaRecorderRef.current.start(100);
       setRecording(true);
-      setMessage("🎥 Grabando... Habla claramente frente a la cámara.");
+      setMessage("🎥 Grabando...");
       setDebug(`Grabando con mimeType: ${mimeType}`);
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error("Error grabando:", err);
       setError("❌ Error iniciando grabación.");
-      setDebug(e.message);
+      setDebug(err.name + ": " + err.message);
     }
   };
 
@@ -146,14 +107,12 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
     if (mediaRecorderRef.current && recording) {
       mediaRecorderRef.current.stop();
       setRecording(false);
-      stopCamera();
     }
+    stopCamera();
   };
 
   useEffect(() => {
-    startCamera();
     return () => stopCamera();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -177,7 +136,6 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
         </div>
       </div>
 
-      {/* Debug visible */}
       {debug && (
         <div className="bg-gray-800 text-white p-2 rounded-md text-xs break-words">
           Debug: {debug}
@@ -198,7 +156,14 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
       </div>
 
       <div className="flex justify-center gap-3 flex-wrap">
-        {!recording ? (
+        {!stream ? (
+          <button
+            onClick={startCamera}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl shadow-lg"
+          >
+            Iniciar cámara
+          </button>
+        ) : !recording ? (
           <button
             onClick={startRecording}
             className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 px-5 py-2 rounded-xl shadow-lg"
@@ -213,6 +178,7 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
             <Square size={18} /> Detener
           </button>
         )}
+
         <button
           onClick={prevStep}
           className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-xl shadow"
