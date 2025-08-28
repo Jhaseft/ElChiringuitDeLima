@@ -95,10 +95,10 @@ export default function CambioDivisasCard({ tasas,bancos }) {
         {/* Título y Logo */}
         <div className="flex flex-col items-center mb-4">
           <h1 className="text-xl sm:text-2xl font-bold text-gray-800 text-center">
-            TransferCashessss
+            TransferCash
           </h1>
           <p className="text-sm sm:text-base text-gray-500 text-center">
-            Cambio de forma rápida y segura
+            Cambio de forma rápida y segura y buena
           </p>
           <div className="my-3 w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
             <img
