@@ -170,7 +170,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
             >
               Registrarse
             </Link>
-          </div>
+          </div> 
         )}
         <p className="text-green-800 text-lg mt-4 text-center">
           Para personas que quieran enviar dinero a terceros, esta operación debe ser realizada mediante la atención de un asesor.
