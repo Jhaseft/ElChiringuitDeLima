@@ -9,17 +9,12 @@ const DOCS = [
 
 export default function DocumentTypePicker({ value, onChange, onNext }) {
 
-  // 👇 Se ejecuta al montar el componente
-  useEffect(() => {
-    // Detener cámara y micrófono si están en uso
-    navigator.mediaDevices?.getUserMedia({ audio: true, video: true })
-      .then(stream => {
-        stream.getTracks().forEach(track => track.stop());
-      })
-      .catch(err => {
-        console.log("No había cámara/micrófono activos o no se pudieron detener:", err);
-      });
-  }, []);
+ useEffect(() => {
+  // suponiendo que tienes el stream como prop o en contexto
+  if (videoBlob?.stream) {
+    videoBlob.stream.getTracks().forEach(track => track.stop());
+  }
+}, []);
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 space-y-5">
