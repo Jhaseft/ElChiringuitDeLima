@@ -10,4 +10,7 @@ export default defineConfig({
         }),
         react(),
     ],
+    server: {
+        https: true, // solo necesario para desarrollo HTTPS
+    },
 });
