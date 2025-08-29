@@ -20,12 +20,7 @@ export default function StepReview({
   const [backURL, setBackURL] = useState(null);
   const [videoURL, setVideoURL] = useState(null);
   
-  useEffect(() => {
-  // suponiendo que tienes el stream como prop o en contexto
-  if (videoBlob?.stream) {
-    videoBlob.stream.getTracks().forEach(track => track.stop());
-  }
-}, []);
+ 
 
   // Crear URLs para mostrar blobs y liberar memoria después
   useEffect(() => {
