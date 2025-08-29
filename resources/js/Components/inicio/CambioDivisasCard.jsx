@@ -119,7 +119,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
               min="0"
               value={monto}
               onChange={(e) => handleCambio(e.target.value)}
-              className="border rounded-lg px-3 py-2 text-center font-semibold focus:ring-2 focus:ring-green-500 focus:outline-none shadow-sm"
+              className="border rounded-lg px-1 py-2 text-center font-semibold focus:ring-2 focus:ring-green-500 focus:outline-none shadow-sm"
             />
           </div>
 
@@ -140,27 +140,35 @@ export default function CambioDivisasCard({ tasas, bancos }) {
               type="text"
               value={conversion}
               readOnly
-              className="border rounded-lg px-3 py-2 text-center font-semibold bg-gray-50 shadow-sm"
+              className="border rounded-lg px-1 py-2 text-center font-semibold bg-gray-50 shadow-sm"
             />
           </div>
         </div>
-
         {/* Botones */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+        <div className="grid grid-cols-1 sm:grid-cols-1 gap-3 mt-3">
           <button
             onClick={iniciarOperacion}
             className="bg-green-700 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-800 shadow-md transition-all"
           >
             Iniciar Operación
           </button>
-          <a
-            href="https://wa.me/59165359695?text=Hola,%20quiero%20cambiar%20con%20un%20asesor"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-gradient-to-r from-green-600 to-green-500 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:opacity-90 shadow-md inline-flex items-center justify-center"
-          >
-            Cambiar con Asesor
-          </a>
+
+          <p className="text-green-800 text-lg mt-4 text-center">
+            Para personas que quieran enviar dinero a terceros, esta operación debe ser realizada mediante la atención de un asesor.
+          </p>
+
+          <div className="flex justify-center mt-2">
+            <svg
+              className="w-6 h-6 text-green-800  animate-pulse rotate-0  lg:-rotate-90"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </div>
         </div>
 
         {/* Login / Registro */}

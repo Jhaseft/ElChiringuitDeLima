@@ -1,30 +1,32 @@
-import { MessageCircle } from "lucide-react"; // ícono de WhatsApp
 import NumeroAutorizadoButton from "./NumeroAutorizadoButton";
 
 export default function InfoAdicionalCard() {
-  const numerosBolivia = [
-    "59177958109",
-    "59175995613",
-    "59176925774",
-    "59169325874",
+  const asesoresBolivia = [
+    { nombre: "Asesor 1", numero: "59177958109" },
+    { nombre: "Asesor 2", numero: "59175995613" },
+    { nombre: "Asesor 3", numero: "59176925774" },
+    { nombre: "Asesor 4", numero: "59169325874" },
   ];
-  const numerosPeru = ["51907844210"];
+
+  const asesoresPeru = [
+    { nombre: "Asesor 1", numero: "51907844210" },
+  ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col gap-6 border border-gray-100 transition hover:shadow-2xl hover:scale-[1.01] duration-300">
+    <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col gap-3 border border-gray-100 transition hover:shadow-2xl hover:scale-[1.01] duration-300">
       {/* Intro */}
-      <div className="text-center">
+      <div className="text-center ">
         <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
           ¿Necesitas pagar a tus proveedores del extranjero?
           <span className="text-green-700 font-semibold"> Hazlo fácilmente.</span>
         </p>
-        <button className="bg-gradient-to-r from-green-700 to-green-500 text-white py-2 px-5 rounded-lg text-sm font-semibold mt-4 hover:scale-105 transition shadow-md">
-          🌍 Envía dinero al extranjero
-        </button>
-      </div>
 
+      </div>
+      <a href="https://wa.me/59177958109?text=Hola,%20necesito%20información" className="bg-gradient-to-r from-green-700 to-green-500 text-white py-3 rounded-lg text-sm font-semibold text-center hover:scale-105 transition shadow-md">
+        🌍 Envía dinero al extranjero
+      </a>
       {/* Beneficios */}
-      <div className="">
+      <div>
         <h3 className="font-semibold text-lg justify-center text-gray-800 mb-2 flex items-center gap-2">
           ✅ ¿Por qué elegirnos?
         </h3>
@@ -43,32 +45,33 @@ export default function InfoAdicionalCard() {
 
       {/* Atención */}
       <div className="border-t pt-4">
-        <p className="text-red-600 font-bold text-sm mb-1">⚠️ ¡Atención!</p>
-        <p className="text-gray-700 text-xs sm:text-sm mb-3 leading-relaxed">
-          Personas inescrupulosas están usando números falsos.
-          <span className="font-semibold text-red-600">
-            {" "}
-            Solo comunícate con los oficiales autorizados.
-          </span>
-        </p>
+        <p className="text-red-600 font-bold text-sm mb-1 text-center">Asesores Designados</p>
 
-        {/* Números Bolivia */}
+        {/* Bolivia */}
         <h4 className="font-semibold text-gray-800 mb-2 text-sm flex items-center gap-2">
           🇧🇴 Bolivia
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-          {numerosBolivia.map((num) => (
-            <NumeroAutorizadoButton key={num} numero={num} />
+          {asesoresBolivia.map((asesor) => (
+            <NumeroAutorizadoButton
+              key={asesor.numero}
+              nombre={asesor.nombre}
+              numero={asesor.numero}
+            />
           ))}
         </div>
 
-        {/* Números Perú */}
+        {/* Perú */}
         <h4 className="font-semibold text-gray-800 mb-2 text-sm flex items-center gap-2">
           🇵🇪 Perú
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {numerosPeru.map((num) => (
-            <NumeroAutorizadoButton key={num} numero={num} />
+          {asesoresPeru.map((asesor) => (
+            <NumeroAutorizadoButton
+              key={asesor.numero}
+              nombre={asesor.nombre}
+              numero={asesor.numero}
+            />
           ))}
         </div>
       </div>
