@@ -144,7 +144,26 @@ export default function CambioDivisasCard({ tasas, bancos }) {
             />
           </div>
         </div>
-        {/* Botones */}
+        {/* Login / Registro */}
+        {!user && (
+          <div className="flex flex-col sm:flex-row gap-2 justify-center mt-2">
+            <Link
+              href="/login"
+              className="flex-1 text-center py-2 rounded-lg text-sm font-semibold border border-green-600 text-green-600 hover:bg-green-50 transition"
+            >
+              Iniciar sesión
+            </Link>
+            <Link
+              href="/register"
+              className="flex-1 text-center py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition"
+            >
+              Registrarse
+            </Link>
+          </div>
+        )}
+
+      </div>
+  {/* Botones */}
         <div className="grid grid-cols-1 sm:grid-cols-1 gap-3 mt-3">
           <button
             onClick={iniciarOperacion}
@@ -170,27 +189,6 @@ export default function CambioDivisasCard({ tasas, bancos }) {
             </svg>
           </div>
         </div>
-
-        {/* Login / Registro */}
-        {!user && (
-          <div className="flex flex-col sm:flex-row gap-2 justify-center mt-2">
-            <Link
-              href="/login"
-              className="flex-1 text-center py-2 rounded-lg text-sm font-semibold border border-green-600 text-green-600 hover:bg-green-50 transition"
-            >
-              Iniciar sesión
-            </Link>
-            <Link
-              href="/register"
-              className="flex-1 text-center py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition"
-            >
-              Registrarse
-            </Link>
-          </div>
-        )}
-
-      </div>
-
 
       {/* Modal */}
       {modalOpen && (
