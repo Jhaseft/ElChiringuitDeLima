@@ -6,7 +6,7 @@ export default function Nosotros() {
     <>
       <Head title="Transfer Cash - Nosotros" />
       <InicioLayout>
-        <div className="min-h-screen bg-gray-50 px-4 py-1">
+        <div className="min-h-screen bg-gray-50 px-4 lg:px-52 py-1 ">
           {/* Banner */}
           <div className="relative w-full h-64 rounded-lg overflow-hidden mb-10">
             <img
