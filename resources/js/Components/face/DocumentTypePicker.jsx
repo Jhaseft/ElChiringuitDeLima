@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+
 import { IdCard, Car, Plane } from "lucide-react";
 
 const DOCS = [
@@ -9,12 +9,7 @@ const DOCS = [
 
 export default function DocumentTypePicker({ value, onChange, onNext }) {
 
- useEffect(() => {
-  // suponiendo que tienes el stream como prop o en contexto
-  if (videoBlob?.stream) {
-    videoBlob.stream.getTracks().forEach(track => track.stop());
-  }
-}, []);
+
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 space-y-5">
