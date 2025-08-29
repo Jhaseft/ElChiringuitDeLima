@@ -1,4 +1,3 @@
-// StepReview.jsx
 import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -19,19 +18,22 @@ export default function StepReview({
   const [frontURL, setFrontURL] = useState(null);
   const [backURL, setBackURL] = useState(null);
   const [videoURL, setVideoURL] = useState(null);
-  
- 
 
   // Crear URLs para mostrar blobs y liberar memoria después
   useEffect(() => {
-    if (docFrontBlob) setFrontURL(URL.createObjectURL(docFrontBlob));
-    if (docBackBlob) setBackURL(URL.createObjectURL(docBackBlob));
-    if (videoBlob) setVideoURL(URL.createObjectURL(videoBlob));
+    let front, back, video;
+    if (docFrontBlob) front = URL.createObjectURL(docFrontBlob);
+    if (docBackBlob) back = URL.createObjectURL(docBackBlob);
+    if (videoBlob) video = URL.createObjectURL(videoBlob);
+
+    setFrontURL(front || null);
+    setBackURL(back || null);
+    setVideoURL(video || null);
 
     return () => {
-      frontURL && URL.revokeObjectURL(frontURL);
-      backURL && URL.revokeObjectURL(backURL);
-      videoURL && URL.revokeObjectURL(videoURL);
+      front && URL.revokeObjectURL(front);
+      back && URL.revokeObjectURL(back);
+      video && URL.revokeObjectURL(video);
     };
   }, [docFrontBlob, docBackBlob, videoBlob]);
 
@@ -47,7 +49,6 @@ export default function StepReview({
     const formData = new FormData();
     formData.append("carnet", docFrontBlob, "documento_frente.jpg");
     formData.append("doc_type", docType);
-    // Cambiamos a mp4 para compatibilidad
     formData.append("video", videoBlob, "video.mp4");
 
     try {
@@ -57,12 +58,11 @@ export default function StepReview({
       const res = await axios.post(
         "https://apiface-production-767c.up.railway.app/registro-face/verify",
         formData
-        // No forzamos Content-Type, axios lo gestiona
       );
 
       setResultado(res.data);
 
-      // 2️⃣ Enviamos resultado a nuestro backend
+      // 2️⃣ Enviar resultado a nuestro backend
       const csrf = getCsrfToken();
       const backendRes = await axios.post(
         "/face/verify",
@@ -119,7 +119,7 @@ export default function StepReview({
             <strong className="text-sm">⚠️ Sugerencias:</strong>
             <ul className="list-disc ml-5 text-sm text-red-600">
               {problems.map((p, i) => (
-                <li key={i}>{p}</li>
+                <li key={`problem-${i}`}>{p}</li>
               ))}
             </ul>
           </div>
@@ -129,7 +129,10 @@ export default function StepReview({
           <summary className="cursor-pointer text-xs text-gray-500">
             Ver JSON completo
           </summary>
-          <pre className="text-xs bg-white rounded-md p-2 overflow-auto max-h-60 border">
+          <pre
+            key={JSON.stringify(resultado)}
+            className="text-xs bg-white rounded-md p-2 overflow-auto max-h-60 border"
+          >
             {JSON.stringify(resultado, null, 2)}
           </pre>
         </details>
@@ -143,7 +146,7 @@ export default function StepReview({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {frontURL && (
-          <div>
+          <div key={frontURL}>
             <p className="text-sm font-medium mb-1">
               {docType === "pasaporte" ? "Pasaporte" : "Anverso"}
             </p>
@@ -156,7 +159,7 @@ export default function StepReview({
         )}
 
         {backURL && (
-          <div>
+          <div key={backURL}>
             <p className="text-sm font-medium mb-1">Reverso</p>
             <img
               src={backURL}
@@ -168,7 +171,7 @@ export default function StepReview({
       </div>
 
       {videoURL && (
-        <div className="mt-2">
+        <div key={videoURL} className="mt-2">
           <p className="text-sm font-medium mb-1">Video selfie</p>
           <video
             src={videoURL}
