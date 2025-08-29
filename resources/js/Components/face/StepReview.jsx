@@ -19,6 +19,17 @@ export default function StepReview({
   const [frontURL, setFrontURL] = useState(null);
   const [backURL, setBackURL] = useState(null);
   const [videoURL, setVideoURL] = useState(null);
+  // 👇 Se ejecuta al montar el componente
+  useEffect(() => {
+    // Detener cámara y micrófono si están en uso
+    navigator.mediaDevices?.getUserMedia({ audio: true, video: true })
+      .then(stream => {
+        stream.getTracks().forEach(track => track.stop());
+      })
+      .catch(err => {
+        console.log("No había cámara/micrófono activos o no se pudieron detener:", err);
+      });
+  }, []);
 
   // Crear URLs para mostrar blobs y liberar memoria después
   useEffect(() => {
