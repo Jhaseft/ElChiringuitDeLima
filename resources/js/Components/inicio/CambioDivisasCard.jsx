@@ -161,8 +161,6 @@ export default function CambioDivisasCard({ tasas, bancos }) {
             </Link>
           </div>
         )}
-
-      </div>
   {/* Botones */}
         <div className="grid grid-cols-1 sm:grid-cols-1 gap-3 mt-3">
           <button
@@ -189,6 +187,11 @@ export default function CambioDivisasCard({ tasas, bancos }) {
             </svg>
           </div>
         </div>
+
+
+
+      </div>
+
 
       {/* Modal */}
       {modalOpen && (
