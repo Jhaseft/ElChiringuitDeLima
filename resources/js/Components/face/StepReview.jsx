@@ -19,7 +19,12 @@ export default function StepReview({
   const [backURL, setBackURL] = useState(null);
   const [videoURL, setVideoURL] = useState(null);
 
-  // Crear URLs para mostrar blobs y liberar memoria después
+  // Estados para verificar carga de recursos
+  const [loadedFront, setLoadedFront] = useState(false);
+  const [loadedBack, setLoadedBack] = useState(false);
+  const [loadedVideo, setLoadedVideo] = useState(false);
+
+  // Crear URLs y liberar memoria
   useEffect(() => {
     let front, back, video;
     if (docFrontBlob) front = URL.createObjectURL(docFrontBlob);
@@ -29,6 +34,11 @@ export default function StepReview({
     setFrontURL(front || null);
     setBackURL(back || null);
     setVideoURL(video || null);
+
+    // Resetear estados de carga
+    setLoadedFront(false);
+    setLoadedBack(false);
+    setLoadedVideo(false);
 
     return () => {
       front && URL.revokeObjectURL(front);
@@ -46,6 +56,9 @@ export default function StepReview({
     if (!docFrontBlob || !videoBlob)
       return alert("⚠️ Debes capturar documento y video.");
 
+    if (!(loadedFront && loadedBack && loadedVideo))
+      return alert("⚠️ Espera a que todas las imágenes y el video se carguen completamente.");
+
     const formData = new FormData();
     formData.append("carnet", docFrontBlob, "documento_frente.jpg");
     formData.append("doc_type", docType);
@@ -54,7 +67,6 @@ export default function StepReview({
     try {
       setLoading(true);
 
-      // 1️⃣ Llamada a API externa
       const res = await axios.post(
         "https://apiface-production-767c.up.railway.app/registro-face/verify",
         formData
@@ -62,17 +74,11 @@ export default function StepReview({
 
       setResultado(res.data);
 
-      // 2️⃣ Enviar resultado a nuestro backend
       const csrf = getCsrfToken();
       const backendRes = await axios.post(
         "/face/verify",
         { resultado: res.data },
-        {
-          headers: {
-            "X-CSRF-TOKEN": csrf,
-            "Content-Type": "application/json",
-          },
-        }
+        { headers: { "X-CSRF-TOKEN": csrf, "Content-Type": "application/json" } }
       );
 
       const data = backendRes.data;
@@ -102,25 +108,17 @@ export default function StepReview({
       <div className="mt-4 p-4 border rounded-lg bg-gray-100 shadow-inner space-y-2">
         <h3 className="font-semibold text-lg">Resultado de verificación</h3>
 
-        {message && (
-          <p className="text-sm">
-            <strong>📢 Mensaje:</strong> {message}
-          </p>
-        )}
+        {message && <p className="text-sm"><strong>📢 Mensaje:</strong> {message}</p>}
 
         {resultado.score !== undefined && (
-          <p className="text-sm">
-            <strong>⭐ Score:</strong> {resultado.score}
-          </p>
+          <p className="text-sm"><strong>⭐ Score:</strong> {resultado.score}</p>
         )}
 
         {problems.length > 0 && (
           <div>
             <strong className="text-sm">⚠️ Sugerencias:</strong>
             <ul className="list-disc ml-5 text-sm text-red-600">
-              {problems.map((p, i) => (
-                <li key={`problem-${i}`}>{p}</li>
-              ))}
+              {problems.map((p, i) => (<li key={`problem-${i}`}>{p}</li>))}
             </ul>
           </div>
         )}
@@ -153,6 +151,7 @@ export default function StepReview({
             <img
               src={frontURL}
               alt="Documento anverso"
+              onLoad={() => setLoadedFront(true)}
               className="rounded-lg border shadow w-full h-auto object-cover"
             />
           </div>
@@ -164,6 +163,7 @@ export default function StepReview({
             <img
               src={backURL}
               alt="Documento reverso"
+              onLoad={() => setLoadedBack(true)}
               className="rounded-lg border shadow w-full h-auto object-cover opacity-80"
             />
           </div>
@@ -176,10 +176,15 @@ export default function StepReview({
           <video
             src={videoURL}
             controls
+            onLoadedData={() => setLoadedVideo(true)}
             className="rounded-lg border shadow w-full h-auto object-cover"
           />
         </div>
       )}
+
+      {!loadedFront || !loadedBack || !loadedVideo ? (
+        <p className="text-center text-sm text-gray-500 mt-2">⏳ Cargando recursos...</p>
+      ) : null}
 
       <div className="flex flex-wrap justify-center gap-3 mt-4">
         <button
@@ -190,7 +195,7 @@ export default function StepReview({
         </button>
         <button
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={loading || !(loadedFront && loadedBack && loadedVideo)}
           className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />} Verificar
