@@ -13,7 +13,7 @@ export default function Step3Terms({ data, setData, errors }) {
           required
         />
         Acepto los{" "}
-        <a href="/terminos" className="text-blue-600 underline">términos y condiciones</a>
+        <a href="/politicas" className="text-blue-600 underline">términos y condiciones</a>
       </label>
       {errors.terms && <p className="text-red-500 text-sm">{errors.terms}</p>}
     </div>

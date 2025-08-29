@@ -60,7 +60,7 @@ export default function Step3Security({ data, setData, errors, passwordRules }) 
         />
         <label htmlFor="accepted_terms" className="ml-2 block text-sm text-gray-700">
           Acepto los{" "}
-          <a href="/terminos" className="text-indigo-600 underline">
+          <a href="/politicas" className="text-indigo-600 underline">
             términos y condiciones
           </a>
         </label>

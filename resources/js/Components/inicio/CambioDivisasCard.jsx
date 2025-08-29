@@ -73,13 +73,21 @@ export default function CambioDivisasCard({ tasas, bancos }) {
     }
 
     if (user.nationality.toLowerCase() === "boliviano" && modo === "PENtoBOB") {
-      setError("⚠️ No puedes iniciar operaciones de PEN a BOB siendo boliviano.");
+      setError(
+        `No puedes iniciar operaciones de PEN a BOB siendo boliviano. 
+       Contacta a un asesor para mandar dinero a terceros`
+      );
       return;
     }
+
     if (user.nationality.toLowerCase() === "peruano" && modo === "BOBtoPEN") {
-      setError("⚠️ No puedes iniciar operaciones de BOB a PEN siendo peruano.");
+      setError(
+        `No puedes iniciar operaciones de BOB a PEN siendo peruano. 
+       Contacta a un asesor para mandar dinero a terceros`
+      );
       return;
     }
+
 
     setModalOpen(true);
     setError("");
@@ -160,9 +168,14 @@ export default function CambioDivisasCard({ tasas, bancos }) {
           >
             Iniciar Operación
           </button>
-          <button className="bg-gradient-to-r from-green-600 to-green-500 text-white py-2 rounded-lg text-sm font-semibold hover:opacity-90 shadow-md">
+          <a
+            href="https://wa.me/59165359695?text=Hola,%20quiero%20cambiar%20con%20un%20asesor"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-gradient-to-r from-green-600 to-green-500 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:opacity-90 shadow-md inline-flex items-center justify-center"
+          >
             Cambiar con Asesor
-          </button>
+          </a>
         </div>
 
         {/* Login / Registro */}
@@ -186,21 +199,21 @@ export default function CambioDivisasCard({ tasas, bancos }) {
       </div>
 
 
-       {/* Modal */}
-        {modalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
-            <ModalOperacion
-              isOpen={modalOpen}
-              onClose={() => setModalOpen(false)}
-              user={user}
-              monto={monto}
-              tasa={tasaPENtoBOB}
-              conversion={conversion}
-              modo={modo}
-              bancos={bancos}
-            />
-          </div>
-        )}
+      {/* Modal */}
+      {modalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
+          <ModalOperacion
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+            user={user}
+            monto={monto}
+            tasa={tasaPENtoBOB}
+            conversion={conversion}
+            modo={modo}
+            bancos={bancos}
+          />
+        </div>
+      )}
     </>
   );
 }

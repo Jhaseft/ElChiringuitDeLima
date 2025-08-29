@@ -7,112 +7,67 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
   const recordedChunks = useRef([]);
   const [recording, setRecording] = useState(false);
   const [stream, setStream] = useState(null);
+  const [message, setMessage] = useState("Pulsa 'Activar cámara'");
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("Pulsa 'Iniciar cámara'");
-  const [debug, setDebug] = useState("");
 
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((t) => t.stop());
-      setStream(null);
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  };
-
-  const getSupportedMimeType = () => {
-    const candidates = [
-      "video/mp4",
-      "video/webm;codecs=vp8,opus",
-      "video/webm;codecs=vp8",
-      "video/webm",
-    ];
-    return candidates.find(
-      (t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)
-    ) || "";
-  };
-
+  // Activar cámara
   const startCamera = async () => {
-    setError("");
-    setMessage("Iniciando cámara...");
-    setDebug("");
-
     try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error("Tu navegador no soporta cámara");
-      }
-
+      setMessage("Iniciando cámara...");
       const s = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user" },
         audio: true,
       });
-
+      setStream(s);
       if (videoRef.current) {
         videoRef.current.srcObject = s;
         videoRef.current.muted = true;
         videoRef.current.setAttribute("playsinline", "");
-
-        try { await videoRef.current.play(); } 
-        catch (e) { console.warn("video.play() falló:", e); }
-
-        setStream(s);
-        setMessage("Cámara lista. Pulsa 'Grabar'.");
+        await videoRef.current.play();
       }
-    } catch (err) {
-      console.error("Error cámara:", err);
-      setError("❌ No se pudo iniciar la cámara.");
-      setDebug(err.name + ": " + err.message);
+      setMessage("Cámara lista. Pulsa 'Grabar'.");
+    } catch {
+      setError("❌ No se pudo activar la cámara.");
+      setMessage("");
     }
   };
 
+  // Iniciar grabación
   const startRecording = () => {
-    if (!videoRef.current?.srcObject) {
-      setError("❌ La cámara no está activa.");
-      return;
-    }
+    if (!stream) return;
 
-    const mimeType = getSupportedMimeType();
-    if (!mimeType) {
-      setError("❌ Ningún formato de video soportado.");
-      return;
-    }
+    recordedChunks.current = [];
+    mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: "video/webm" });
 
-    try {
-      recordedChunks.current = [];
-      mediaRecorderRef.current = new MediaRecorder(videoRef.current.srcObject, { mimeType });
+    mediaRecorderRef.current.ondataavailable = (e) => {
+      if (e.data.size > 0) recordedChunks.current.push(e.data);
+    };
 
-      mediaRecorderRef.current.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) recordedChunks.current.push(e.data);
-      };
+    mediaRecorderRef.current.onstop = () => {
+      const blob = new Blob(recordedChunks.current, { type: "video/webm" });
+      setVideoBlob(blob);
+      setMessage("✅ Grabación finalizada.");
+    };
 
-      mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(recordedChunks.current, { type: mimeType });
-        setVideoBlob(blob);
-        setMessage("✅ Grabación finalizada.");
-      };
-
-      mediaRecorderRef.current.start(100);
-      setRecording(true);
-      setMessage("🎥 Grabando...");
-      setDebug(`Grabando con mimeType: ${mimeType}`);
-    } catch (err) {
-      console.error("Error grabando:", err);
-      setError("❌ Error iniciando grabación.");
-      setDebug(err.name + ": " + err.message);
-    }
+    mediaRecorderRef.current.start();
+    setRecording(true);
+    setMessage("🎥 Grabando...");
   };
 
+  // Detener grabación y cámara
   const stopRecording = () => {
     if (mediaRecorderRef.current && recording) {
       mediaRecorderRef.current.stop();
       setRecording(false);
     }
-    stopCamera();
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      setStream(null);
+    }
   };
 
   useEffect(() => {
-    return () => stopCamera();
+    return () => stopRecording();
   }, []);
 
   return (
@@ -136,12 +91,6 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
         </div>
       </div>
 
-      {debug && (
-        <div className="bg-gray-800 text-white p-2 rounded-md text-xs break-words">
-          Debug: {debug}
-        </div>
-      )}
-
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
         <div className="flex items-center gap-2 text-blue-700 font-semibold">
           <Info size={18} /> Recomendaciones para el video
@@ -161,7 +110,7 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
             onClick={startCamera}
             className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl shadow-lg"
           >
-            Iniciar cámara
+            Activar cámara
           </button>
         ) : !recording ? (
           <button
