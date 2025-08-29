@@ -1,19 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-import { Video, Square, Info } from "lucide-react";
+import { Video, Square, RefreshCw, Info } from "lucide-react";
 
 export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep }) {
   const videoRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const recordedChunks = useRef([]);
-  const [recording, setRecording] = useState(false);
+  const [status, setStatus] = useState("preview"); // preview | recording | done
   const [stream, setStream] = useState(null);
-  const [message, setMessage] = useState("Pulsa 'Activar cámara'");
+  const [message, setMessage] = useState("Cámara lista. Pulsa 'Grabar'.");
   const [error, setError] = useState("");
 
-  // Activar cámara
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      setStream(null);
+    }
+  };
+
   const startCamera = async () => {
     try {
-      setMessage("Iniciando cámara...");
       const s = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user" },
         audio: true,
@@ -25,6 +30,7 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
         videoRef.current.setAttribute("playsinline", "");
         await videoRef.current.play();
       }
+      setStatus("preview");
       setMessage("Cámara lista. Pulsa 'Grabar'.");
     } catch {
       setError("❌ No se pudo activar la cámara.");
@@ -32,10 +38,8 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
     }
   };
 
-  // Iniciar grabación
   const startRecording = () => {
     if (!stream) return;
-
     recordedChunks.current = [];
     mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: "video/webm" });
 
@@ -47,27 +51,31 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
       const blob = new Blob(recordedChunks.current, { type: "video/webm" });
       setVideoBlob(blob);
       setMessage("✅ Grabación finalizada.");
+      setStatus("done");
     };
 
     mediaRecorderRef.current.start();
-    setRecording(true);
+    setStatus("recording");
     setMessage("🎥 Grabando...");
   };
 
-  // Detener grabación y cámara
   const stopRecording = () => {
-    if (mediaRecorderRef.current && recording) {
+    if (mediaRecorderRef.current && status === "recording") {
       mediaRecorderRef.current.stop();
-      setRecording(false);
-    }
-    if (stream) {
-      stream.getTracks().forEach((t) => t.stop());
-      setStream(null);
     }
   };
 
+  const retake = () => {
+    setVideoBlob(null);
+    setStatus("preview");
+    setMessage("Cámara lista. Pulsa 'Grabar'.");
+  };
+
+  // Iniciar cámara apenas se monta
   useEffect(() => {
-    return () => stopRecording();
+    startCamera();
+    return () => stopCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -76,21 +84,24 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
         🎥 Video selfie (cámara frontal)
       </p>
 
+      {/* Vista previa de cámara o video grabado */}
       <div className="relative border-2 border-dashed border-indigo-400 bg-gray-900 aspect-[3/4] rounded-xl flex items-center justify-center overflow-hidden shadow-inner">
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          className="w-full h-full object-cover"
-        />
+        {status !== "done" ? (
+          <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+        ) : (
+          <video
+            src={URL.createObjectURL(videoBlob)}
+            controls
+            playsInline
+            className="w-full h-full object-cover rounded-lg"
+          />
+        )}
         <div className="absolute bottom-2 inset-x-0 flex justify-center px-3 text-center">
-          <p className="text-white text-sm bg-black/60 px-3 py-1 rounded-lg">
-            {error || message}
-          </p>
+          <p className="text-white text-sm bg-black/60 px-3 py-1 rounded-lg">{error || message}</p>
         </div>
       </div>
 
+      {/* Recomendaciones */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
         <div className="flex items-center gap-2 text-blue-700 font-semibold">
           <Info size={18} /> Recomendaciones para el video
@@ -104,27 +115,30 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
         </ul>
       </div>
 
+      {/* Botones */}
       <div className="flex justify-center gap-3 flex-wrap">
-        {!stream ? (
-          <button
-            onClick={startCamera}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl shadow-lg"
-          >
-            Activar cámara
-          </button>
-        ) : !recording ? (
+        {status === "preview" && (
           <button
             onClick={startRecording}
             className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2 px-5 py-2 rounded-xl shadow-lg"
           >
             <Video size={18} /> Grabar
           </button>
-        ) : (
+        )}
+        {status === "recording" && (
           <button
             onClick={stopRecording}
             className="bg-yellow-500 hover:bg-yellow-600 text-white flex items-center gap-2 px-5 py-2 rounded-xl shadow-lg"
           >
             <Square size={18} /> Detener
+          </button>
+        )}
+        {status === "done" && (
+          <button
+            onClick={retake}
+            className="bg-yellow-500 hover:bg-yellow-600 text-white flex items-center gap-2 px-5 py-2 rounded-xl shadow-lg"
+          >
+            <RefreshCw size={18} /> Repetir
           </button>
         )}
 
@@ -146,18 +160,6 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
           Siguiente
         </button>
       </div>
-
-      {videoBlob && (
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600 mb-2">Vista previa del video</p>
-          <video
-            src={URL.createObjectURL(videoBlob)}
-            controls
-            playsInline
-            className="w-48 h-48 mx-auto rounded-lg border shadow"
-          />
-        </div>
-      )}
     </div>
   );
 }
