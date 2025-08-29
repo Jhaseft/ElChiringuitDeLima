@@ -24,11 +24,11 @@ export default function InfoAdicionalCard() {
       </div>
 
       {/* Beneficios */}
-      <div>
-        <h3 className="font-semibold text-lg text-gray-800 mb-2 flex items-center gap-2">
+      <div className="">
+        <h3 className="font-semibold text-lg justify-center text-gray-800 mb-2 flex items-center gap-2">
           ✅ ¿Por qué elegirnos?
         </h3>
-        <ul className="list-disc list-inside text-gray-700 space-y-1 pl-2 text-sm">
+        <ul className="list-disc list-inside text-center text-gray-700 space-y-1 pl-2 text-sm">
           <li>
             Transferencias <span className="font-semibold">100% seguras</span>
           </li>

@@ -72,21 +72,6 @@ export default function CambioDivisasCard({ tasas, bancos }) {
       return;
     }
 
-    if (user.nationality.toLowerCase() === "boliviano" && modo === "PENtoBOB") {
-      setError(
-        `No puedes iniciar operaciones de PEN a BOB siendo boliviano. 
-       Contacta a un asesor para mandar dinero a terceros`
-      );
-      return;
-    }
-
-    if (user.nationality.toLowerCase() === "peruano" && modo === "BOBtoPEN") {
-      setError(
-        `No puedes iniciar operaciones de BOB a PEN siendo peruano. 
-       Contacta a un asesor para mandar dinero a terceros`
-      );
-      return;
-    }
 
 
     setModalOpen(true);
