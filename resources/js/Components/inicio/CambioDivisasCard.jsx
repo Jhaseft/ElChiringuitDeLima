@@ -144,6 +144,17 @@ export default function CambioDivisasCard({ tasas, bancos }) {
             />
           </div>
         </div>
+        {/* Botones */}
+        <div className="grid grid-cols-1 sm:grid-cols-1 gap-3 mt-3">
+          <button
+            onClick={iniciarOperacion}
+            className="bg-green-700 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-800 shadow-md transition-all"
+          >
+            Iniciar Operación
+          </button>
+
+        </div>
+
         {/* Login / Registro */}
         {!user && (
           <div className="flex flex-col sm:flex-row gap-2 justify-center mt-2">
@@ -161,16 +172,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
             </Link>
           </div>
         )}
-  {/* Botones */}
-        <div className="grid grid-cols-1 sm:grid-cols-1 gap-3 mt-3">
-          <button
-            onClick={iniciarOperacion}
-            className="bg-green-700 text-white py-2 rounded-lg text-sm font-semibold hover:bg-green-800 shadow-md transition-all"
-          >
-            Iniciar Operación
-          </button>
-
-          <p className="text-green-800 text-lg mt-4 text-center">
+ <p className="text-green-800 text-lg mt-4 text-center">
             Para personas que quieran enviar dinero a terceros, esta operación debe ser realizada mediante la atención de un asesor.
           </p>
 
@@ -186,10 +188,6 @@ export default function CambioDivisasCard({ tasas, bancos }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"></path>
             </svg>
           </div>
-        </div>
-
-
-
       </div>
 
 
