@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function StepReview({
   docType,
@@ -13,196 +13,155 @@ export default function StepReview({
   resultado,
   setResultado,
 }) {
-  const [message, setMessage] = useState(null);
-  const [problems, setProblems] = useState([]);
   const [frontURL, setFrontURL] = useState(null);
   const [backURL, setBackURL] = useState(null);
   const [videoURL, setVideoURL] = useState(null);
+  const [error, setError] = useState(null);
 
-  // Estados para verificar carga de recursos
-  const [loadedFront, setLoadedFront] = useState(false);
-  const [loadedBack, setLoadedBack] = useState(false);
-  const [loadedVideo, setLoadedVideo] = useState(false);
+  const mountedRef = useRef(true);
 
-  // Crear URLs y liberar memoria
+  // Crear y limpiar ObjectURLs
   useEffect(() => {
-    let front, back, video;
-    if (docFrontBlob) front = URL.createObjectURL(docFrontBlob);
-    if (docBackBlob) back = URL.createObjectURL(docBackBlob);
-    if (videoBlob) video = URL.createObjectURL(videoBlob);
+    mountedRef.current = true;
 
-    setFrontURL(front || null);
-    setBackURL(back || null);
-    setVideoURL(video || null);
-
-    setLoadedFront(false);
-    setLoadedBack(false);
-    setLoadedVideo(false);
+    if (docFrontBlob) {
+      const url = URL.createObjectURL(docFrontBlob);
+      setFrontURL(url);
+    }
+    if (docBackBlob) {
+      const url = URL.createObjectURL(docBackBlob);
+      setBackURL(url);
+    }
+    if (videoBlob) {
+      const url = URL.createObjectURL(videoBlob);
+      setVideoURL(url);
+    }
 
     return () => {
-      front && URL.revokeObjectURL(front);
-      back && URL.revokeObjectURL(back);
-      video && URL.revokeObjectURL(video);
+      mountedRef.current = false;
+      if (frontURL) URL.revokeObjectURL(frontURL);
+      if (backURL) URL.revokeObjectURL(backURL);
+      if (videoURL) URL.revokeObjectURL(videoURL);
     };
   }, [docFrontBlob, docBackBlob, videoBlob]);
 
-  const getCsrfToken = () => {
-    const el = document.querySelector('meta[name="csrf-token"]');
-    return el?.getAttribute("content") || "";
-  };
+  const handleVerify = async () => {
+    setError(null);
+    setResultado(null);
 
-  const handleSubmit = async () => {
-    if (!docFrontBlob || !videoBlob)
-      return alert("⚠️ Debes capturar documento y video.");
-
-    if (!(loadedFront && loadedBack && loadedVideo))
-      return alert("⚠️ Espera a que todas las imágenes y el video se carguen completamente.");
-
-    const formData = new FormData();
-    formData.append("carnet", docFrontBlob, "documento_frente.jpg");
-    formData.append("doc_type", docType);
-    formData.append("video", videoBlob, "video.mp4");
+    // Validación: que existan blobs
+    if (!docFrontBlob || !docBackBlob || !videoBlob) {
+      setError("Faltan archivos por subir.");
+      return;
+    }
 
     try {
       setLoading(true);
 
-      const res = await axios.post(
-        "https://apiface-production-767c.up.railway.app/registro-face/verify",
-        formData
-      );
+      const formData = new FormData();
+      formData.append("tipoDocumento", docType);
+      formData.append("anverso", docFrontBlob, "front.jpg");
+      formData.append("reverso", docBackBlob, "back.jpg");
+      formData.append("video", videoBlob, "video.mp4");
 
-      setResultado(res.data);
+      const response = await axios.post("/api/verify", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-      const csrf = getCsrfToken();
-      const backendRes = await axios.post(
-        "/face/verify",
-        { resultado: res.data },
-        { headers: { "X-CSRF-TOKEN": csrf, "Content-Type": "application/json" } }
-      );
-
-      const data = backendRes.data;
-
-      setMessage(data.mensaje || "ℹ️ Verificación realizada.");
-      setProblems(data.sugerencias || []);
-
-      if (data.status === "success" || data.kyc_status === "active") {
-        setTimeout(() => {
-          const params = new URLSearchParams(window.location.search);
-          const next = params.get("next");
-          window.location.href = next || "/";
-        }, 1200);
+      if (mountedRef.current) {
+        setResultado(response.data);
       }
     } catch (err) {
-      console.error(err);
-      alert("❌ Error en la verificación KYC. Intenta nuevamente.");
+      if (mountedRef.current) {
+        setError("Error en la verificación. Intenta nuevamente.");
+        console.error(err);
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
-  const renderResultado = () => {
-    if (!resultado) return null;
-
-    return (
-      <div className="mt-4 p-4 border rounded-lg bg-gray-100 shadow-inner space-y-2">
-        <h3 className="font-semibold text-lg">Resultado de verificación</h3>
-
-        {message && <p className="text-sm"><strong>📢 Mensaje:</strong> {message}</p>}
-
-        {resultado.score !== undefined && (
-          <p className="text-sm"><strong>⭐ Score:</strong> {resultado.score}</p>
-        )}
-
-        {problems.length > 0 && (
-          <div>
-            <strong className="text-sm">⚠️ Sugerencias:</strong>
-            <ul className="list-disc ml-5 text-sm text-red-600">
-              {problems.map((p, i) => (<li key={`problem-${i}`}>{p}</li>))}
-            </ul>
-          </div>
-        )}
-
-        <details className="mt-3">
-          <summary className="cursor-pointer text-xs text-gray-500">
-            Ver JSON completo
-          </summary>
-          <pre
-            key={JSON.stringify(resultado)}
-            className="text-xs bg-white rounded-md p-2 overflow-auto max-h-60 border"
-          >
-            {JSON.stringify(resultado, null, 2)}
-          </pre>
-        </details>
-      </div>
-    );
-  };
-
-  // --- Renderizado normal ---
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
-      <p className="font-semibold text-lg text-center">Revisa tus capturas</p>
+    <div className="p-6 space-y-4 max-w-lg mx-auto">
+      <h2 className="text-xl font-bold text-center">Revisión del Documento</h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Vista previa de imágenes */}
+      <div className="grid grid-cols-2 gap-4">
         {frontURL && (
-          <div key={frontURL}>
-            <p className="text-sm font-medium mb-1">
-              {docType === "pasaporte" ? "Pasaporte" : "Anverso"}
-            </p>
+          <div>
+            <p className="text-sm text-gray-600 mb-1">Anverso</p>
             <img
               src={frontURL}
-              alt="Documento anverso"
-              onLoad={() => setLoadedFront(true)}
-              className="rounded-lg border shadow w-full h-auto object-cover"
+              alt="Anverso"
+              className="rounded-lg shadow-md w-full object-cover"
+              onError={() => setError("Error cargando la imagen del anverso.")}
             />
           </div>
         )}
-
         {backURL && (
-          <div key={backURL}>
-            <p className="text-sm font-medium mb-1">Reverso</p>
+          <div>
+            <p className="text-sm text-gray-600 mb-1">Reverso</p>
             <img
               src={backURL}
-              alt="Documento reverso"
-              onLoad={() => setLoadedBack(true)}
-              className="rounded-lg border shadow w-full h-auto object-cover opacity-80"
+              alt="Reverso"
+              className="rounded-lg shadow-md w-full object-cover"
+              onError={() => setError("Error cargando la imagen del reverso.")}
             />
           </div>
         )}
       </div>
 
+      {/* Vista previa de video */}
       {videoURL && (
-        <div key={videoURL} className="mt-2">
-          <p className="text-sm font-medium mb-1">Video selfie</p>
+        <div>
+          <p className="text-sm text-gray-600 mb-1">Video</p>
           <video
             src={videoURL}
             controls
-            onLoadedData={() => setLoadedVideo(true)}
-            className="rounded-lg border shadow w-full h-auto object-cover"
+            className="rounded-lg shadow-md w-full"
+            onError={() => setError("Error cargando el video.")}
           />
         </div>
       )}
 
-      {!loadedFront || !loadedBack || !loadedVideo ? (
-        <p className="text-center text-sm text-gray-500 mt-2">⏳ Cargando recursos...</p>
-      ) : null}
+      {/* Mensajes de error */}
+      {error && <p className="text-red-500 text-center">{error}</p>}
 
-      <div className="flex flex-wrap justify-center gap-3 mt-4">
+      {/* Resultado de verificación */}
+      {resultado && (
+        <div className="p-3 bg-green-100 border border-green-300 rounded-lg">
+          <p className="text-green-700 font-medium">
+            {JSON.stringify(resultado)}
+          </p>
+        </div>
+      )}
+
+      {/* Botones */}
+      <div className="flex justify-between">
         <button
           onClick={prevStep}
-          className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg"
+          className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 transition"
         >
-          Atrás
+          Volver
         </button>
+
         <button
-          onClick={handleSubmit}
-          disabled={loading || !(loadedFront && loadedBack && loadedVideo)}
-          className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+          onClick={handleVerify}
+          disabled={loading}
+          className="px-4 py-2 flex items-center gap-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
         >
-          {loading && <Loader2 className="h-4 w-4 animate-spin" />} Verificar
+          {loading ? (
+            <>
+              <Loader2 className="animate-spin w-5 h-5" />
+              Verificando...
+            </>
+          ) : (
+            "Verificar"
+          )}
         </button>
       </div>
-
-      {renderResultado()}
     </div>
   );
 }
