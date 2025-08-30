@@ -18,7 +18,7 @@ export default function FaceKycSteps() {
   // Video selfie
   const [videoBlob, setVideoBlob] = useState(null);
 
-  // Resultado de backend
+  // Resultado de backend  
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState(null);
 
