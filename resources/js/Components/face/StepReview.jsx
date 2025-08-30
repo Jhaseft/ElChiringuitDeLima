@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Loader2 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 export default function StepReview({
   docType,
@@ -13,155 +13,214 @@ export default function StepReview({
   resultado,
   setResultado,
 }) {
+  const [message, setMessage] = useState(null);
+  const [problems, setProblems] = useState([]);
   const [frontURL, setFrontURL] = useState(null);
   const [backURL, setBackURL] = useState(null);
   const [videoURL, setVideoURL] = useState(null);
-  const [error, setError] = useState(null);
 
-  const mountedRef = useRef(true);
+  // Estados de carga de recursos
+  const [loadedFront, setLoadedFront] = useState(false);
+  const [loadedBack, setLoadedBack] = useState(false);
+  const [loadedVideo, setLoadedVideo] = useState(false);
 
-  // Crear y limpiar ObjectURLs
+  // Crear URLs de blobs y liberar memoria
   useEffect(() => {
-    mountedRef.current = true;
+    let front, back, video;
+    if (docFrontBlob) front = URL.createObjectURL(docFrontBlob);
+    if (docBackBlob) back = URL.createObjectURL(docBackBlob);
+    if (videoBlob) video = URL.createObjectURL(videoBlob);
 
-    if (docFrontBlob) {
-      const url = URL.createObjectURL(docFrontBlob);
-      setFrontURL(url);
-    }
-    if (docBackBlob) {
-      const url = URL.createObjectURL(docBackBlob);
-      setBackURL(url);
-    }
-    if (videoBlob) {
-      const url = URL.createObjectURL(videoBlob);
-      setVideoURL(url);
-    }
+    setFrontURL(front || null);
+    setBackURL(back || null);
+    setVideoURL(video || null);
+
+    setLoadedFront(false);
+    setLoadedBack(false);
+    setLoadedVideo(false);
 
     return () => {
-      mountedRef.current = false;
-      if (frontURL) URL.revokeObjectURL(frontURL);
-      if (backURL) URL.revokeObjectURL(backURL);
-      if (videoURL) URL.revokeObjectURL(videoURL);
+      if (front) URL.revokeObjectURL(front);
+      if (back) URL.revokeObjectURL(back);
+      if (video) URL.revokeObjectURL(video);
     };
   }, [docFrontBlob, docBackBlob, videoBlob]);
 
-  const handleVerify = async () => {
-    setError(null);
-    setResultado(null);
+  const getCsrfToken = () => {
+    const el = document.querySelector('meta[name="csrf-token"]');
+    return el?.getAttribute("content") || "";
+  };
 
-    // Validación: que existan blobs
-    if (!docFrontBlob || !docBackBlob || !videoBlob) {
-      setError("Faltan archivos por subir.");
+  const handleSubmit = async () => {
+    // Validaciones previas
+    if (!docFrontBlob || !videoBlob) {
+      alert("⚠️ Debes capturar al menos documento frontal y video.");
       return;
     }
 
+    if (!(loadedFront && (docBackBlob ? loadedBack : true) && loadedVideo)) {
+      alert("⚠️ Espera a que todos los recursos se carguen completamente.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("carnet", docFrontBlob, "documento_frente.jpg");
+    if (docBackBlob) formData.append("carnet_back", docBackBlob, "documento_reverso.jpg");
+    formData.append("doc_type", docType);
+    formData.append("video", videoBlob, "video.mp4");
+
     try {
       setLoading(true);
+      setMessage(null);
+      setProblems([]);
 
-      const formData = new FormData();
-      formData.append("tipoDocumento", docType);
-      formData.append("anverso", docFrontBlob, "front.jpg");
-      formData.append("reverso", docBackBlob, "back.jpg");
-      formData.append("video", videoBlob, "video.mp4");
+      // 1️⃣ Llamada al backend de verificación externa
+      const res = await axios.post(
+        "https://apiface-production-767c.up.railway.app/registro-face/verify",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
 
-      const response = await axios.post("https://apiface-production-767c.up.railway.app/registro-face/verify", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      setResultado(res.data);
 
-      if (mountedRef.current) {
-        setResultado(response.data);
+      // 2️⃣ Enviar resultado a backend interno (Laravel, Django, etc.)
+      const csrf = getCsrfToken();
+      const backendRes = await axios.post(
+        "/face/verify",
+        { resultado: res.data },
+        { headers: { "X-CSRF-TOKEN": csrf, "Content-Type": "application/json" } }
+      );
+
+      const data = backendRes.data;
+      setMessage(data.mensaje || "ℹ️ Verificación realizada.");
+      setProblems(data.sugerencias || []);
+
+      // 3️⃣ Redirigir si todo fue bien
+      if (data.status === "success" || data.kyc_status === "active") {
+        setTimeout(() => {
+          const params = new URLSearchParams(window.location.search);
+          const next = params.get("next");
+          window.location.href = next || "/";
+        }, 1500);
       }
     } catch (err) {
-      if (mountedRef.current) {
-        setError("Error en la verificación. Intenta nuevamente.");
-        console.error(err);
+      console.error("❌ Error en verificación:", err);
+
+      if (err.response?.status === 422) {
+        setMessage("⚠️ Datos inválidos: revisa los campos requeridos.");
+        setProblems(err.response.data?.errors || []);
+      } else if (err.response?.data?.mensaje) {
+        setMessage("❌ " + err.response.data.mensaje);
+      } else {
+        setMessage("❌ Error inesperado en la verificación KYC.");
       }
     } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
-  return (
-    <div className="p-6 space-y-4 max-w-lg mx-auto">
-      <h2 className="text-xl font-bold text-center">Revisión del Documento</h2>
+  const renderResultado = () => {
+    if (!resultado) return null;
 
-      {/* Vista previa de imágenes */}
-      <div className="grid grid-cols-2 gap-4">
+    return (
+      <div className="mt-4 p-4 border rounded-lg bg-gray-100 shadow-inner space-y-2">
+        <h3 className="font-semibold text-lg">Resultado de verificación</h3>
+
+        {message && <p className="text-sm"><strong>📢 Mensaje:</strong> {message}</p>}
+
+        {resultado.score !== undefined && (
+          <p className="text-sm"><strong>⭐ Score:</strong> {resultado.score}</p>
+        )}
+
+        {problems.length > 0 && (
+          <div>
+            <strong className="text-sm">⚠️ Sugerencias:</strong>
+            <ul className="list-disc ml-5 text-sm text-red-600">
+              {problems.map((p, i) => (<li key={`problem-${i}`}>{p}</li>))}
+            </ul>
+          </div>
+        )}
+
+        <details className="mt-3">
+          <summary className="cursor-pointer text-xs text-gray-500">
+            Ver JSON completo
+          </summary>
+          <pre
+            key={JSON.stringify(resultado)}
+            className="text-xs bg-white rounded-md p-2 overflow-auto max-h-60 border"
+          >
+            {JSON.stringify(resultado, null, 2)}
+          </pre>
+        </details>
+      </div>
+    );
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
+      <p className="font-semibold text-lg text-center">Revisa tus capturas</p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {frontURL && (
           <div>
-            <p className="text-sm text-gray-600 mb-1">Anverso</p>
+            <p className="text-sm font-medium mb-1">
+              {docType === "pasaporte" ? "Pasaporte" : "Anverso"}
+            </p>
             <img
               src={frontURL}
-              alt="Anverso"
-              className="rounded-lg shadow-md w-full object-cover"
-              onError={() => setError("Error cargando la imagen del anverso.")}
+              alt="Documento anverso"
+              onLoad={() => setLoadedFront(true)}
+              className="rounded-lg border shadow w-full h-auto object-cover"
             />
           </div>
         )}
+
         {backURL && (
           <div>
-            <p className="text-sm text-gray-600 mb-1">Reverso</p>
+            <p className="text-sm font-medium mb-1">Reverso</p>
             <img
               src={backURL}
-              alt="Reverso"
-              className="rounded-lg shadow-md w-full object-cover"
-              onError={() => setError("Error cargando la imagen del reverso.")}
+              alt="Documento reverso"
+              onLoad={() => setLoadedBack(true)}
+              className="rounded-lg border shadow w-full h-auto object-cover opacity-80"
             />
           </div>
         )}
       </div>
 
-      {/* Vista previa de video */}
       {videoURL && (
-        <div>
-          <p className="text-sm text-gray-600 mb-1">Video</p>
+        <div className="mt-2">
+          <p className="text-sm font-medium mb-1">Video selfie</p>
           <video
             src={videoURL}
             controls
-            className="rounded-lg shadow-md w-full"
-            onError={() => setError("Error cargando el video.")}
+            onLoadedData={() => setLoadedVideo(true)}
+            className="rounded-lg border shadow w-full h-auto object-cover"
           />
         </div>
       )}
 
-      {/* Mensajes de error */}
-      {error && <p className="text-red-500 text-center">{error}</p>}
+      {!loadedFront || (docBackBlob && !loadedBack) || !loadedVideo ? (
+        <p className="text-center text-sm text-gray-500 mt-2">⏳ Cargando recursos...</p>
+      ) : null}
 
-      {/* Resultado de verificación */}
-      {resultado && (
-        <div className="p-3 bg-green-100 border border-green-300 rounded-lg">
-          <p className="text-green-700 font-medium">
-            {JSON.stringify(resultado)}
-          </p>
-        </div>
-      )}
-
-      {/* Botones */}
-      <div className="flex justify-between">
+      <div className="flex flex-wrap justify-center gap-3 mt-4">
         <button
           onClick={prevStep}
-          className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 transition"
+          className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg"
         >
-          Volver
+          Atrás
         </button>
-
         <button
-          onClick={handleVerify}
-          disabled={loading}
-          className="px-4 py-2 flex items-center gap-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
+          onClick={handleSubmit}
+          disabled={loading || !(loadedFront && (docBackBlob ? loadedBack : true) && loadedVideo)}
+          className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg flex items-center gap-2"
         >
-          {loading ? (
-            <>
-              <Loader2 className="animate-spin w-5 h-5" />
-              Verificando...
-            </>
-          ) : (
-            "Verificar"
-          )}
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />} Verificar
         </button>
       </div>
+
+      {renderResultado()}
     </div>
   );
 }
