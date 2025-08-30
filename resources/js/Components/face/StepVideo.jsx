@@ -33,7 +33,7 @@ export default function StepVideo({ videoBlob, setVideoBlob, nextStep, prevStep 
       setStatus("preview");
       setMessage("Cámara lista. Pulsa 'Grabar'.");
     } catch {
-      setError("❌ No se pudo activar la cámara.");
+      setError("❌Recarga la Pagina No se pudo activar la cámara.");
       setMessage("");
     }
   };

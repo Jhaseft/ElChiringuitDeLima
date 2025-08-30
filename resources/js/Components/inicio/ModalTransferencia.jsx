@@ -8,6 +8,8 @@ export default function ModalTransferencia({
   user,
   cuentaOrigen,
   cuentaDestino,
+  modo,
+  modoDescripcion,
   conversion,
   monto,
 }) {
@@ -73,11 +75,12 @@ export default function ModalTransferencia({
     }
   };
 
-  const isBoliviano = user.nationality === "boliviano";
-  const isPeruano = user.nationality === "peruano";
+  // 🔥 Ahora dependemos de "modo"
+  const isBOBtoPEN = modo === "BOBtoPEN";
+  const isPENtoBOB = modo === "PENtoBOB";
 
-  const montoTexto = isBoliviano ? `${monto} BOB` : `${monto} PEN`;
-  const conversionTexto = isBoliviano ? `${conversion} PEN` : `${conversion} BOB`;
+  const montoTexto = isBOBtoPEN ? `${monto} BOB` : `${monto} PEN`;
+  const conversionTexto = isBOBtoPEN ? `${conversion} PEN` : `${conversion} BOB`;
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 px-2">
@@ -99,6 +102,10 @@ export default function ModalTransferencia({
             <div className="border rounded-lg bg-gray-50 p-4 mb-4 text-sm">
               <table className="w-full text-sm">
                 <tbody>
+                  <tr>
+                    <td className="font-semibold pr-2">Conversión:</td>
+                    <td>{modoDescripcion}</td>
+                  </tr>
                   <tr>
                     <td className="font-semibold pr-2">Monto a enviar:</td>
                     <td>{montoTexto}</td>
@@ -134,23 +141,22 @@ export default function ModalTransferencia({
                 <span className="text-green-600">{montoTexto}</span>
               </p>
 
-              {/* Boliviano → CUERE (espacio para imagen) */}
-              {isBoliviano && (
+              {/* BOB → PEN (mostrar QR) */}
+              {isBOBtoPEN && (
                 <div className="flex flex-col items-center gap-2">
-                  <p className="font-semibold">Escanea el CUERE para transferir</p>
+                  <p className="font-semibold">Escanea el QR para transferir</p>
                   <div className="bg-white p-2 rounded-lg shadow">
-                    {/* 🚨 Aquí SOLO pones tu imagen de CUERE */}
                     <img
-                      src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756359417/qr_hgokvi.jpg" // <-- aquí pones el link del CUERE
-                      alt="CUERE Bolivia"
+                      src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756359417/qr_hgokvi.jpg"
+                      alt="QR CUERE Bolivia"
                       className="w-40 h-40 object-contain"
                     />
                   </div>
                 </div>
               )}
 
-              {/* Peruano → Yape & Plin */}
-              {isPeruano && (
+              {/* PEN → BOB (mostrar Yape & Plin) */}
+              {isPENtoBOB && (
                 <div className="flex flex-col gap-4 mt-4">
                   {/* Yape */}
                   <div className="flex items-center gap-3 border rounded-lg p-3 shadow-sm">

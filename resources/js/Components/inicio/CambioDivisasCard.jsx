@@ -10,7 +10,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
 
   const [monto, setMonto] = useState("");
   const [conversion, setConversion] = useState("");
-  const [modo, setModo] = useState("BOBtoPEN");
+  const [modo, setModo] = useState("BOBtoPEN"); // "BOBtoPEN" o "PENtoBOB"
   const [error, setError] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -72,17 +72,17 @@ export default function CambioDivisasCard({ tasas, bancos }) {
       return;
     }
 
-
-
     setModalOpen(true);
     setError("");
   };
 
+  // 🔹 Texto descriptivo del modo
+  const modoDescripcion =
+    modo === "BOBtoPEN" ? "Bolivianos → Soles" : "Soles → Bolivianos";
+
   return (
     <>
-      {error && (
-        <ErrorBanner message={error} onClose={() => setError("")} />
-      )}
+      {error && <ErrorBanner message={error} onClose={() => setError("")} />}
 
       <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col gap-5 border border-gray-100 transition hover:shadow-2xl hover:scale-[1.01] duration-300 relative">
         {/* Título */}
@@ -144,6 +144,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
             />
           </div>
         </div>
+
         {/* Botones */}
         <div className="grid grid-cols-1 sm:grid-cols-1 gap-3 mt-3">
           <button
@@ -152,7 +153,6 @@ export default function CambioDivisasCard({ tasas, bancos }) {
           >
             Iniciar Operación
           </button>
-
         </div>
 
         {/* Login / Registro */}
@@ -170,10 +170,12 @@ export default function CambioDivisasCard({ tasas, bancos }) {
             >
               Registrarse
             </Link>
-          </div> 
+          </div>
         )}
+
         <p className="text-green-800 text-lg mt-4 text-center">
-          Para personas que quieran enviar dinero a terceros, esta operación debe ser realizada mediante la atención de un asesor.
+          Para personas que quieran enviar dinero a terceros, esta operación debe
+          ser realizada mediante la atención de un asesor.
         </p>
 
         <div className="flex justify-center mt-2">
@@ -190,7 +192,6 @@ export default function CambioDivisasCard({ tasas, bancos }) {
         </div>
       </div>
 
-
       {/* Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
@@ -199,9 +200,10 @@ export default function CambioDivisasCard({ tasas, bancos }) {
             onClose={() => setModalOpen(false)}
             user={user}
             monto={monto}
-            tasa={tasaPENtoBOB}
             conversion={conversion}
-            modo={modo}
+            tasa={modo === "BOBtoPEN" ? tasaBOBtoPEN : tasaPENtoBOB}
+            modo={modo} // 🔹 se manda el código
+            modoDescripcion={modoDescripcion} // 🔹 se manda texto legible
             bancos={bancos}
           />
         </div>

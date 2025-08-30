@@ -85,7 +85,7 @@ export default function DocumentCapture({
       setStream(mediaStream);
     } catch (e) {
       console.error(e);
-      setError("❌ No se pudo activar la cámara.");
+      setError("❌Recarga la Pagina , No se pudo activar la cámara .");
       setMessage("");
     }
   };
