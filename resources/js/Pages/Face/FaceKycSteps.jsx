@@ -5,7 +5,7 @@ import DocumentCapture from "@/Components/face/StepCarnet";
 import StepVideo from "@/Components/face/StepVideo";
 import StepReview from "@/Components/face/StepReview";
 
-export default function FaceKycSteps() {
+export default function FaceKycSteps() {  
   const [step, setStep] = useState(1);
 
   // Tipo de documento
