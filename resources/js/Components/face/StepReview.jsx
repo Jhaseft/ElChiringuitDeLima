@@ -64,7 +64,7 @@ export default function StepReview({
       formData.append("reverso", docBackBlob, "back.jpg");
       formData.append("video", videoBlob, "video.mp4");
 
-      const response = await axios.post("/api/verify", formData, {
+      const response = await axios.post("https://apiface-production-767c.up.railway.app/registro-face/verify", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
