@@ -13,6 +13,9 @@ export default function StepReview({
   resultado,
   setResultado,
 }) {
+  // Pantalla de carga inicial
+  const [initialLoading, setInitialLoading] = useState(true);
+
   const [message, setMessage] = useState(null);
   const [problems, setProblems] = useState([]);
   const [frontURL, setFrontURL] = useState(null);
@@ -23,6 +26,12 @@ export default function StepReview({
   const [loadedFront, setLoadedFront] = useState(false);
   const [loadedBack, setLoadedBack] = useState(false);
   const [loadedVideo, setLoadedVideo] = useState(false);
+
+  // --- Pantalla de carga inicial 3 segundos ---
+  useEffect(() => {
+    const timer = setTimeout(() => setInitialLoading(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Crear URLs y liberar memoria
   useEffect(() => {
@@ -35,7 +44,6 @@ export default function StepReview({
     setBackURL(back || null);
     setVideoURL(video || null);
 
-    // Resetear estados de carga
     setLoadedFront(false);
     setLoadedBack(false);
     setLoadedVideo(false);
@@ -138,6 +146,19 @@ export default function StepReview({
     );
   };
 
+  // --- Si estamos en carga inicial, mostramos loader ---
+  if (initialLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full bg-gray-100 text-gray-800">
+        <p className="text-lg font-semibold mb-4">
+          Analizando imágenes y videos...
+        </p>
+        <Loader2 className="h-12 w-12 animate-spin text-gray-600" />
+      </div>
+    );
+  }
+
+  // --- Renderizado normal ---
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
       <p className="font-semibold text-lg text-center">Revisa tus capturas</p>
