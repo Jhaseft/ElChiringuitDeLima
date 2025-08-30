@@ -63,7 +63,7 @@ export default function Nosotros() {
                   alt="Juan Perez"
                   className="w-24 h-24 rounded-full mx-auto mb-4"
                 />
-                <h4 className="font-semibold text-lg">Juan Perez</h4>
+                <h4 className="font-semibold text-lg">Juan Roman</h4>
                 <p className="text-gray-600 text-sm">CEO & Fundador</p>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-md text-center">
