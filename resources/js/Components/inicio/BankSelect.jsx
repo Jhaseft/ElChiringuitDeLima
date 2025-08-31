@@ -43,12 +43,16 @@ export default function BankSelect({ options, value, onChange, placeholder = "Se
                 onChange(opt); // devuelve el objeto completo
                 setOpen(false);
               }}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-sm  hover:bg-gray-50 ${
-                selected?.id === opt.id ? "bg-blue-50" : ""
-              }`}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-sm  hover:bg-gray-50 ${selected?.id === opt.id ? "bg-blue-50" : ""
+                }`}
             >
               {opt.logo_url && <img src={opt.logo_url} alt={opt.name} className="w-8 h-8  " />}
-              <span className="flex-1 text-left">{opt.name}</span>
+              <span className="flex-1 text-left flex items-center gap-2">
+                <span className="font-medium">{opt.name}</span>
+                <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 border">
+                  {opt.country.charAt(0).toUpperCase() + opt.country.slice(1).toLowerCase()}
+                </span>
+              </span>
               {selected?.id === opt.id && <Check size={16} />}
             </button>
           ))}

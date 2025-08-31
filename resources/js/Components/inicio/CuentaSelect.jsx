@@ -30,7 +30,7 @@ export default function CuentaSelect({ options, value, onChange, placeholder = "
               <img src={selected.bank_logo} alt={selected.bank_name} className="w-6 h-6 object-contain" />
             )}
             <div className="flex flex-col text-left">
-              <span className="font-semibold">{selected.bank_name}</span>
+              <span className="font-semibold">{selected.bank_name}-</span>
               <span className="text-gray-500 text-xs">{selected.account_number}</span>
             </div>
           </div>

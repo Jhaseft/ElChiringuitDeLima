@@ -21,44 +21,41 @@ export default function ModalCuentaBancaria({
   const [loading, setLoading] = useState(false);
 
   const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+useEffect(() => {
+  if (!isOpen) return;
 
-  useEffect(() => {
-    if (!isOpen) return;
+  const fetchBancos = async () => {
+    try {
+      let data = bancosCache || bancosProp;
 
-    const fetchBancos = async () => {
-      try {
-        let data = bancosCache || bancosProp;
-
-        if (!data || data.length === 0) {
-          const res = await fetch("/operacion/listar-bancos");
-          if (!res.ok) {
-            console.error("Error al listar bancos:", await res.text());
-            return;
-          }
-          data = await res.json();
+      if (!data || data.length === 0) {
+        const res = await fetch("/operacion/listar-bancos");
+        if (!res.ok) {
+          console.error("Error al listar bancos:", await res.text());
+          return;
         }
-
-        bancosCache = data;
-
-        const pais =
-          accountType === "origin"
-            ? nationality.toLowerCase() === "peruano"
-              ? "peru"
-              : "bolivia"
-            : nationality.toLowerCase() === "peruano"
-            ? "bolivia"
-            : "peru";
-
-        setBancosDisponibles(
-          data.filter((b) => b.country.toLowerCase() === pais)
-        );
-      } catch (err) {
-        console.error("Error al listar bancos:", err);
+        data = await res.json();
       }
-    };
 
-    fetchBancos();
-  }, [isOpen, nationality, accountType, bancosProp]);
+      bancosCache = data;
+
+      // 👉 Ordenar: bancos de Perú primero
+      const ordenados = [...data].sort((a, b) => {
+        if (a.country.toLowerCase() === "peru" && b.country.toLowerCase() !== "peru") return -1;
+        if (a.country.toLowerCase() !== "peru" && b.country.toLowerCase() === "peru") return 1;
+        return 0;
+      });
+
+      setBancosDisponibles(ordenados);
+
+    } catch (err) {
+      console.error("Error al listar bancos:", err);
+    }
+  };
+
+  fetchBancos();
+}, [isOpen, nationality, accountType, bancosProp]);
+
 
   const handleSave = async () => {
     if (!(juramento && terminos && banco && numeroCuenta)) return;
@@ -83,14 +80,6 @@ export default function ModalCuentaBancaria({
       });
 
       const text = await res.text();
-
-      if (text.startsWith("<!DOCTYPE html>") || text.startsWith("<html")) {
-        console.error("Respuesta HTML inesperada:", text);
-        if (res.status === 419) alert("Sesión expirada. Recarga la página.");
-        else if (res.status === 401) alert("No autorizado. Inicia sesión.");
-        else alert("Error inesperado del servidor.");
-        return;
-      }
 
       const data = JSON.parse(text);
 

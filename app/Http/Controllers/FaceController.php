@@ -9,12 +9,21 @@ use Inertia\Inertia;
 class FaceController extends Controller
 {
     // Vista React
-    public function index(Request $request)
-    {
-        return Inertia::render('Face/FaceKycSteps', [
-            'next' => $request->query('next', null)
-        ]);
+   public function index(Request $request)
+{
+    $user = Auth::user();
+
+    // 🔒 Si ya está verificado, redirigirlo a donde corresponda
+    if ($user && $user->kyc_status === 'verified') {
+        return redirect()->route('welcome'); // o la ruta que quieras
     }
+
+    // Si no está verificado, renderizamos la vista de pasos
+    return Inertia::render('Face/FaceKycSteps', [
+        'next' => $request->query('next', null)
+    ]);
+}
+
 
     // Procesar resultado de la API KYC
     public function verify(Request $request)

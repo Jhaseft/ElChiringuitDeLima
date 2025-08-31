@@ -140,40 +140,33 @@ export default function ModalOperacion({
             </div>
           </div>
 
-         {/* Info usuario */}
-<div className="mb-4 text-sm border p-3 rounded-lg bg-gray-50">
-  <div className="grid grid-cols-2 gap-4">
-    <p>
-      <strong>Nombre:</strong> {user.first_name} {user.last_name}
-    </p>
-    <p>
-      <strong>CI:</strong> {user.document_number || "N/A"}
-    </p>
-    <p>
-      <strong>Nacionalidad:</strong> {user.nationality || "N/A"}
-    </p>
-    <p>
-      <strong>KYC:</strong>{" "}
-      <span
-        className={
-          user.kyc_status === "active"
-            ? "text-green-600"
-            : "text-orange-600"
-        }
-      >
-        {user.kyc_status}
-      </span>
-    </p>
-  </div>
+          {/* Info usuario */}
+          <div className="mb-4 text-sm border p-3 rounded-lg bg-gray-50">
+            <div className="grid grid-cols-2 gap-4">
+              <p>
+                <strong>Nombre:</strong> {user.first_name} {user.last_name}
+              </p>
+              <p>
+                <strong>CI:</strong> {user.document_number || "N/A"}
+              </p>
+              <p>
+                <strong>Nacionalidad:</strong> {user.nationality || "N/A"}
+              </p>
+              <p>
+                <strong>KYC:</strong>{" "}
+                <span
+                  className={
+                    user.kyc_status === "active"
+                      ? "text-green-600"
+                      : "text-orange-600"
+                  }
+                >
+                  {user.kyc_status}
+                </span>
+              </p>
+            </div>
 
-  {/* Nota aclaratoria */}
-  <p className="mt-3 text-xs text-gray-600 italic">
-    Nota: Si eres <span className="font-semibold">boliviano</span>, las cuentas de 
-    origen disponibles serán bancos de Bolivia.  
-    Si eres <span className="font-semibold">peruano</span>, las cuentas de origen 
-    disponibles serán bancos de Perú.
-  </p>
-</div>
+          </div>
 
 
           {/* Cuenta Origen */}
@@ -277,9 +270,8 @@ export default function ModalOperacion({
             </button>
             <button
               onClick={handleSiguiente}
-              className={`bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 transition w-full md:w-auto ${
-                !(juramento && terminos && cuentaOrigen && cuentaDestino) ? "opacity-50 cursor-not-allowed" : ""
-              }`}
+              className={`bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 transition w-full md:w-auto ${!(juramento && terminos && cuentaOrigen && cuentaDestino) ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               disabled={!(juramento && terminos && cuentaOrigen && cuentaDestino) || loading}
             >
               Siguiente

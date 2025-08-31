@@ -42,28 +42,34 @@ export default function ModalCuentaDestino({
   }, [isOpen]);
 
   // Filtrado de bancos
-  useEffect(() => {
-    if (!isOpen) return;
+useEffect(() => {
+  if (!isOpen) return;
 
-    const fetchBancos = async () => {
-      try {
-        let data = bancosCache || bancos;
-        if (!data || data.length === 0) {
-          const res = await fetch("/operacion/listar-bancos");
-          if (!res.ok) throw new Error("Error al listar bancos");
-          data = await res.json();
-          bancosCache = data;
-        }
-
-        const pais = nationality.toLowerCase() === "peruano" ? "bolivia" : "peru";
-        setBancosDisponibles(data.filter((b) => b.country.toLowerCase() === pais));
-      } catch (err) {
-        console.error("Error al listar bancos:", err);
+  const fetchBancos = async () => {
+    try {
+      let data = bancosCache || bancos;
+      if (!data || data.length === 0) {
+        const res = await fetch("/operacion/listar-bancos");
+        if (!res.ok) throw new Error("Error al listar bancos");
+        data = await res.json();
+        bancosCache = data;
       }
-    };
 
-    fetchBancos();
-  }, [isOpen, nationality, bancos]);
+      // 👇 Ordenamos: bancos de Perú primero
+      const ordenados = [...data].sort((a, b) => {
+        if (a.country.toLowerCase() === "peru" && b.country.toLowerCase() !== "peru") return -1;
+        if (a.country.toLowerCase() !== "peru" && b.country.toLowerCase() === "peru") return 1;
+        return 0; // si son del mismo país, se quedan como están
+      });
+
+      setBancosDisponibles(ordenados);
+    } catch (err) {
+      console.error("Error al listar bancos:", err);
+    }
+  };
+
+  fetchBancos();
+}, [isOpen, bancos]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
