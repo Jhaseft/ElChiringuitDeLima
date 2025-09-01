@@ -51,73 +51,86 @@ export default function StepReview({
     return el?.getAttribute("content") || "";
   };
 
-  const handleSubmit = async () => {
-    // Validaciones previas
-    if (!docFrontBlob || !videoBlob) {
-      alert("⚠️ Debes capturar al menos documento frontal y video.");
+const handleSubmit = async () => {
+  if (!docFrontBlob || !videoBlob) {
+    alert("⚠️ Debes capturar al menos documento frontal y video.");
+    return;
+  }
+
+  if (docType === "ci" || docType === "licencia") {
+    if (!docBackBlob) {
+      alert("⚠️ Debes capturar también el reverso.");
       return;
     }
+  }
 
-    if (!(loadedFront && (docBackBlob ? loadedBack : true) && loadedVideo)) {
-      alert("⚠️ Espera a que todos los recursos se carguen completamente.");
-      return;
+  if (!(loadedFront && (docBackBlob ? loadedBack : true) && loadedVideo)) {
+    alert("⚠️ Espera a que todos los recursos se carguen completamente.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setMessage(null);
+    setProblems([]);
+
+    // 1️⃣ FormData para API KYC (solo frente + video)
+    const formDataKyc = new FormData();
+  formDataKyc.append("carnet", docFrontBlob, "documento_frente.jpg");
+    if (docBackBlob) formDataKyc.append("carnet_back", docBackBlob, "documento_reverso.jpg");
+    formDataKyc.append("doc_type", docType);
+    formDataKyc.append("video", videoBlob, "video.mp4");
+
+    const res = await axios.post(
+      "https://apiface-production-767c.up.railway.app/registro-face/verify",
+      formDataKyc,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+
+    setResultado(res.data);
+
+    // 2️⃣ FormData para backend interno (frente + reverso opcional + video + resultado)
+    const csrf = getCsrfToken();
+    const formDataBackend = new FormData();
+    formDataBackend.append("doc_type", docType);
+    formDataBackend.append("docFront", docFrontBlob, "documento_frente.jpg");
+    if (docBackBlob) {
+      formDataBackend.append("docBack", docBackBlob, "documento_reverso.jpg");
     }
+    formDataBackend.append("video", videoBlob, "video.mp4");
+    formDataBackend.append("resultado", JSON.stringify(res.data));
 
-    const formData = new FormData();
-    formData.append("carnet", docFrontBlob, "documento_frente.jpg");
-    if (docBackBlob) formData.append("carnet_back", docBackBlob, "documento_reverso.jpg");
-    formData.append("doc_type", docType);
-    formData.append("video", videoBlob, "video.mp4");
+    const backendRes = await axios.post("/face/verify", formDataBackend, {
+      headers: { "X-CSRF-TOKEN": csrf, "Content-Type": "multipart/form-data" },
+    });
 
-    try {
-      setLoading(true);
-      setMessage(null);
-      setProblems([]);
+    const data = backendRes.data;
+    setMessage(data.mensaje || "ℹ️ Verificación realizada.");
+    setProblems(data.sugerencias || []);
 
-      // 1️⃣ Llamada al backend de verificación externa
-      const res = await axios.post(
-        "https://apiface-production-767c.up.railway.app/registro-face/verify",
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-
-      setResultado(res.data);
-
-      // 2️⃣ Enviar resultado a backend interno (Laravel, Django, etc.)
-      const csrf = getCsrfToken();
-      const backendRes = await axios.post(
-        "/face/verify",
-        { resultado: res.data },
-        { headers: { "X-CSRF-TOKEN": csrf, "Content-Type": "application/json" } }
-      );
-
-      const data = backendRes.data;
-      setMessage(data.mensaje || "ℹ️ Verificación realizada.");
-      setProblems(data.sugerencias || []);
-
-      // 3️⃣ Redirigir si todo fue bien
-      if (data.status === "success" || data.kyc_status === "active") {
-        setTimeout(() => {
-          const params = new URLSearchParams(window.location.search);
-          const next = params.get("next");
-          window.location.href = next || "/";
-        }, 1500);
-      }
-    } catch (err) {
-      console.error("❌ Error en verificación:", err);
-
-      if (err.response?.status === 422) {
-        setMessage("⚠️ Datos inválidos: revisa los campos requeridos.");
-        setProblems(err.response.data?.errors || []);
-      } else if (err.response?.data?.mensaje) {
-        setMessage("❌ " + err.response.data.mensaje);
-      } else {
-        setMessage("❌ Error inesperado en la verificación KYC.");
-      }
-    } finally {
-      setLoading(false);
+    // 3️⃣ Redirigir si todo fue bien
+    if (data.status === "success" || data.kyc_status === "active") {
+      setTimeout(() => {
+        const params = new URLSearchParams(window.location.search);
+        const next = params.get("next");
+        window.location.href = next || "/";
+      }, 1500);
     }
-  };
+  } catch (err) {
+    console.error("❌ Error en verificación:", err);
+
+    if (err.response?.status === 422) {
+      setMessage("⚠️ Datos inválidos: revisa los campos requeridos.");
+      setProblems(err.response.data?.errors || []);
+    } else if (err.response?.data?.mensaje) {
+      setMessage("❌ " + err.response.data.mensaje);
+    } else {
+      setMessage("❌ Error inesperado en la verificación KYC.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   const renderResultado = () => {
     if (!resultado) return null;

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use App\Mail\TipoCambioActualizadoMail;
 
-class TipoCambioController extends Controller
+class AdminControllerDashboard extends Controller
 {
     // Ver tipo de cambio
     public function index()
@@ -24,6 +24,44 @@ class TipoCambioController extends Controller
         'tipoCambio' => $tipoCambio
     ]);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Actualizar tipo de cambio
     public function update(Request $request)
@@ -50,6 +88,29 @@ foreach ($users as $user) {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Historial de tipo de cambio
 public function historial()
 {
     // Obtener los últimos 50 registros, ordenados de más antiguo a más reciente

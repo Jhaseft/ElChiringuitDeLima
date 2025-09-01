@@ -11,9 +11,9 @@ class AdminAuthController extends Controller
     public function showLoginForm()
     {
         if (Auth::guard('admin')->check()) {
-        return redirect('/admin/tipo-cambio');
+        return redirect('/admin/dashboard');
     }
-    return Inertia::render('Admin/login');
+         return Inertia::render('Admin/login');
     }
 
     public function login(Request $request)
@@ -27,7 +27,7 @@ class AdminAuthController extends Controller
             // Login exitoso
             return response()->json([
                 'success' => true,
-                'redirect' => url('/admin/tipo-cambio')
+                'redirect' => url('/admin/dashboard')
             ]);
         }
 
@@ -38,9 +38,12 @@ class AdminAuthController extends Controller
     }
 
 
-    public function logout()
-    {
-        Auth::guard('admin')->logout();
-        return redirect('/admin/login');
-    }
+    public function logout(Request $request)
+{
+    Auth::guard('admin')->logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect()->route('admin.login');
+}
 }

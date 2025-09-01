@@ -6,7 +6,7 @@ import StepVideo from "@/Components/face/StepVideo";
 import StepReview from "@/Components/face/StepReview";
 
 export default function FaceKycSteps() {  
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(1); 
 
   // Tipo de documento
   const [docType, setDocType] = useState("ci"); // "ci" | "licencia" | "pasaporte"

@@ -55,4 +55,8 @@ public function transfers()
 {
     return $this->hasMany(Transfer::class);
 }
+public function media()
+{
+    return $this->hasMany(UserMedia::class);
+}
 }

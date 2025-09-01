@@ -1,106 +1,44 @@
-import { useState } from "react";
+// resources/js/Pages/Admin/AdminTipoCambio.jsx
+import AdminHeader from "@/Components/admin/AdminHeader.jsx";
+import TipoCambioForm from "@/Components/admin/TipoCambioForm";
+import AdminUserMediaTable from "@/Components/admin/AdminUserMediaTable";
 
 export default function AdminTipoCambio({ tipoCambio }) {
-  const [compra, setCompra] = useState(tipoCambio?.compra || "");
-  const [venta, setVenta] = useState(tipoCambio?.venta || "");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
-    const token = document.querySelector('meta[name="csrf-token"]').content;
-
-    try {
-      const res = await fetch("/admin/tipo-cambio", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-TOKEN": token,
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({ compra, venta }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setMessage("Tipo de cambio actualizado ✅");
-      } else {
-        setMessage(data.message || "Error al actualizar ❌");
-      }
-    } catch (err) {
-      console.error(err);
-      setMessage("Error de conexión ❌");
-    } finally {
-      setLoading(false);
-    }
+  const handleLogout = () => {
+    window.location.href = "/logout";
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-8 flex flex-col items-center">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-center">Panel de Tipo de Cambio</h1>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header */}
+      <AdminHeader onLogout={handleLogout} />
 
-      {/* Tabla con tipo de cambio actual */}
-      <div className="w-full max-w-lg overflow-x-auto mb-6">
-        <table className="bg-white shadow-md rounded w-full min-w-[400px]">
-          <thead>
-            <tr className="border-b">
-              <th className="p-2 text-left">Compra (actual)</th>
-              <th className="p-2 text-left">Venta (actual)</th>
-              <th className="p-2 text-left">Última actualización</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr className="odd:bg-gray-50">
-              <td className="p-2">{tipoCambio?.compra}</td>
-              <td className="p-2">{tipoCambio?.venta}</td>
-              <td className="p-2">{tipoCambio?.fecha_actualizacion}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      {/* Main content */}
+      <main className="flex-1 p-4 sm:p-8 flex flex-col items-center w-full space-y-10">
+        <h1 className="text-2xl sm:text-3xl font-bold text-center text-gray-800">
+          Panel Administrativo
+        </h1>
 
-      {/* Formulario para actualizar */}
-      <form 
-        onSubmit={handleSubmit} 
-        className="bg-white p-6 sm:p-8 rounded shadow-md w-full max-w-md flex flex-col gap-4"
-      >
-        <label className="flex flex-col">
-          <span className="font-semibold mb-1">Actualizar Compra:</span>
-          <input 
-            type="number" 
-            step="0.01"
-            value={compra} 
-            onChange={e => setCompra(e.target.value)} 
-            className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-            required
-          />
-        </label>
+        {/* --- Tabla de Usuarios KYC --- */}
+        <section className="w-full max-w-6xl">
+          <div className="bg-white rounded-2xl shadow p-6">
+            <h2 className="text-xl font-semibold mb-4 text-gray-700">
+              Usuarios KYC
+            </h2>
+            <AdminUserMediaTable />
+          </div>
+        </section>
 
-        <label className="flex flex-col">
-          <span className="font-semibold mb-1">Actualizar Venta:</span>
-          <input 
-            type="number" 
-            step="0.01"
-            value={venta} 
-            onChange={e => setVenta(e.target.value)} 
-            className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-            required
-          />
-        </label>
-
-        <button 
-          type="submit" 
-          disabled={loading}
-          className="bg-blue-500 text-white rounded p-2 mt-2 hover:bg-blue-600 disabled:opacity-50 transition-colors"
-        >
-          {loading ? "Actualizando..." : "Actualizar Tipo de Cambio"}
-        </button>
-
-        {message && <p className="mt-2 text-center text-sm">{message}</p>}
-      </form>
+        {/* --- Tipo de Cambio --- */}
+        <section className="w-full max-w-4xl">
+          <div className="bg-white rounded-2xl shadow p-6">
+            <h2 className="text-xl font-semibold mb-4 text-gray-700">
+              Tipo de Cambio
+            </h2>
+            <TipoCambioForm tipoCambio={tipoCambio} />
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

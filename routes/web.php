@@ -7,11 +7,13 @@ use App\Http\Controllers\CompleteProfileController;
 use App\Http\Controllers\OperacionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\AdminAuthController;
-use App\Http\Controllers\TipoCambioController;
+use App\Http\Controllers\AdminControllerDashboard;
+use App\Http\Controllers\AdminUserMediaController;
 use App\Models\Bank;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+
 
 // Página principal
 Route::get('/', function () {
@@ -102,10 +104,19 @@ Route::prefix('admin')->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
     Route::middleware('auth:admin')->group(function () {
-    Route::get('/tipo-cambio', [TipoCambioController::class, 'index']);
-    Route::post('/tipo-cambio', [TipoCambioController::class, 'update']);
-        });
+        Route::get('/dashboard', [AdminControllerDashboard::class, 'index']);
+        Route::post('/tipo-cambio', [AdminControllerDashboard::class, 'update']);
+        
+ Route::get('/users', [AdminUserMediaController::class, 'index']);
+    Route::get('/users/{user}/detail', [AdminUserMediaController::class, 'show']);
+    Route::delete('/users/{user}', [AdminUserMediaController::class, 'destroy']);
+    });
 });
-Route::get('/api/tipo-cambio/historial', [TipoCambioController::class, 'historial']);
+
+
+// Tipo de cambio - API pública
+Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'historial']);
+
+
 
 require __DIR__.'/auth.php';
