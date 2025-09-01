@@ -57,65 +57,94 @@ public function verify(Request $request)
 
     $aprobado = $verificado && empty($mensajes);
 
-    // Guardar estado en el usuario
-    $user->kyc_status = $aprobado ? 'verified' : 'rejected';
-    $user->save();
+    // Si no pasó la verificación KYC básica, no continuar
+    if (!$aprobado) {
+        $user->kyc_status = 'rejected';
+        $user->save();
 
-    // Subir archivos a Cloudinary si fue aprobado
-    if ($aprobado) {
-        $uploadApi = new UploadApi();
-        $folder = "users/{$user->id}";
+        return response()->json([
+            'status'      => 'error',
+            'titulo'      => '⚠️ Verificación incompleta',
+            'mensaje'     => 'No pudimos validar tu identidad',
+            'sugerencias' => $mensajes,
+            'score'       => data_get($resultado, 'score', null),
+        ]);
+    }
 
-        // 🔹 Definir qué campos subir
-        $files = ['video' => 3]; // siempre hay video
+    // 🔹 Subir archivos a Cloudinary
+    $uploadApi = new UploadApi();
+    $folder = "users/{$user->id}";
 
-        if ($docType === 'pasaporte') {
-            $files['docFront'] = 1; // solo frente
-        } elseif (in_array($docType, ['ci', 'licencia'])) {
-            $files['docFront'] = 1;
-            $files['docBack']  = 2;
-        }
+    $files = ['video' => 3]; // siempre hay video
+    if ($docType === 'pasaporte') {
+        $files['docFront'] = 1;
+    } elseif (in_array($docType, ['ci', 'licencia'])) {
+        $files['docFront'] = 1;
+        $files['docBack']  = 2;
+    }
 
-        foreach ($files as $field => $position) {
-            if ($request->hasFile($field)) {
-                $file = $request->file($field);
+    $allUploaded = true; // bandera para verificar si todo subió correctamente
 
-                $options = ['folder' => $folder];
-                if ($field === 'video') {
-                    $options['resource_type'] = 'auto';
-                }
+    foreach ($files as $field => $position) {
+        if ($request->hasFile($field)) {
+            $file = $request->file($field);
 
-                try {
-                    $uploaded = $uploadApi->upload($file->getRealPath(), $options);
-
-                    UserMedia::updateOrCreate(
-                        [
-                            'user_id'  => $user->id,
-                            'position' => $position,
-                        ],
-                        [
-                            'media_type' => $field === 'video' ? 'video' : 'image',
-                            'url'        => $uploaded['secure_url'],
-                            'public_id'  => $uploaded['public_id'],
-                            'format'     => $uploaded['format'] ?? null,
-                        ]
-                    );
-                } catch (\Exception $e) {
-                    \Log::error("❌ Error subiendo $field a Cloudinary: " . $e->getMessage());
-                }
-            } else {
-                \Log::warning("⚠️ Campo $field no recibido en la request.");
+            $options = ['folder' => $folder];
+            if ($field === 'video') {
+                $options['resource_type'] = 'auto';
             }
+
+            try {
+                $uploaded = $uploadApi->upload($file->getRealPath(), $options);
+
+                UserMedia::updateOrCreate(
+                    [
+                        'user_id'  => $user->id,
+                        'position' => $position,
+                    ],
+                    [
+                        'media_type' => $field === 'video' ? 'video' : 'image',
+                        'url'        => $uploaded['secure_url'],
+                        'public_id'  => $uploaded['public_id'],
+                        'format'     => $uploaded['format'] ?? null,
+                    ]
+                );
+            } catch (\Exception $e) {
+                \Log::error("❌ Error subiendo $field a Cloudinary: " . $e->getMessage());
+                $allUploaded = false;
+            }
+        } else {
+            \Log::warning("⚠️ Campo $field no recibido en la request.");
+            $allUploaded = false;
         }
     }
 
+    // Si alguna subida falló, marcar como rechazado
+    if (!$allUploaded) {
+        $user->kyc_status = 'rejected';
+        $user->save();
+
+        return response()->json([
+            'status'      => 'error',
+            'titulo'      => '⚠️ Verificación incompleta',
+            'mensaje'     => 'No pudimos subir todos los archivos a Cloudinary',
+            'sugerencias' => $mensajes,
+            'score'       => data_get($resultado, 'score', null),
+        ]);
+    }
+
+    // Todo bien, marcar como verificado
+    $user->kyc_status = 'verified';
+    $user->save();
+
     return response()->json([
-        'status'      => $aprobado ? 'success' : 'error',
-        'titulo'      => $aprobado ? '✅ Verificación aprobada' : '⚠️ Verificación incompleta',
-        'mensaje'     => $aprobado ? 'Identidad verificada' : 'No pudimos validar tu identidad',
+        'status'      => 'success',
+        'titulo'      => '✅ Verificación aprobada',
+        'mensaje'     => 'Identidad verificada',
         'sugerencias' => $mensajes,
         'score'       => data_get($resultado, 'score', null),
     ]);
 }
+
 
 }
