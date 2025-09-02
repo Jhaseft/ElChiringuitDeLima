@@ -35,6 +35,11 @@ Route::get('/politicas', function () {
 
 });
 //Nosotros
+Route::get('/jaime', function () {
+
+    return Inertia::render('jaime');
+
+});
 
 Route::get('/nosotros', function () {
 

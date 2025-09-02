@@ -48,7 +48,7 @@ public function verify(Request $request)
     if ($similitud < 50) {
         $mensajes[] = "Rostro no coincide (Similitud baja).";
     }
-    if ($liveness < 40) {
+    if ($liveness < 30) {
         $mensajes[] = "Necesitamos confirmar que eres real (Liveness insuficiente).";
     }
     if (!$rostro) {
