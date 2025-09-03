@@ -47,19 +47,7 @@ export default function AdminUserMediaTable() {
     }
   };
 
-  const deleteRow = async (id) => {
-    if (!confirm("¿Eliminar este usuario? Esta acción no se puede deshacer.")) return;
-    try {
-      setProcessing(true);
-      await axios.delete(`/admin/users/${id}`);
-      await fetchList(meta.current_page);
-    } catch (e) {
-      console.error(e);
-      alert("No se pudo eliminar.");
-    } finally {
-      setProcessing(false);
-    }
-  };
+
 
   useEffect(() => {
     fetchList(1);
@@ -129,13 +117,6 @@ export default function AdminUserMediaTable() {
                         disabled={processing}
                       >
                         Ver detalle
-                      </button>
-                      <button
-                        onClick={() => deleteRow(r.id)}
-                        className="px-3 py-1 rounded-xl bg-red-600 text-white hover:bg-red-700 transition"
-                        disabled={processing}
-                      >
-                        Eliminar
                       </button>
                     </div>
                   </td>
