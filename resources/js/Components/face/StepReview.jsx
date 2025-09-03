@@ -101,7 +101,7 @@ const handleSubmit = async () => {
     formDataBackend.append("resultado", JSON.stringify(res.data));
 
     const backendRes = await axios.post("/face/verify", formDataBackend, {
-      headers: { "X-CSRF-TOKEN": csrf, "Content-Type": "multipart/form-data" },
+      headers: { "X-CSRF-TOKEN": csrf },
     });
 
     const data = backendRes.data;
