@@ -25,14 +25,7 @@ class FaceController extends Controller
 
 public function verify(Request $request)
 {
-    \Log::info('face/verify: request recibido', [
-  'has_docFront' => request()->hasFile('docFront'),
-  'has_docBack'  => request()->hasFile('docBack'),
-  'has_video'    => request()->hasFile('video'),
-  'doc_type'     => request('doc_type'),
-  'content_length' => $_SERVER['CONTENT_LENGTH'] ?? null,
-]);
-return response()->json(['ok' => true, 'paso' => 'llega_a_laravel'], 200);
+
     $user = Auth::user();
     if (!$user) {
         return response()->json(['error' => 'No autenticado'], 401);
