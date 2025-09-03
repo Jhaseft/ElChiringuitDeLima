@@ -16,14 +16,15 @@ class AdminUserMediaController extends Controller
         $query = User::query();
 
         if ($search !== '') {
-    $query->where(function($q) use ($search) {
-        $q->where('first_name', 'ILIKE', "$search%")
-          ->orWhere('last_name', 'ILIKE', "$search%")
-          ->orWhere('email', 'ILIKE', "$search%")
-          ->orWhere('document_number', 'ILIKE', "$search%")
-          ->orWhere('phone', 'ILIKE', "$search%");
-    });
-}
+            // Búsqueda insensible a mayúsculas y con índice
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'LIKE', "$search%")
+                  ->orWhere('last_name', 'LIKE', "$search%")
+                  ->orWhere('email', 'LIKE', "$search%")
+                  ->orWhere('document_number', 'LIKE', "$search%")
+                  ->orWhere('phone', 'LIKE', "$search%");
+            });
+        }
 
         $users = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
@@ -36,6 +37,7 @@ class AdminUserMediaController extends Controller
         ], 500);
     }
 }
+
 
     public function show(User $user)
     {
