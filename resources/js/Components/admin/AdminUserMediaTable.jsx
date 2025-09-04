@@ -3,22 +3,34 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 
 export default function AdminUserMediaTable() {
+  //hook para guardaer los datos de la tabla
   const [rows, setRows] = useState([]);
+  //hook para guardar los metadatos de la tabla
   const [meta, setMeta] = useState({ current_page: 1, last_page: 1, per_page: 10, total: 0 });
+  //hook para manejar el estado de carga de la tabla
   const [loading, setLoading] = useState(false);
+  //hook para manejar el estado de busqueda
   const [search, setSearch] = useState("");
-
+//hook para manejar el estado del modal de detalle si es open o cerrado
   const [detailOpen, setDetailOpen] = useState(false);
+  //hook para guardar los datos del detalle del usuario seleccionado para el modal y asi tener mas velocidad
   const [detail, setDetail] = useState(null);
-  const [processing, setProcessing] = useState(false); // Loader global (detalle/eliminar)
+  //hook para manejar el estado de procesamiento global (detalle)
+  const [processing, setProcessing] = useState(false); // Loader global (detalle)
 
+//espera una promesa para obtener los datos de la tabla hasta que no se resuelva esta en estado de carga pero la pagina no se congela
+//por eso usamos una funcion asyncrona
   const fetchList = async (page = 1, perPage = meta.per_page, q = search) => {
     try {
       setLoading(true);
+      //con await esperamsoos la respuesta de la peticion get
       const { data } = await axios.get("/admin/users", {
+        //definimos los parametros de la peticion para mejorar la paginacion y busqueda
         params: { page, perPage, search: q },
       });
+      //seteamos los datos de la tabla y los metadatos con los de la base de datos
       setRows(data.data || []);
+      //le pasamos los metadatos que necesitamos para la paginacion
       setMeta({
         current_page: data.current_page,
         last_page: data.last_page,
@@ -32,12 +44,16 @@ export default function AdminUserMediaTable() {
       setLoading(false);
     }
   };
-
+//funcion para abrir el modal de detalle y cargar los datos del usuario seleccionado igual asincrono
   const openDetail = async (id) => {
     try {
+      //procesa la peticion
       setProcessing(true);
+      //espera la respuesta de la peticion get para obtener los datos del usuario seleccionado
       const { data } = await axios.get(`/admin/users/${id}/detail`);
+      //setea los datos del detalle y abre el modal con los datos del usuario seleccionado
       setDetail(data);
+      //luego abre el modal
       setDetailOpen(true);
     } catch (e) {
       console.error(e);
@@ -53,8 +69,11 @@ export default function AdminUserMediaTable() {
     fetchList(1);
   }, []);
 
+//funcion para manejar la busqueda de usuarios
   const onSearch = async (e) => {
+    //evita que se recargue la pagina
     e.preventDefault();
+    //llama a la funcion fetchList para obtener los datos de la tabla con la busqueda
     await fetchList(1);
   };
 

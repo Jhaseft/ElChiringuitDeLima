@@ -39,7 +39,7 @@
                             <ul style="padding-left:20px; list-style-type:disc;">
                                 <li><strong>Monto recibido:</strong> {{ number_format($data['transfer']->amount, 2) }} {{ $data['depositCurrency'] }}</li>
                                 <li><strong>Banco origen:</strong> {{ $data['transfer']->originAccount->bank->name ?? 'Banco N/D' }}</li>
-                                <li><strong>Número de cuenta origen:</strong> {{ $data['transfer']->origin_account_number }}</li>
+                                <li><strong>Número de cuenta origen:</strong> {{ $data['transfer']->originAccount->account_number ?? 'N/D' }}</li>
                             </ul>
 
                             <h3 style="color:#333333;">👤 Propietario de la cuenta origen</h3>
@@ -55,7 +55,8 @@
                             <ul style="padding-left:20px; list-style-type:disc;">
                                 <li><strong>Monto convertido:</strong> {{ number_format($data['convertedAmount'], 2) }} {{ $data['receiveCurrency'] }}</li>
                                 <li><strong>Banco destino:</strong> {{ $data['transfer']->destinationAccount->bank->name ?? 'Banco N/D' }}</li>
-                                <li><strong>Número de cuenta destino:</strong> {{ $data['transfer']->destination_account_number }}</li>
+                                <li><strong>Número de cuenta destino:</strong> {{ $data['transfer']->destinationAccount->account_number ?? 'N/D' }}</li>
+
                             </ul>
 
                             @php
@@ -77,7 +78,7 @@
 
                             <!-- Botón -->
                             <p style="text-align:center; margin:30px 0;">
-                                <a href="{{ url('/admin/transfers') }}" style="display:inline-block; padding:12px 25px; background-color:#FF6600; color:#ffffff; text-decoration:none; border-radius:5px; font-weight:bold;">
+                                <a href="{{ url('/admin/login') }}" style="display:inline-block; padding:12px 25px; background-color:#FF6600; color:#ffffff; text-decoration:none; border-radius:5px; font-weight:bold;">
                                     🔗 Ir al panel de administración
                                 </a>
                             </p>

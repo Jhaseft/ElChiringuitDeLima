@@ -5,7 +5,6 @@ export default function ModalTransferencia({
   isOpen,
   onClose,
   tasa,
-  user,
   cuentaOrigen,
   cuentaDestino,
   modo,
@@ -42,17 +41,17 @@ export default function ModalTransferencia({
     }
 
     setLoading(true);
-    setError("");
+    setError(""); 
 
     try {
       const formData = new FormData();
-      formData.append("user_id", user.id);
-      formData.append("origin_account_number", cuentaOrigen.account_number);
-      formData.append("destination_account_number", cuentaDestino.account_number);
+      formData.append("origin_account_id", cuentaOrigen.id);       // ✅ enviar id, no número
+      formData.append("destination_account_id", cuentaDestino.id); // ✅ enviar id, no número
       formData.append("amount", monto);
       formData.append("exchange_rate", tasa);
       formData.append("converted_amount", conversion);
       formData.append("comprobante", comprobante);
+      formData.append("modo", modo); // ✅ nuevo campo
 
       const res = await fetch("/operacion/crear-transferencia", {
         method: "POST",

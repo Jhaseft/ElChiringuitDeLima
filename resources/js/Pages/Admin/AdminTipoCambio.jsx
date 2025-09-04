@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import AdminHeader from "@/Components/admin/AdminHeader.jsx";
 import TipoCambioForm from "@/Components/admin/TipoCambioForm";
 import AdminUserMediaTable from "@/Components/admin/AdminUserMediaTable";
+import AdminTransfers from "@/Components/admin/AdminTranfers";
 
 export default function AdminTipoCambio({ tipoCambio }) {
   const tipoCambioRef = useRef(null);
@@ -88,11 +89,11 @@ export default function AdminTipoCambio({ tipoCambio }) {
         ref={transferenciasRef}
         className="min-h-screen flex justify-center items-center px-4"
       >
-        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8 max-w-4xl w-[95%] sm:w-full text-center text-gray-500">
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8 max-w-7xl w-[95%] sm:w-full  text-center text-gray-500">
           <h2 className="text-2xl sm:text-3xl font-semibold mb-6 text-gray-700">
             Transferencias de Usuarios
           </h2>
-          <p>🚧 Esta sección está en desarrollo...</p>
+          <AdminTransfers />
         </div>
       </section>
     </div>

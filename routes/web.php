@@ -6,6 +6,7 @@ use App\Http\Controllers\FaceController;
 use App\Http\Controllers\CompleteProfileController;
 use App\Http\Controllers\OperacionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\AdminTransfers;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminControllerDashboard;
 use App\Http\Controllers\AdminUserMediaController;
@@ -112,9 +113,18 @@ Route::prefix('admin')->group(function () {
         Route::get('/dashboard', [AdminControllerDashboard::class, 'index']);
         Route::post('/tipo-cambio', [AdminControllerDashboard::class, 'update']);
         
- Route::get('/users', [AdminUserMediaController::class, 'index']);
+    Route::get('/users', [AdminUserMediaController::class, 'index']);
     Route::get('/users/{user}/detail', [AdminUserMediaController::class, 'show']);
-    Route::delete('/users/{user}', [AdminUserMediaController::class, 'destroy']);
+
+
+
+    Route::get('/transfers', [AdminTransfers::class, 'index']);
+    Route::get('/transfers/{id}', [AdminTransfers::class, 'show']);
+    Route::post('/transfers', [AdminTransfers::class, 'store']);
+    Route::put('/transfers/{id}', [AdminTransfers::class, 'update']);
+    Route::delete('/transfers/{id}', [AdminTransfers::class, 'destroy']);
+
+    
     });
 });
 

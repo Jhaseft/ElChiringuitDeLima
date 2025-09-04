@@ -10,7 +10,7 @@ class AdminUserMediaController extends Controller
     public function index(Request $request)
 {
     try {
-        $perPage = (int) $request->query('perPage', 10);
+        $perPage = (int) $request->query('perPage', 6);
         $search  = trim($request->query('search', ''));
 
         $query = User::query();

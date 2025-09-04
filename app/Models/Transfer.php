@@ -10,13 +10,15 @@ class Transfer extends Model
     use HasFactory;
 
     protected $fillable = [
-    'user_id',
-    'origin_account_number',
-    'destination_account_number',
-    'amount',
-    'exchange_rate',
-    'status',
-];
+        'user_id',
+        'origin_account_id',
+        'destination_account_id',
+        'amount',
+        'exchange_rate',
+        'converted_amount',   // monto convertido
+        'modo',               // <--- agregar aquí
+        'status',
+    ];
 
     public function user()
     {
@@ -24,14 +26,12 @@ class Transfer extends Model
     }
 
     public function originAccount()
-{
-    return $this->hasOne(Account::class, 'account_number', 'origin_account_number');
-}
+    {
+        return $this->belongsTo(Account::class, 'origin_account_id')->with('bank','owner');
+    }
 
-public function destinationAccount()
-{
-    return $this->hasOne(Account::class, 'account_number', 'destination_account_number');
-}
-
-
+    public function destinationAccount()
+    {
+        return $this->belongsTo(Account::class, 'destination_account_id')->with('bank','owner');
+    }
 }
