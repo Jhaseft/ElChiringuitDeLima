@@ -3,28 +3,27 @@ import InicioLayout from "@/Layouts/Inicio/InicioLayout";
 import { FaWhatsapp } from "react-icons/fa";
 
 export default function Contacto() {
-  const numerosBolivia = [
-    "59177958109",
-    "59175995613",
-    "59176925774",
-    "59169325874",
-  ];
+  const numerosBolivia = ["59177958109"];
   const numerosPeru = ["51907844210"];
 
   const renderCards = (numeros, pais, color) => (
-    <div className="mb-8">
-      <h2 className={`text-3xl font-bold mb-4 text-${color}-700`}>{pais}</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+    <div className="mb-12 w-full flex flex-col items-center">
+      <h2 className={`text-3xl font-bold mb-6 text-${color}-700 text-center`}>
+        {pais}
+      </h2>
+      <div className="flex flex-col items-center gap-8">
         {numeros.map((num) => (
           <a
             key={num}
             href={`https://wa.me/${num}`}
             target="_blank"
             rel="noopener noreferrer"
-            className={`flex items-center justify-center gap-3 p-6 bg-${color}-100 hover:bg-${color}-200 rounded-xl shadow-lg transition transform hover:scale-105`}
+            className={`flex flex-col items-center justify-center gap-3 p-8 bg-${color}-100 hover:bg-${color}-200 rounded-2xl shadow-lg transition-transform transform hover:scale-105 w-60`}
           >
-            <FaWhatsapp className={`text-${color}-600 w-8 h-8`} />
-            <span className="text-xl font-semibold">{num}</span>
+            <FaWhatsapp className={`text-${color}-600 w-12 h-12`} />
+            <span className="text-2xl font-bold text-center text-gray-800">
+              {num}
+            </span>
           </a>
         ))}
       </div>
@@ -35,8 +34,8 @@ export default function Contacto() {
     <>
       <Head title="Transfer Cash" />
       <InicioLayout>
-        <div className="max-w-6xl mx-auto p-8">
-          <h1 className="text-4xl font-extrabold mb-8 text-center">
+        <div className="max-w-6xl mx-auto p-8 flex flex-col items-center">
+          <h1 className="text-4xl font-extrabold mb-12 text-center">
             Contacto Rápido
           </h1>
 

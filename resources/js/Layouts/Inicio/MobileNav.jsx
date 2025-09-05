@@ -52,6 +52,15 @@ export default function MobileNav({ links, user, menuOpen, setMenuOpen }) {
             {userMenu && (
               <div className="mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 animate-fade-slide">
                 <Link
+                href={route("transfers.history")} 
+                className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all rounded"
+                onClick={() => setUserMenu(false)}
+              >
+                Ver Historial
+              </Link>
+
+
+                <Link
                   href={route("logout")}
                   method="post"
                   as="button"

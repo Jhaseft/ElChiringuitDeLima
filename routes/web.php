@@ -10,7 +10,10 @@ use App\Http\Controllers\AdminTransfers;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminControllerDashboard;
 use App\Http\Controllers\AdminUserMediaController;
+use App\Http\Controllers\TransferController;
 use App\Models\Bank;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -58,15 +61,14 @@ Route::middleware(['web'])->group(function () {
 
 // Perfil y KYC
 Route::middleware('auth')->group(function () {
+
     Route::get('/complete-profile', [CompleteProfileController::class, 'index'])->name('complete-profile');
     Route::post('/complete-profile', [CompleteProfileController::class, 'store'])->name('complete-profile.store');
 
     Route::get('/face', [FaceController::class, 'index'])->name('face.index');
     Route::post('/face/verify', [FaceController::class, 'verify'])->name('face.verify');
 
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/transfers/history', [TransferController::class, 'history'])->name('transfers.history');
 });
 
 // Login Google
@@ -127,8 +129,48 @@ Route::prefix('admin')->group(function () {
     
     });
 });
+//ruta oara proxy KYC
+Route::post('/kyc-proxy', function (Request $request) {
+    $user = $request->user(); // opcional, si quieres asociar a usuario logueado
+    if (!$user) {
+        return response()->json(['error' => 'No autenticado'], 401);
+    }
 
+    // Construir la petición al API externo
+    $http = Http::withHeaders([
+        'Accept' => 'application/json',
+    ]);
 
+    // Adjuntar archivos
+    if ($request->hasFile('carnet')) {
+        $http = $http->attach(
+            'carnet', file_get_contents($request->file('carnet')->getRealPath()), 'documento_frente.jpg'
+        );
+    }
+
+    if ($request->hasFile('carnet_back')) {
+        $http = $http->attach(
+            'carnet_back', file_get_contents($request->file('carnet_back')->getRealPath()), 'documento_reverso.jpg'
+        );
+    }
+
+    if ($request->hasFile('video')) {
+        $http = $http->attach(
+            'video', file_get_contents($request->file('video')->getRealPath()), 'video.mp4'
+        );
+    }
+
+    // Otros campos
+    $params = [
+        'doc_type' => $request->input('doc_type'),
+    ];
+
+    // Hacer POST al API externo
+    $response = $http->post('https://apiface-production-767c.up.railway.app/registro-face/verify', $params);
+
+    return response($response->body(), $response->status())
+        ->header('Content-Type', $response->header('Content-Type'));
+});
 // Tipo de cambio - API pública
 Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'historial']);
 

@@ -4,7 +4,6 @@ import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 export default function DesktopNav({ links, user, userMenu, setUserMenu }) {
   return (
     <nav className="hidden md:flex items-center space-x-8 font-medium">
-      {/* Links principales */}
       {links.map((link) => (
         <a
           key={link.name}
@@ -16,7 +15,6 @@ export default function DesktopNav({ links, user, userMenu, setUserMenu }) {
         </a>
       ))}
 
-      {/* Autenticación */}
       {!user ? (
         <a
           href="/login"
@@ -27,7 +25,6 @@ export default function DesktopNav({ links, user, userMenu, setUserMenu }) {
         </a>
       ) : (
         <div className="relative">
-          {/* Botón usuario */}
           <button
             onClick={() => setUserMenu(!userMenu)}
             className="flex items-center gap-1 text-gray-800 font-semibold hover:text-blue-600 transition-colors px-2 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -40,9 +37,16 @@ export default function DesktopNav({ links, user, userMenu, setUserMenu }) {
             )}
           </button>
 
-          {/* Dropdown */}
           {userMenu && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 animate-fade-slide z-50">
+              <Link
+                href={route("transfers.history")} 
+                className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all rounded"
+                onClick={() => setUserMenu(false)}
+              >
+                Ver Historial
+              </Link>
+
               <Link
                 href={route("logout")}
                 method="post"
