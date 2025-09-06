@@ -48,28 +48,31 @@ export default function Register() {
 
   const prevStep = () => setStep(step - 1);
 
-  const submit = (e) => {
-    e.preventDefault();
-    if (step < 3) {
-      nextStep();
-    } else {
-      setMessage(""); // limpiar mensaje previo
-      setLoading(true); // mostrar overlay de carga
-      post('/register-provisional', {
-    data,
-    onFinish: () => {
+const submit = (e) => {
+  e.preventDefault();
+  if (step < 3) {
+    nextStep();
+  } else {
+    setMessage("");
+    setLoading(true);
+
+    post("/register-provisional", {
+      data,
+      onSuccess: (page) => {
         setLoading(false);
-        setMessage('Correo enviado. Revisa tu bandeja y confirma para completar el registro luego vuelve e inciia sesion.');
-        reset('password', 'password_confirmation');
-    },
-    onError: (errs) => {
-        const allErrors = Object.values(errs).flat().join(' ');
-        setMessage(allErrors || 'Hubo un error al enviar el correo.');
+        const msg = page?.props?.flash?.message || "✅ Correo enviado correctamente.";
+        setMessage("✅ " + msg);
+        reset("password", "password_confirmation");
+      },
+      onError: (errs) => {
         setLoading(false);
-    },
-});
-    }
-  };
+        const allErrors = Object.values(errs).flat().join(" ");
+        setMessage("❌ " + (allErrors || "Hubo un error al enviar el correo."));
+      },
+    });
+  }
+};
+
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-4 sm:px-6">
@@ -90,12 +93,17 @@ export default function Register() {
           Crear una cuenta
         </h1>
 
-        {/* Mensaje global de error */}
-        {message && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {message}
-          </div>
-        )}
+       {message && (
+  <div
+    className={`mb-4 p-3 rounded border ${
+      message.startsWith("✅")
+        ? "bg-green-100 border-green-400 text-green-700"
+        : "bg-red-100 border-red-400 text-red-700"
+    }`}
+  >
+    {message}
+  </div>
+)}
 
         {/* Stepper */}
         <Stepper step={step} />

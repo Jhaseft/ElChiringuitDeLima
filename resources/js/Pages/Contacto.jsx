@@ -32,7 +32,7 @@ export default function Contacto() {
 
   return (
     <>
-      <Head title="Transfer Cash" />
+      <Head title="Transfer Cash - Contacto" />
       <InicioLayout>
         <div className="max-w-6xl mx-auto p-8 flex flex-col items-center">
           <h1 className="text-4xl font-extrabold mb-12 text-center">

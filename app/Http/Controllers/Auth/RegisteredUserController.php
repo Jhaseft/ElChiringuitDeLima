@@ -27,27 +27,35 @@ class RegisteredUserController extends Controller
     public function store(Request $request)
 {
     $request->validate([
-        'first_name' => 'required|string|max:255',
-        'last_name' => 'required|string|max:255',
-        'email' => 'required|string|email|max:255|unique:users,email',
-        'phone' => 'nullable|string|max:20|unique:users,phone',
-        'nationality' => 'nullable|string|max:100',
-        'document_number' => 'nullable|string|max:50|unique:users,document_number',
-        'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        'first_name'       => 'required|string|max:255',
+        'last_name'        => 'required|string|max:255',
+        'email'            => 'required|string|email|max:255|unique:users,email',
+        'phone'            => 'nullable|string|max:20|unique:users,phone',
+        'nationality'      => 'nullable|string|max:100',
+        'document_number'  => 'nullable|string|max:50|unique:users,document_number',
+        'password'         => ['required', 'confirmed', Rules\Password::defaults()],
     ]);
 
-    // Crear token temporal
     $token = Str::random(64);
 
-    // Guardar datos del registro en cache por 30 min
+    // Guardar datos en cache por 30 min
     Cache::put('register:' . $token, $request->all(), now()->addMinutes(30));
 
-    // Generar enlace firmado
     $url = route('email.verify', ['token' => $token]);
 
-    // Enviar correo
-    Mail::to($request->email)->send(new VerifyEmail($url));
+    try {
+        Mail::to($request->email)->send(new VerifyEmail($url));
 
-    return redirect('/');
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Correo enviado. Revisa tu bandeja y confirma tu cuenta.',
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'No se pudo enviar el correo de verificación. Inténtalo de nuevo.',
+        ], 500);
+    }
 }
+
 }

@@ -58,7 +58,15 @@ export default function CompleteProfile({ user }) {
       <h1 className="text-xl font-bold mb-6 text-center">Completa tu perfil</h1>
 
       <Stepper step={step} />
-
+{Object.keys(errors).length > 0 && (
+  <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded">
+    <ul className="list-disc list-inside">
+      {Object.values(errors).map((error, idx) => (
+        <li key={idx}>{error}</li>
+      ))}
+    </ul>
+  </div>
+)}
       <form onSubmit={submit} className="space-y-4">
         {step === 1 && (
           <Step1Personal data={data} setData={setData} errors={errors} />
