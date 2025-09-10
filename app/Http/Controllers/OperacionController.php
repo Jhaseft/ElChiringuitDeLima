@@ -213,8 +213,8 @@ try {
                     "• Email: ".($destOwner->email ?? 'N/D')."\n\n";
     }
 
-    $mensaje .= "📎 *Comprobante*: verificar en el sistema.\n\n".
-                "🔗 Ir al panel de administración:\n".
+    $mensaje .= "📎 *Comprobante*: verificar en los Mails.\n\n".
+                "🔗 Ir al panel de administración para mas detalles:\n".
                 url('/admin/login');
 
     // Configuración Evolution API

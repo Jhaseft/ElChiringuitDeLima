@@ -10,7 +10,7 @@ export default function ModalCuentaDestino({
   onClose,
   onCuentaGuardada,
   user,
-  nationality,
+  modo, // BOBtoPEN o PENtoBOB
 }) {
   const [form, setForm] = useState({
     banco: null,
@@ -41,35 +41,41 @@ export default function ModalCuentaDestino({
     }
   }, [isOpen]);
 
-  // Filtrado de bancos
-useEffect(() => {
-  if (!isOpen) return;
+  // Filtrar bancos según modo
+  useEffect(() => {
+    if (!isOpen) return;
 
-  const fetchBancos = async () => {
-    try {
-      let data = bancosCache || bancos;
-      if (!data || data.length === 0) {
-        const res = await fetch("/operacion/listar-bancos");
-        if (!res.ok) throw new Error("Error al listar bancos");
-        data = await res.json();
+    const fetchBancos = async () => {
+      try {
+        let data = bancosCache || bancos;
+
+        if (!data || data.length === 0) {
+          const res = await fetch("/operacion/listar-bancos");
+          if (!res.ok) {
+            console.error("Error al listar bancos:", await res.text());
+            return;
+          }
+          data = await res.json();
+        }
+
         bancosCache = data;
+
+        // 👉 Filtrar según modo
+        let filtrados = [];
+        if (modo === "PENtoBOB") {
+          filtrados = data.filter((b) => b.country.toLowerCase() === "bolivia");
+        } else if (modo === "BOBtoPEN") {
+          filtrados = data.filter((b) => b.country.toLowerCase() === "peru");
+        }
+
+        setBancosDisponibles(filtrados);
+      } catch (err) {
+        console.error("Error al listar bancos:", err);
       }
+    };
 
-      // 👇 Ordenamos: bancos de Perú primero
-      const ordenados = [...data].sort((a, b) => {
-        if (a.country.toLowerCase() === "peru" && b.country.toLowerCase() !== "peru") return -1;
-        if (a.country.toLowerCase() !== "peru" && b.country.toLowerCase() === "peru") return 1;
-        return 0; // si son del mismo país, se quedan como están
-      });
-
-      setBancosDisponibles(ordenados);
-    } catch (err) {
-      console.error("Error al listar bancos:", err);
-    }
-  };
-
-  fetchBancos();
-}, [isOpen, bancos]);
+    fetchBancos();
+  }, [isOpen, bancos, modo]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -112,15 +118,8 @@ useEffect(() => {
       });
 
       const text = await res.text();
-      if (text.startsWith("<!DOCTYPE html>") || text.startsWith("<html")) {
-        console.error("Respuesta HTML inesperada:", text);
-        if (res.status === 419) alert("Sesión expirada. Recarga la página.");
-        else if (res.status === 401) alert("No autorizado. Inicia sesión.");
-        else alert("Error inesperado del servidor.");
-        return;
-      }
-
       const data = JSON.parse(text);
+
       if (!res.ok) throw new Error(data.message || "Error en el servidor");
 
       onCuentaGuardada && onCuentaGuardada(data);
@@ -134,6 +133,14 @@ useEffect(() => {
   };
 
   if (!isOpen) return null;
+
+  // 👇 Placeholder dinámico y tipo de input según banco
+  const esYapeOPlin =
+    form.banco && ["yape", "plin"].includes(form.banco.name?.toLowerCase());
+  const cuentaPlaceholder = esYapeOPlin
+    ? "Número de teléfono"
+    : "Número de cuenta";
+  const cuentaType = esYapeOPlin ? "tel" : "number";
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 px-2">
@@ -181,7 +188,7 @@ useEffect(() => {
             <input
               type="number"
               name="dniPropietario"
-              placeholder="DNI"
+              placeholder="CI"
               value={form.dniPropietario}
               onChange={handleChange}
               className="w-full border rounded-lg p-2 mb-2"
@@ -200,9 +207,9 @@ useEffect(() => {
 
           <div>
             <input
-              type="number"
+              type={cuentaType}
               name="numeroCuenta"
-              placeholder="Número de cuenta"
+              placeholder={cuentaPlaceholder}
               value={form.numeroCuenta}
               onChange={handleChange}
               className="w-full border rounded-lg p-2"
@@ -230,7 +237,10 @@ useEffect(() => {
                 disabled={loading}
               />
               Acepto los{" "}
-              <a href="/politicas" className="text-blue-600 underline cursor-pointer">
+              <a
+                href="/politicas"
+                className="text-blue-600 underline cursor-pointer"
+              >
                 Términos y condiciones y la Política de privacidad
               </a>
             </label>

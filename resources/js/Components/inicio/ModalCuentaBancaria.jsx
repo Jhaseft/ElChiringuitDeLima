@@ -9,9 +9,9 @@ export default function ModalCuentaBancaria({
   isOpen,
   onClose,
   user,
-  nationality,
   accountType = "origin",
   onCuentaGuardada,
+  modo,//BOBtoPEN o PENtoBOB
 }) {
   const [banco, setBanco] = useState(null);
   const [numeroCuenta, setNumeroCuenta] = useState("");
@@ -21,40 +21,50 @@ export default function ModalCuentaBancaria({
   const [loading, setLoading] = useState(false);
 
   const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-useEffect(() => {
-  if (!isOpen) return;
 
-  const fetchBancos = async () => {
-    try {
-      let data = bancosCache || bancosProp;
 
-      if (!data || data.length === 0) {
-        const res = await fetch("/operacion/listar-bancos");
-        if (!res.ok) {
-          console.error("Error al listar bancos:", await res.text());
-          return;
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchBancos = async () => {
+      try {
+        let data = bancosCache || bancosProp;
+
+        if (!data || data.length === 0) {
+          const res = await fetch("/operacion/listar-bancos");
+          if (!res.ok) {
+            console.error("Error al listar bancos:", await res.text());
+            return;
+          }
+          data = await res.json();
         }
-        data = await res.json();
+
+        bancosCache = data;
+
+        // 👉 Filtrar según modo y tipo de cuenta
+        let filtrados = [];
+        if (modo === "PENtoBOB") {
+          if (accountType === "origin") {
+            filtrados = data.filter((b) => b.country.toLowerCase() === "peru");
+          } else {
+            filtrados = data.filter((b) => b.country.toLowerCase() === "bolivia");
+          }
+        } else if (modo === "BOBtoPEN") {
+          if (accountType === "origin") {
+            filtrados = data.filter((b) => b.country.toLowerCase() === "bolivia");
+          } else {
+            filtrados = data.filter((b) => b.country.toLowerCase() === "peru");
+          }
+        }
+
+        setBancosDisponibles(filtrados);
+      } catch (err) {
+        console.error("Error al listar bancos:", err);
       }
+    };
 
-      bancosCache = data;
-
-      // 👉 Ordenar: bancos de Perú primero
-      const ordenados = [...data].sort((a, b) => {
-        if (a.country.toLowerCase() === "peru" && b.country.toLowerCase() !== "peru") return -1;
-        if (a.country.toLowerCase() !== "peru" && b.country.toLowerCase() === "peru") return 1;
-        return 0;
-      });
-
-      setBancosDisponibles(ordenados);
-
-    } catch (err) {
-      console.error("Error al listar bancos:", err);
-    }
-  };
-
-  fetchBancos();
-}, [isOpen, nationality, accountType, bancosProp]);
+    fetchBancos();
+  }, [isOpen, , accountType, bancosProp, modo]);
 
 
   const handleSave = async () => {
@@ -112,6 +122,16 @@ useEffect(() => {
 
   if (!isOpen) return null;
 
+  const cuentaPlaceholder =
+    banco && ["yape", "plin"].includes(banco.name?.toLowerCase())
+      ? "Número de teléfono"
+      : "Número de cuenta";
+
+  const cuentaType =
+    banco && ["yape", "plin"].includes(banco.name?.toLowerCase())
+      ? "tel"
+      : "number";
+
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 px-2">
       {/* Overlay bloqueante mientras se guarda */}
@@ -154,13 +174,15 @@ useEffect(() => {
 
         <div className="mb-4">
           <label className="block text-sm font-semibold mb-1">
-            Número de Cuenta
+            {cuentaPlaceholder}
           </label>
           <input
-            type="number"
+            type={cuentaType}
             value={numeroCuenta}
             onChange={(e) => setNumeroCuenta(e.target.value)}
-            placeholder="Ej: 1234567890"
+            placeholder={
+              cuentaType === "tel" ? "Ej: 987654321" : "Ej: 1234567890"
+            }
             className="w-full border rounded-lg px-3 py-2 text-sm"
             disabled={loading}
           />
@@ -188,7 +210,7 @@ useEffect(() => {
               Términos y condiciones y la Política de privacidad
             </a>
           </label>
-        </div> 
+        </div>
 
         <div className="flex justify-end gap-2">
           <button
@@ -201,11 +223,10 @@ useEffect(() => {
           <button
             onClick={handleSave}
             disabled={!(juramento && terminos && banco && numeroCuenta) || loading}
-            className={`bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 ${
-              !(juramento && terminos && banco && numeroCuenta) || loading
+            className={`bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 ${!(juramento && terminos && banco && numeroCuenta) || loading
                 ? "opacity-50 cursor-not-allowed"
                 : ""
-            }`}
+              }`}
           >
             Guardar
           </button>

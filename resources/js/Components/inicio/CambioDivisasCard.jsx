@@ -10,7 +10,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
 
   const [monto, setMonto] = useState("");
   const [conversion, setConversion] = useState("");
-  const [modo, setModo] = useState("BOBtoPEN"); // "BOBtoPEN" o "PENtoBOB"
+  const [modo, setModo] = useState("PENtoBOB"); // "BOBtoPEN" o "PENtoBOB"
   const [error, setError] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 

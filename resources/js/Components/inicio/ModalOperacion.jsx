@@ -190,14 +190,7 @@ export default function ModalOperacion({
                 >
                   <Plus size={18} />
                 </button>
-                <button
-                  onClick={() => eliminarCuenta(cuentaOrigen)}
-                  className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition"
-                  title="Eliminar cuenta"
-                  disabled={!cuentaOrigen || loading}
-                >
-                  <Trash2 size={18} />
-                </button>
+                
               </div>
             )}
           </div>
@@ -223,14 +216,7 @@ export default function ModalOperacion({
                 >
                   <Plus size={18} />
                 </button>
-                <button
-                  onClick={() => eliminarCuenta(cuentaDestino)}
-                  className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition"
-                  title="Eliminar cuenta"
-                  disabled={!cuentaDestino || loading}
-                >
-                  <Trash2 size={18} />
-                </button>
+                
               </div>
             )}
           </div>
@@ -291,6 +277,7 @@ export default function ModalOperacion({
       <ModalCuentaBancaria
         isOpen={openCuentaOrigen}
         bancos={bancos}
+        modo={modo }  // Pasamos el modo BOBtoPEN o PENtoBOB
         onClose={() => setOpenCuentaOrigen(false)}
         user={user}
         nationality={user.nationality}
@@ -316,6 +303,7 @@ export default function ModalOperacion({
       <ModalCuentaDestino
         isOpen={openCuentaDestino}
         bancos={bancos}
+        modo={modo }  // Pasamos el modo BOBtoPEN o PENtoBOB
         onClose={() => setOpenCuentaDestino(false)}
         user={user}
         nationality={user.nationality}
