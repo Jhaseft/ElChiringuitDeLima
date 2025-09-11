@@ -175,7 +175,7 @@ class OperacionController extends Controller
     ];
 
     // Enviar mails
-    Mail::to("jhasesaat@gmail.com")->send(new \App\Mail\NuevaTransferenciaAdmin($payload));
+    Mail::to("operaciones@transfercash.click")->send(new \App\Mail\NuevaTransferenciaAdmin($payload));
     Mail::to($user->email)->send(new \App\Mail\NuevaTransferenciaUsuario($payload));
 
     // 🔔 Enviar mensaje ya armado a n8n (para Evolution API)
@@ -216,7 +216,7 @@ try {
     $mensaje .= "📎 *Comprobante*: verificar en los Mails.\n\n".
                 "🔗 Ir al panel de administración para mas detalles:\n".
                 url('/admin/login');
-
+ 
     // Configuración Evolution API
     $server   = "https://prueba-evolution-api-lima.ylblfg.easypanel.host";
     $instance = "TransferCash";
