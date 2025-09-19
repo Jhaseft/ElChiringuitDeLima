@@ -34,7 +34,7 @@ class AuthController extends Controller
             return redirect()->route('complete-profile');
         }
 
-        // Si ya tiene perfil incompleto, redirigir
+        // Si  tiene perfil incompleto, redirigir
         if (empty($user->nationality) || empty($user->phone) || empty($user->accepted_terms_at) || empty($user->document_number)) {
             Auth::login($user);
             return redirect()->route('complete-profile');

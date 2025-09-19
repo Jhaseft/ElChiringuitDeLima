@@ -35,7 +35,7 @@ class RegisteredUserController extends Controller
         'document_number'  => 'nullable|string|max:50|unique:users,document_number',
         'password'         => ['required', 'confirmed', Rules\Password::defaults()],
     ]);
-
+ 
     $token = Str::random(64);
 
     // Guardar datos en cache por 30 min

@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Controllers\AppNative;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FaceController; 
@@ -171,9 +171,10 @@ Route::post('/kyc-proxy', function (Request $request) {
     return response($response->body(), $response->status())
         ->header('Content-Type', $response->header('Content-Type'));
 });
+
+
 // Tipo de cambio - API pública
 Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'historial']);
-
 
 
 require __DIR__.'/auth.php';
