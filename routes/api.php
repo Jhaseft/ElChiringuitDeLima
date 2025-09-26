@@ -15,5 +15,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/userapp', [AppNative::class, 'user']);
    Route::get('/listar-cuentas', [AppNative::class, 'listarCuentas']);
  Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta']);
-  Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia'])->name('operacion.crearTransferencia');
+  Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia']);
 });
