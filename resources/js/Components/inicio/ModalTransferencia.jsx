@@ -25,9 +25,7 @@ export default function ModalTransferencia({
 
   const handleUpload = (e) => setComprobante(e.target.files[0]);
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-  };
+  const copyToClipboard = (text) => navigator.clipboard.writeText(text);
 
   const handleEnviar = async () => {
     if (!comprobante) {
@@ -41,17 +39,17 @@ export default function ModalTransferencia({
     }
 
     setLoading(true);
-    setError(""); 
+    setError("");
 
     try {
       const formData = new FormData();
-      formData.append("origin_account_id", cuentaOrigen.id);       // ✅ enviar id, no número
-      formData.append("destination_account_id", cuentaDestino.id); // ✅ enviar id, no número
+      formData.append("origin_account_id", cuentaOrigen.id);
+      formData.append("destination_account_id", cuentaDestino.id);
       formData.append("amount", monto);
       formData.append("exchange_rate", tasa);
       formData.append("converted_amount", conversion);
       formData.append("comprobante", comprobante);
-      formData.append("modo", modo); // ✅ nuevo campo
+      formData.append("modo", modo);
 
       const res = await fetch("/operacion/crear-transferencia", {
         method: "POST",
@@ -74,9 +72,50 @@ export default function ModalTransferencia({
     }
   };
 
-  // 🔥 Ahora dependemos de "modo"
+  // 🔥 Configuración escalable
+  const transferOptions = {
+    BOBtoPEN: [
+      {
+        type: "qr",
+        title: "QR Bolivia",
+        image:
+          "https://res.cloudinary.com/dnbklbswg/image/upload/v1756359417/qr_hgokvi.jpg",
+      },
+    ],
+    PENtoBOB: [
+      {
+        type: "Yape",
+        title: "Yape Perú",
+        number: "947847817",
+        image:
+          "https://res.cloudinary.com/dnbklbswg/image/upload/v1756359619/yape-logo-png_seeklogo-504685_tns3su.png",
+      },
+      {
+        type: "Plin",
+        title: "Plin Perú",
+        number: "947847817",
+        image:
+          "https://res.cloudinary.com/dnbklbswg/image/upload/v1756359595/plin_fi3i8u.png",
+      },
+      {
+        type: "InterBank",
+        title: "InterBank Perú",
+        number: "00222000706362203721",
+        image:
+          "https://res.cloudinary.com/dnbklbswg/image/upload/v1756305466/download_zxsiny.png",
+      },
+       {
+        type: "InterBank",
+        title: "BCP Perú",
+        number: "2207063622037  ",
+        image:
+          "https://res.cloudinary.com/dnbklbswg/image/upload/v1756304903/bcp_mtkdyl.png",
+      },
+    ],
+  };
+
+  const opciones = transferOptions[modo] || [];
   const isBOBtoPEN = modo === "BOBtoPEN";
-  const isPENtoBOB = modo === "PENtoBOB";
 
   const montoTexto = isBOBtoPEN ? `${monto} BOB` : `${monto} PEN`;
   const conversionTexto = isBOBtoPEN ? `${conversion} PEN` : `${conversion} BOB`;
@@ -140,72 +179,52 @@ export default function ModalTransferencia({
                 <span className="text-green-600">{montoTexto}</span>
               </p>
 
-              {/* BOB → PEN (mostrar QR) */}
-              {isBOBtoPEN && (
-                <div className="flex flex-col items-center gap-2">
-                  <p className="font-semibold">Escanea el QR para transferir</p>
-                  <div className="bg-white p-2 rounded-lg shadow">
-                    <img
-                      src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756359417/qr_hgokvi.jpg"
-                      alt="QR CUERE Bolivia"
-                      className="w-40 h-40 object-contain"
-                    />
-                  </div>
-                </div>
-              )}
+              {/* Render dinámico */}
+              <div className="flex flex-col gap-4 mt-4 items-center">
+                {opciones.map((op, idx) => {
+                  if (op.type === "qr") {
+                    return (
+                      <div key={idx} className="flex flex-col items-center gap-2">
+                        <p className="font-semibold">Escanea el QR para transferir</p>
+                        <div className="bg-white p-2 rounded-lg shadow">
+                          <img
+                            src={op.image}
+                            alt={op.title}
+                            className="w-40 h-40 object-contain"
+                          />
+                        </div>
+                      </div>
+                    );
+                  }
 
-              {/* PEN → BOB (mostrar Yape & Plin) */}
-              {isPENtoBOB && (
-                <div className="flex flex-col gap-4 mt-4">
-                  {/* Yape */}
-                  <div className="flex items-center gap-3 border rounded-lg p-3 shadow-sm">
-                    <div className="flex-shrink-0">
-                      <img
-                        src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756359619/yape-logo-png_seeklogo-504685_tns3su.png"
-                        alt="Yape"
-                        className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
-                      />
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 border rounded-lg p-3 shadow-sm w-full"
+                    >
+                      <div className="flex-shrink-0">
+                        <img
+                          src={op.image}
+                          alt={op.title}
+                          className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
+                        />
+                      </div>
+                      <div className="text-left text-sm flex-1">
+                        <p className="font-bold text-gray-800">{op.title}</p>
+                        <p className="flex items-center gap-2">
+                          Número: <span className="font-mono">{op.number}</span>
+                          <button
+                            onClick={() => copyToClipboard(op.number)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            <Copy size={14} />
+                          </button>
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-left text-sm flex-1">
-                      <p className="font-bold text-gray-800">Yape Perú</p>
-                      <p className="flex items-center gap-2">
-                        Número: <span className="font-mono">947847817</span>
-                        <button
-                          onClick={() => copyToClipboard("947847817")}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <Copy size={14} />
-                        </button>
-                      </p>
-                      <p className="text-gray-700">Titular: Huguier Lee Sánchez Del Castillo</p>
-                    </div>
-                  </div>
-
-                  {/* Plin */}
-                  <div className="flex items-center gap-3 border rounded-lg p-3 shadow-sm">
-                    <div className="flex-shrink-0">
-                      <img
-                        src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756359595/plin_fi3i8u.png"
-                        alt="Plin"
-                        className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
-                      />
-                    </div>
-                    <div className="text-left text-sm flex-1">
-                      <p className="font-bold text-gray-800">Plin Perú</p>
-                      <p className="flex items-center gap-2">
-                        Número: <span className="font-mono">947847817</span>
-                        <button
-                          onClick={() => copyToClipboard("947847817")}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <Copy size={14} />
-                        </button>
-                      </p>
-                      <p className="text-gray-700">Titular: Huguier Lee Sánchez Del Castillo</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
 
             {/* Subir comprobante */}

@@ -1,12 +1,19 @@
 <?php
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AppNative;
-
+use App\Http\Controllers\OperacionController;
+// Registro y verificación
 Route::post('/register', [AppNative::class, 'register']);
 Route::post('/verify-code', [AppNative::class, 'verifyCode']);
 
-// Rutas de login/logout/user si no las tienes
+// Login
 Route::post('/loginapp', [AppNative::class, 'login']);
-Route::post('/logout', [AppNative::class, 'logout'])->middleware('auth:sanctum');
-Route::get('/userapp', [AppNative::class, 'user'])->middleware('auth:sanctum');
+
+// Rutas protegidas con token Sanctum
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AppNative::class, 'logout']);
+    Route::get('/userapp', [AppNative::class, 'user']);
+   Route::get('/listar-cuentas', [AppNative::class, 'listarCuentas']);
+ Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta']);
+  Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia'])->name('operacion.crearTransferencia');
+});

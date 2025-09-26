@@ -29,7 +29,7 @@ export default function Politicas() {
               <section className="pt-2">
                 <h2 className="text-lg font-semibold text-gray-800 mb-1">Objeto</h2>
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  El presente documento regula el uso de cuentas bancarias, billeteras electrónicas y demás instrumentos financieros registrados y utilizados por los usuarios dentro de la plataforma web Transfer Cash (<a href="https://www.elchangarrodelima.com" className="text-indigo-600 underline">www.elchangarrodelima.com</a>).
+                  El presente documento regula el uso de cuentas bancarias, billeteras electrónicas y demás instrumentos financieros registrados y utilizados por los usuarios dentro de la plataforma web Transfer Cash (<a href="https://www.transfercash.click" className="text-indigo-600 underline">www.transfercash.click</a>).
                 </p>
               </section>
 
@@ -92,7 +92,7 @@ export default function Politicas() {
               <section className="pt-2">
                 <h2 className="text-lg font-semibold text-gray-800 mb-1">Aceptación</h2>
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  El uso de la plataforma <a href="https://www.elchangarrodelima.com" className="text-indigo-600 underline">www.elchangarrodelima.com</a> implica la aceptación total de los presentes términos y condiciones.
+                  El uso de la plataforma <a href="https://www.transfercash.click" className="text-indigo-600 underline">www.transfercash.click</a> implica la aceptación total de los presentes términos y condiciones.
                 </p>
               </section>
             </div>

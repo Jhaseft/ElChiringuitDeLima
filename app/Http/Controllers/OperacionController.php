@@ -178,7 +178,6 @@ class OperacionController extends Controller
     Mail::to("operaciones@transfercash.click")->send(new \App\Mail\NuevaTransferenciaAdmin($payload));
     Mail::to($user->email)->send(new \App\Mail\NuevaTransferenciaUsuario($payload));
 
-    // 🔔 Enviar mensaje ya armado a n8n (para Evolution API)
    // 🔔 Enviar mensaje ya armado a n8n (para Evolution API)
 try {
     $mensaje = "📌 *Nueva transferencia registrada*\n\n".

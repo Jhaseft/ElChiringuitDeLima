@@ -27,42 +27,6 @@ class AdminControllerDashboard extends Controller
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // Actualizar tipo de cambio
     public function update(Request $request)
 {
@@ -86,28 +50,6 @@ foreach ($users as $user) {
 
     return response()->json(['success' => true, 'tipoCambio' => $tipoCambio]);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // Historial de tipo de cambio

@@ -38,13 +38,13 @@ Route::get('/politicas', function () {
     return Inertia::render('politicasypriv');
 
 });
-//Nosotros
+
 Route::get('/jaime', function () {
 
     return Inertia::render('jaime');
 
 });
-
+//Nosotros
 Route::get('/nosotros', function () {
 
     return Inertia::render('Nosotros');
@@ -171,7 +171,7 @@ Route::post('/kyc-proxy', function (Request $request) {
     return response($response->body(), $response->status())
         ->header('Content-Type', $response->header('Content-Type'));
 });
-
+ 
 
 // Tipo de cambio - API pública
 Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'historial']);

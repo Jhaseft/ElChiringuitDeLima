@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Models\User;
+use App\Models\Account;
 use App\Mail\VerifyCodeEmail;
 
 class AppNative extends Controller
@@ -26,25 +26,22 @@ class AppNative extends Controller
             'password'         => ['required', 'confirmed'],
         ]);
 
-        // Generar código de 6 dígitos
         $code = rand(100000, 999999);
 
-        // Guardar los datos + código en cache por 30 min
         Cache::put('register:' . $code, [
-            'first_name'      => $request->first_name,
-            'last_name'       => $request->last_name,
-            'email'           => $request->email,
-            'phone'           => $request->phone,
-            'nationality'     => $request->nationality,
-            'document_number' => $request->document_number,
+            'first_name'       => $request->first_name,
+            'last_name'        => $request->last_name,
+            'email'            => $request->email,
+            'phone'            => $request->phone,
+            'nationality'      => $request->nationality,
+            'document_number'  => $request->document_number,
             'accepted_terms_at'=> now(),
             'terms_version'    => '1.0',
-            'password'        => Hash::make($request->password),
+            'password'         => Hash::make($request->password),
         ], now()->addMinutes(30));
 
         try {
             Mail::to($request->email)->send(new VerifyCodeEmail($code));
-
             return response()->json([
                 'status' => 'success',
                 'message' => 'Código enviado al correo. Revisa tu bandeja e ingrésalo para activar tu cuenta.',
@@ -60,26 +57,16 @@ class AppNative extends Controller
     // Verificar código y crear usuario
     public function verifyCode(Request $request)
     {
-        $request->validate([
-            'code' => 'required|numeric',
-        ]);
+        $request->validate(['code' => 'required|numeric']);
 
         $data = Cache::get('register:' . $request->code);
-
         if (!$data) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Código inválido o expirado.',
-            ], 400);
+            return response()->json(['status' => 'error', 'message' => 'Código inválido o expirado.'], 400);
         }
 
-        // Crear usuario
         $user = User::create($data);
-
-        // Borrar de cache
         Cache::forget('register:' . $request->code);
 
-        // Crear token para la app móvil
         $token = $user->createToken('mobile-app')->plainTextToken;
 
         return response()->json([
@@ -94,7 +81,7 @@ class AppNative extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required',
         ]);
 
@@ -104,6 +91,9 @@ class AppNative extends Controller
 
         $user = Auth::user();
         $token = $user->createToken('mobile-app')->plainTextToken;
+
+        // Cargar relaciones necesarias
+        $user->load(['accounts', 'transfers', 'media']);
 
         return response()->json([
             'user' => $user,
@@ -115,7 +105,6 @@ class AppNative extends Controller
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-
         return response()->json(['message' => 'Sesión cerrada']);
     }
 
@@ -124,4 +113,39 @@ class AppNative extends Controller
     {
         return response()->json($request->user());
     }
+
+    // Listar cuentas del usuario autenticado
+    public function listarCuentas(Request $request)
+{
+    $userId = $request->query('user_id'); // obtener user_id desde la query
+
+    // Si no viene user_id, usamos el usuario autenticado (opcional)
+    if (!$userId) {
+        $user = $request->user();
+        $userId = $user?->id;
+    }
+
+    if (!$userId) {
+        return response()->json(['error' => 'Usuario no encontrado'], 404);
+    }
+
+    $accounts = Account::with('bank', 'owner')
+        ->where('user_id', $userId)
+        ->get()
+        ->map(function ($a) {
+            return [
+                'id' => $a->id,
+                'account_number' => $a->account_number,
+                'account_type' => $a->account_type,
+                'bank_id' => $a->bank->id,
+                'bank_name' => $a->bank->name,
+                'bank_logo' => $a->bank->logo_url,
+                'owner_full_name' => $a->owner?->full_name,
+                'owner_document' => $a->owner?->document_number,
+                'owner_phone' => $a->owner?->phone,
+            ];
+        });
+
+    return response()->json($accounts);
+}
 }

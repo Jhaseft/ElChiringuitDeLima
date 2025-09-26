@@ -61,35 +61,35 @@ export default function ModalOperacion({
 
   if (!isOpen) return null;
 
-  const cuentasOrigen = cuentasUsuario.filter(c => c.account_type === "origin");
-  const cuentasDestino = cuentasUsuario.filter(c => c.account_type === "destination");
+const cuentasOrigen = cuentasUsuario.filter(c => {
+  const banco = bancos.find(b => b.id === c.bank_id);
+  if (!banco) return false;
 
-  const eliminarCuenta = (cuenta) => {
-    if (!cuenta) return;
-    if (!confirm(`¿Seguro que quieres eliminar la cuenta ${cuenta.account_number}?`)) return;
+  if (modo === "PENtoBOB") {
+    // origen → Perú
+    return c.account_type === "origin" && banco.country === "peru";
+  } else if (modo === "BOBtoPEN") {
+    // origen → Bolivia
+    return c.account_type === "origin" && banco.country === "bolivia";
+  }
+  return false;
+});
 
-    setLoading(true);
-    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+const cuentasDestino = cuentasUsuario.filter(c => {
+  const banco = bancos.find(b => b.id === c.bank_id);
+  if (!banco) return false;
 
-    fetch(`/operacion/eliminar-cuenta/${cuenta.id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': token,
-      },
-    })
-      .then(res => res.json())
-      .then(() => {
-        const nuevas = cuentasUsuario.filter(c => c.id !== cuenta.id);
-        setCuentasUsuario(nuevas);
-        updateCache(user.id, nuevas);
+  if (modo === "PENtoBOB") {
+    // destino → Bolivia
+    return c.account_type === "destination" && banco.country === "bolivia";
+  } else if (modo === "BOBtoPEN") {
+    // destino → Perú
+    return c.account_type === "destination" && banco.country === "peru";
+  }
+  return false;
+});
 
-        if (cuenta.account_type === 'origin') setCuentaOrigen(null);
-        if (cuenta.account_type === 'destination') setCuentaDestino(null);
-      })
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
-  };
+  
 
   const handleSiguiente = () => {
     if (loading) return;
