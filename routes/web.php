@@ -166,7 +166,7 @@ Route::post('/kyc-proxy', function (Request $request) {
     ];
 
     // Hacer POST al API externo
-    $response = $http->post('https://apiface-production-767c.up.railway.app/registro-face/verify', $params);
+    $response = $http->post('https://api-face-api-face.ylblfg.easypanel.host/registro-face/verify', $params);
 
     return response($response->body(), $response->status())
         ->header('Content-Type', $response->header('Content-Type'));
