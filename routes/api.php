@@ -2,8 +2,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AppNative;
 use App\Http\Controllers\OperacionController;
-use App\Http\Controllers\TransferController
-;
+use App\Http\Controllers\TransferController;
+use App\Http\Controllers\MobileFaceController;
 // Registro y verificación
 Route::post('/register', [AppNative::class, 'register']);
 Route::post('/verify-code', [AppNative::class, 'verifyCode']);
