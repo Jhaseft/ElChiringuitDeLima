@@ -19,4 +19,7 @@ Route::middleware('auth:sanctum')->group(function () {
  Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta']);
   Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia']);
   Route::get('/transfers/historymobile', [TransferController::class, 'historymobile']);
+   Route::get('/kyc-url', [MobileFaceController::class, 'getKycUrl']);
+    Route::post('/mobile-face/verify', [MobileFaceController::class, 'verify']);
 });
+ 

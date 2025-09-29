@@ -132,6 +132,7 @@ Route::prefix('admin')->group(function () {
     
     });
 });
+
 //ruta oara proxy KYC
 Route::post('/kyc-proxy', function (Request $request) {
     $user = $request->user(); // opcional, si quieres asociar a usuario logueado

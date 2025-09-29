@@ -38,7 +38,7 @@ export default function StepReview({
     setLoadedFront(false);
     setLoadedBack(false);
     setLoadedVideo(false);
-
+ 
     return () => {
       if (front) URL.revokeObjectURL(front);
       if (back) URL.revokeObjectURL(back);
