@@ -52,22 +52,25 @@ Route::get('/nosotros', function () {
 });
 // Operaciones
 Route::middleware(['web'])->group(function () {
+    //listar bancos existentes en la abase de datos
     Route::get('/operacion/listar-bancos', [OperacionController::class, 'listarBancos'])->name('operacion.listarBancos');
+    //guardar una cuenta
     Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta'])->name('operacion.guardarCuenta');
+    //listar cuentas por usuario
     Route::get('/operacion/listar-cuentas/{user_id}', [OperacionController::class, 'listarCuentas'])->name('operacion.listarCuentas');
-    Route::delete('/operacion/eliminar-cuenta/{id}', [OperacionController::class, 'eliminarCuenta'])->name('operacion.eliminarCuenta');
+   //crear una tranferencia con automatizaciones de envio a Evolution y Email
     Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia'])->name('operacion.crearTransferencia');
 });
 
 // Perfil y KYC
 Route::middleware('auth')->group(function () {
-
+    //completar perfil si viene de google
     Route::get('/complete-profile', [CompleteProfileController::class, 'index'])->name('complete-profile');
     Route::post('/complete-profile', [CompleteProfileController::class, 'store'])->name('complete-profile.store');
-
+    //rutas para verificar el Kyc
     Route::get('/face', [FaceController::class, 'index'])->name('face.index');
     Route::post('/face/verify', [FaceController::class, 'verify'])->name('face.verify');
-
+    //ver historial de tranferencias del usuario
     Route::get('/transfers/history', [TransferController::class, 'history'])->name('transfers.history');
 });
 

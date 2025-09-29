@@ -2,6 +2,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AppNative;
 use App\Http\Controllers\OperacionController;
+use App\Http\Controllers\TransferController
+;
 // Registro y verificación
 Route::post('/register', [AppNative::class, 'register']);
 Route::post('/verify-code', [AppNative::class, 'verifyCode']);
@@ -16,4 +18,5 @@ Route::middleware('auth:sanctum')->group(function () {
    Route::get('/listar-cuentas', [AppNative::class, 'listarCuentas']);
  Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta']);
   Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia']);
+  Route::get('/transfers/historymobile', [TransferController::class, 'historymobile']);
 });

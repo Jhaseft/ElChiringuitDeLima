@@ -8,7 +8,7 @@ export default function History({ transfers }) {
     switch (status) {
       case "pending": return "text-yellow-600";
       case "verified": return "text-blue-600";
-      case "completed": return "text-green-600";
+      case "completed": return "text-green-600"; 
       case "rejected": return "text-red-600";
       default: return "text-gray-600";
     }
