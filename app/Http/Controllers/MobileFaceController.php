@@ -30,17 +30,27 @@ class MobileFaceController extends Controller
         ]);
     }
 
-    // Mostrar vista KYC en móvil (WebView)
-    public function viewMobileKyc(Request $request)
-    {
-        $user = $request->user();
+   public function viewMobileKyc(Request $request)
+{
+    $user = $request->user();
 
-        // No redirigir si ya está verificado, solo mostrar la vista
-        return Inertia::render('Face/FaceKycSteps', [
-            'next' => $request->query('next', 'app://kyc-success'),
-            'user' => $user,
-        ]);
+    // Si viene temp_token, obtener userId del cache
+    if (!$user && $request->has('temp_token')) {
+        $userId = Cache::pull('kyc_temp_'.$request->query('temp_token'));
+        if ($userId) {
+            $user = User::find($userId);
+        } else {
+            return redirect('/login'); // token expirado
+        }
     }
+
+    if (!$user) return redirect('/login');
+
+    return Inertia::render('Face/FaceKycSteps', [
+        'next' => $request->query('next', 'app://kyc-success'),
+        'user' => $user,
+    ]);
+}
 
     // Verificar KYC desde móvil
     public function verify(Request $request)

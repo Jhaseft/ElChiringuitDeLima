@@ -5,7 +5,7 @@ use App\Http\Controllers\AppNative;
 use App\Http\Controllers\OperacionController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\MobileFaceController;
-
+use Illuminate\Support\Facades\Cache;
 // Registro y verificación
 Route::post('/register', [AppNative::class, 'register']);
 Route::post('/verify-code', [AppNative::class, 'verifyCode']);
@@ -22,8 +22,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia']);
     Route::get('/transfers/historymobile', [TransferController::class, 'historymobile']);
 
-    // KYC móvil
-    Route::get('/kyc-url', [MobileFaceController::class, 'getKycUrl']);
-    Route::get('/mobile-face-view', [MobileFaceController::class, 'viewMobileKyc']);
-    Route::post('/mobile-face/verify', [MobileFaceController::class, 'verify']);
+});
+
+Route::get('/kyc-temporal/{userId}', function ($userId) {
+    $token = bin2hex(random_bytes(16)); // token aleatorio temporal
+    Cache::put("kyc_temp_$token", $userId, 300); // válido 5 min
+
+    $kycUrl = url('/mobile-face-view') . '?next=app://kyc-success&temp_token=' . $token;
+    return redirect($kycUrl);
 });
