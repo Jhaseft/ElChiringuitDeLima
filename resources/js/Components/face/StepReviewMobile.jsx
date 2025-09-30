@@ -12,7 +12,7 @@ export default function StepReviewMobile({
   setLoading,
   resultado,
   setResultado,
-  onResultToApp, // callback para enviar resultado a la app
+  onResultToApp,
 }) {
   const [message, setMessage] = useState(null);
   const [problems, setProblems] = useState([]);
@@ -23,6 +23,8 @@ export default function StepReviewMobile({
   const [loadedFront, setLoadedFront] = useState(false);
   const [loadedBack, setLoadedBack] = useState(false);
   const [loadedVideo, setLoadedVideo] = useState(false);
+
+  const [verificationComplete, setVerificationComplete] = useState(false); // Nueva flag
 
   useEffect(() => {
     let front, back, video;
@@ -71,7 +73,6 @@ export default function StepReviewMobile({
       setMessage(null);
       setProblems([]);
 
-      // 1️⃣ Enviar a proxy KYC (API externa)
       const formDataKyc = new FormData();
       formDataKyc.append("carnet", docFrontBlob, "documento_frente.jpg");
       if (docBackBlob) formDataKyc.append("carnet_back", docBackBlob, "documento_reverso.jpg");
@@ -84,7 +85,6 @@ export default function StepReviewMobile({
 
       setResultado(kycRes.data);
 
-      // 2️⃣ Enviar resultado al backend interno
       const csrf = getCsrfToken();
       const formDataBackend = new FormData();
       formDataBackend.append("doc_type", docType);
@@ -105,7 +105,6 @@ export default function StepReviewMobile({
       setMessage(data.mensaje || "ℹ️ Verificación realizada.");
       setProblems(data.sugerencias || []);
 
-      // 3️⃣ Enviar resultado a la app y cerrar navegador si todo salió bien
       if (onResultToApp && (data.status === "success" || data.kyc_status === "active")) {
         onResultToApp({
           status: data.status || data.kyc_status,
@@ -114,13 +113,16 @@ export default function StepReviewMobile({
           kyc: kycRes.data,
         });
 
-        // Mensaje final antes de cerrar la ventana
-        alert(
-          "✅ Verificación completada correctamente.\n\nPor favor, vuelve a la app para continuar."
-        );
+        // Mostrar pantalla final
+        setVerificationComplete(true);
+        // Intentar cerrar ventana si se puede
         setTimeout(() => {
-          window.close();
-        }, 500); // delay para que el alert se vea
+          try {
+            window.close();
+          } catch (e) {
+            console.error("No se pudo cerrar la ventana automáticamente", e);
+          }
+        }, 500);
       }
     } catch (err) {
       console.error("❌ Error en verificación:", err);
@@ -136,6 +138,17 @@ export default function StepReviewMobile({
       setLoading(false);
     }
   };
+
+  if (verificationComplete) {
+    return (
+      <div className="fixed inset-0 bg-green-600 text-white flex flex-col items-center justify-center p-4 text-center">
+        <h1 className="text-4xl font-bold mb-4">✅ Identidad Verificada</h1>
+        <p className="text-xl">
+          Gracias por completar la verificación. Por seguridad, cierra esta ventana y vuelve a la app.
+        </p>
+      </div>
+    );
+  }
 
   const renderResultado = () => {
     if (!resultado) return null;
@@ -225,6 +238,7 @@ export default function StepReviewMobile({
       <div className="flex flex-wrap justify-center gap-3 mt-4">
         <button
           onClick={prevStep}
+          disabled={loading}
           className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg"
         >
           Atrás
