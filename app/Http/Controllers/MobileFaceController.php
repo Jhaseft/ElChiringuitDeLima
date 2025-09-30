@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Cloudinary\Api\Upload\UploadApi;
 use App\Models\UserMedia;
+use Inertia\Inertia;
 
 class MobileFaceController extends Controller
 {
-    // Obtener URL de KYC para WebView
+    // Obtener URL de KYC para WebView móvil
     public function getKycUrl(Request $request)
     {
         $user = $request->user();
@@ -21,14 +21,28 @@ class MobileFaceController extends Controller
             ]);
         }
 
-        $kycUrl = url('/mobile-face') . '?next=app://kyc-success';
+        // Endpoint específico para WebView
+        $kycUrl = url('/mobile-face-view') . '?next=app://kyc-success';
+
         return response()->json([
             'status' => 'pending',
             'kyc_url' => $kycUrl,
         ]);
     }
 
-    // Verificar KYC desde mobile
+    // Mostrar vista KYC en móvil (WebView)
+    public function viewMobileKyc(Request $request)
+    {
+        $user = $request->user();
+
+        // No redirigir si ya está verificado, solo mostrar la vista
+        return Inertia::render('Face/FaceKycSteps', [
+            'next' => $request->query('next', 'app://kyc-success'),
+            'user' => $user,
+        ]);
+    }
+
+    // Verificar KYC desde móvil
     public function verify(Request $request)
     {
         $user = $request->user();
