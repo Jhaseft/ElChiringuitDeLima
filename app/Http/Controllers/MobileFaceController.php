@@ -36,14 +36,19 @@ class MobileFaceController extends Controller
 
   public function verify(Request $request)
 {
-    $user = $request->user();
+    $user = null;
 
-    // Buscar por temp_token si no hay usuario logueado
-    if (!$user && $request->has('temp_token')) {
+    // 1️⃣ Intentar recuperar usuario por temp_token primero
+    if ($request->has('temp_token')) {
         $userId = Cache::pull('kyc_temp_' . $request->input('temp_token'));
         if ($userId) {
             $user = User::find($userId);
         }
+    }
+
+    // 2️⃣ Si no hay temp_token, usar sesión/usuario logueado
+    if (!$user) {
+        $user = $request->user();
     }
 
     if (!$user) {
