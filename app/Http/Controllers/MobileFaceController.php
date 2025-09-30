@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -6,20 +7,21 @@ use App\Models\User;
 use Cloudinary\Api\Upload\UploadApi;
 use App\Models\UserMedia;
 use Inertia\Inertia;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class MobileFaceController extends Controller
 {
+    // Mostrar la vista KYC desde app
     public function viewMobileKyc(Request $request)
     {
         $token = $request->query('token');
         if (!$token) return redirect('/login');
 
-        try {
-            $user = auth()->guard('api')->userFromToken($token); // tu método de JWT/Passport/Sanctum
-        } catch (\Exception $e) {
-            return redirect('/login');
-        }
+        // Buscar token en la tabla de Sanctum
+        $accessToken = PersonalAccessToken::findToken($token);
+        if (!$accessToken) return redirect('/login');
 
+        $user = $accessToken->tokenable;
         if (!$user) return redirect('/login');
 
         return Inertia::render('Face/FaceKycStepsMobile', [
@@ -28,31 +30,23 @@ class MobileFaceController extends Controller
         ]);
     }
 
+    // Verificar KYC desde app
     public function verify(Request $request)
     {
-        // 1️⃣ Obtener usuario directamente desde token
         $token = $request->input('token');
-        if (!$token) {
-            return response()->json(['error' => 'No autenticado'], 401);
-        }
+        if (!$token) return response()->json(['error' => 'No autenticado'], 401);
 
-        try {
-            $user = auth()->guard('api')->userFromToken($token);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Token inválido'], 401);
-        }
+        $accessToken = PersonalAccessToken::findToken($token);
+        if (!$accessToken) return response()->json(['error' => 'Token inválido'], 401);
 
-        if (!$user) {
-            return response()->json(['error' => 'Usuario no encontrado'], 401);
-        }
+        $user = $accessToken->tokenable;
+        if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 401);
 
-        // 2️⃣ Procesar resultado KYC
+        // Procesar resultado KYC
         $resultado = json_decode($request->input('resultado'), true);
-        if (!is_array($resultado)) {
-            return response()->json(['error' => 'Formato inválido'], 422);
-        }
+        if (!is_array($resultado)) return response()->json(['error' => 'Formato inválido'], 422);
 
-        $docType   = $request->input('doc_type');
+        $docType    = $request->input('doc_type');
         $verificado = data_get($resultado, 'verificado', false);
         $similitud  = data_get($resultado, 'similitud_promedio', 0);
         $liveness   = data_get($resultado, 'liveness_movimiento', 0);
@@ -60,8 +54,8 @@ class MobileFaceController extends Controller
 
         $mensajes = [];
         if ($similitud < 40) $mensajes[] = "Rostro no coincide (Similitud baja).";
-        if ($liveness < 30) $mensajes[] = "Necesitamos confirmar que eres real (Liveness insuficiente).";
-        if (!$rostro) $mensajes[] = "No se detectó rostro.";
+        if ($liveness < 30)  $mensajes[] = "Necesitamos confirmar que eres real (Liveness insuficiente).";
+        if (!$rostro)         $mensajes[] = "No se detectó rostro.";
 
         $aprobado = $verificado && empty($mensajes);
 
@@ -77,11 +71,10 @@ class MobileFaceController extends Controller
             ]);
         }
 
-        // 3️⃣ Subir archivos a Cloudinary
+        // Subir archivos a Cloudinary
         $uploadApi = new UploadApi();
         $folder = "users/{$user->id}";
         $files = ['video' => 3];
-
         if ($docType === 'pasaporte') $files['docFront'] = 1;
         if (in_array($docType, ['ci','licencia'])) {
             $files['docFront'] = 1;
@@ -101,9 +94,9 @@ class MobileFaceController extends Controller
                         ['user_id' => $user->id, 'position' => $position],
                         [
                             'media_type' => $field === 'video' ? 'video' : 'image',
-                            'url' => $uploaded['secure_url'],
-                            'public_id' => $uploaded['public_id'],
-                            'format' => $uploaded['format'] ?? null,
+                            'url'        => $uploaded['secure_url'],
+                            'public_id'  => $uploaded['public_id'],
+                            'format'     => $uploaded['format'] ?? null,
                         ]
                     );
                 } catch (\Exception $e) {
