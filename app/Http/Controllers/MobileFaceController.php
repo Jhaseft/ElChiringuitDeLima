@@ -122,11 +122,29 @@ class MobileFaceController extends Controller
         $user->kyc_status = 'verified';
         $user->save();
 
-        return response()->json([
-            'status'      => 'success',
-            'titulo'      => '✅ Verificación aprobada',
-            'mensaje'     => 'Identidad verificada',
-            'sugerencias' => $mensajes,
-        ]);
+       // URL de redirección
+$next = $request->input('next', 'transfercash://kyc-success');
+
+// Respuesta temporal con mensaje + redirect
+return response("
+<html>
+<head>
+    <meta charset='UTF-8'>
+    <title>Identidad Verificada</title>
+</head>
+<body style='display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;text-align:center;'>
+    <div>
+        <h1 style='color:green;'>✅ Identidad Verificada</h1>
+        <p>Serás redirigido automáticamente a la app...</p>
+        <script>
+            setTimeout(function() {
+                window.location.href = '{$next}';
+            }, 1500);
+        </script>
+    </div>
+</body>
+</html>
+");
+
     }
 }
