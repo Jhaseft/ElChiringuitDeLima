@@ -12,7 +12,7 @@ export default function StepReviewMobile({
   setLoading,
   resultado,
   setResultado,
-  onResultToApp, // 🟢 callback para enviar resultado a la app
+  onResultToApp, // callback para enviar resultado a la app
 }) {
   const [message, setMessage] = useState(null);
   const [problems, setProblems] = useState([]);
@@ -71,7 +71,7 @@ export default function StepReviewMobile({
       setMessage(null);
       setProblems([]);
 
-      // 🟢 1️⃣ Enviar a proxy KYC (API externa)
+      // 1️⃣ Enviar a proxy KYC (API externa)
       const formDataKyc = new FormData();
       formDataKyc.append("carnet", docFrontBlob, "documento_frente.jpg");
       if (docBackBlob) formDataKyc.append("carnet_back", docBackBlob, "documento_reverso.jpg");
@@ -84,7 +84,7 @@ export default function StepReviewMobile({
 
       setResultado(kycRes.data);
 
-      // 🟢 2️⃣ Enviar resultado al backend interno
+      // 2️⃣ Enviar resultado al backend interno
       const csrf = getCsrfToken();
       const formDataBackend = new FormData();
       formDataBackend.append("doc_type", docType);
@@ -93,7 +93,6 @@ export default function StepReviewMobile({
       formDataBackend.append("video", videoBlob, "video.mp4");
       formDataBackend.append("resultado", JSON.stringify(kycRes.data));
 
-      // 🟢 Agregar temp_token si existe en la URL
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get("token");
       if (token) formDataBackend.append("token", token);
@@ -106,7 +105,7 @@ export default function StepReviewMobile({
       setMessage(data.mensaje || "ℹ️ Verificación realizada.");
       setProblems(data.sugerencias || []);
 
-      // 🟢 3️⃣ Enviar resultado a la app
+      // 3️⃣ Enviar resultado a la app y cerrar navegador si todo salió bien
       if (onResultToApp && (data.status === "success" || data.kyc_status === "active")) {
         onResultToApp({
           status: data.status || data.kyc_status,
@@ -114,6 +113,14 @@ export default function StepReviewMobile({
           sugerencias: data.sugerencias,
           kyc: kycRes.data,
         });
+
+        // Mensaje final antes de cerrar la ventana
+        alert(
+          "✅ Verificación completada correctamente.\n\nPor favor, vuelve a la app para continuar."
+        );
+        setTimeout(() => {
+          window.close();
+        }, 500); // delay para que el alert se vea
       }
     } catch (err) {
       console.error("❌ Error en verificación:", err);
