@@ -140,6 +140,7 @@ class AppNative extends Controller
                 'bank_id' => $a->bank->id,
                 'bank_name' => $a->bank->name,
                 'bank_logo' => $a->bank->logo_url,
+                'bank_country' => $a->bank->country,
                 'owner_full_name' => $a->owner?->full_name,
                 'owner_document' => $a->owner?->document_number,
                 'owner_phone' => $a->owner?->phone,
