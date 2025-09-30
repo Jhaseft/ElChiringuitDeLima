@@ -51,84 +51,84 @@ export default function StepReviewMobile({
   };
 
   const handleSubmit = async () => {
-  if (!docFrontBlob || !videoBlob) {
-    alert("⚠️ Debes capturar al menos documento frontal y video.");
-    return;
-  }
+    if (!docFrontBlob || !videoBlob) {
+      alert("⚠️ Debes capturar al menos documento frontal y video.");
+      return;
+    }
 
-  if ((docType === "ci" || docType === "licencia") && !docBackBlob) {
-    alert("⚠️ Debes capturar también el reverso.");
-    return;
-  }
+    if ((docType === "ci" || docType === "licencia") && !docBackBlob) {
+      alert("⚠️ Debes capturar también el reverso.");
+      return;
+    }
 
-  if (!(loadedFront && (docBackBlob ? loadedBack : true) && loadedVideo)) {
-    alert("⚠️ Espera a que todos los recursos se carguen completamente.");
-    return;
-  }
+    if (!(loadedFront && (docBackBlob ? loadedBack : true) && loadedVideo)) {
+      alert("⚠️ Espera a que todos los recursos se carguen completamente.");
+      return;
+    }
 
-  try {
-    setLoading(true);
-    setMessage(null);
-    setProblems([]);
+    try {
+      setLoading(true);
+      setMessage(null);
+      setProblems([]);
 
-    // 🟢 1️⃣ Enviar a proxy KYC (API externa)
-    const formDataKyc = new FormData();
-    formDataKyc.append("carnet", docFrontBlob, "documento_frente.jpg");
-    if (docBackBlob) formDataKyc.append("carnet_back", docBackBlob, "documento_reverso.jpg");
-    formDataKyc.append("doc_type", docType);
-    formDataKyc.append("video", videoBlob, "video.mp4");
+      // 🟢 1️⃣ Enviar a proxy KYC (API externa)
+      const formDataKyc = new FormData();
+      formDataKyc.append("carnet", docFrontBlob, "documento_frente.jpg");
+      if (docBackBlob) formDataKyc.append("carnet_back", docBackBlob, "documento_reverso.jpg");
+      formDataKyc.append("doc_type", docType);
+      formDataKyc.append("video", videoBlob, "video.mp4");
 
-    const kycRes = await axios.post("/kyc-proxy-mobile", formDataKyc, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    setResultado(kycRes.data);
-
-    // 🟢 2️⃣ Enviar resultado al backend interno
-    const csrf = getCsrfToken();
-    const formDataBackend = new FormData();
-    formDataBackend.append("doc_type", docType);
-    formDataBackend.append("docFront", docFrontBlob, "documento_frente.jpg");
-    if (docBackBlob) formDataBackend.append("docBack", docBackBlob, "documento_reverso.jpg");
-    formDataBackend.append("video", videoBlob, "video.mp4");
-    formDataBackend.append("resultado", JSON.stringify(kycRes.data));
-
-    // 🟢 Agregar temp_token si existe en la URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const tempToken = urlParams.get("temp_token");
-    if (tempToken) formDataBackend.append("temp_token", tempToken);
-
-    const backendRes = await axios.post("/mobile-face-verify", formDataBackend, {
-      headers: { "X-CSRF-TOKEN": csrf },
-    });
-
-    const data = backendRes.data;
-    setMessage(data.mensaje || "ℹ️ Verificación realizada.");
-    setProblems(data.sugerencias || []);
-
-    // 🟢 3️⃣ Enviar resultado a la app
-    if (onResultToApp && (data.status === "success" || data.kyc_status === "active")) {
-      onResultToApp({
-        status: data.status || data.kyc_status,
-        mensaje: data.mensaje,
-        sugerencias: data.sugerencias,
-        kyc: kycRes.data,
+      const kycRes = await axios.post("/kyc-proxy-mobile", formDataKyc, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
+
+      setResultado(kycRes.data);
+
+      // 🟢 2️⃣ Enviar resultado al backend interno
+      const csrf = getCsrfToken();
+      const formDataBackend = new FormData();
+      formDataBackend.append("doc_type", docType);
+      formDataBackend.append("docFront", docFrontBlob, "documento_frente.jpg");
+      if (docBackBlob) formDataBackend.append("docBack", docBackBlob, "documento_reverso.jpg");
+      formDataBackend.append("video", videoBlob, "video.mp4");
+      formDataBackend.append("resultado", JSON.stringify(kycRes.data));
+
+      // 🟢 Agregar temp_token si existe en la URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get("token");
+      if (token) formDataBackend.append("token", token);
+
+      const backendRes = await axios.post("/mobile-face-verify", formDataBackend, {
+        headers: { "X-CSRF-TOKEN": csrf },
+      });
+
+      const data = backendRes.data;
+      setMessage(data.mensaje || "ℹ️ Verificación realizada.");
+      setProblems(data.sugerencias || []);
+
+      // 🟢 3️⃣ Enviar resultado a la app
+      if (onResultToApp && (data.status === "success" || data.kyc_status === "active")) {
+        onResultToApp({
+          status: data.status || data.kyc_status,
+          mensaje: data.mensaje,
+          sugerencias: data.sugerencias,
+          kyc: kycRes.data,
+        });
+      }
+    } catch (err) {
+      console.error("❌ Error en verificación:", err);
+      if (err.response?.status === 422) {
+        setMessage("⚠️ Datos inválidos: revisa los campos requeridos.");
+        setProblems(err.response.data?.errors || []);
+      } else if (err.response?.data?.mensaje) {
+        setMessage("❌ " + err.response.data.mensaje);
+      } else {
+        setMessage("❌ Error inesperado en la verificación KYC.");
+      }
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("❌ Error en verificación:", err);
-    if (err.response?.status === 422) {
-      setMessage("⚠️ Datos inválidos: revisa los campos requeridos.");
-      setProblems(err.response.data?.errors || []);
-    } else if (err.response?.data?.mensaje) {
-      setMessage("❌ " + err.response.data.mensaje);
-    } else {
-      setMessage("❌ Error inesperado en la verificación KYC.");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const renderResultado = () => {
     if (!resultado) return null;
