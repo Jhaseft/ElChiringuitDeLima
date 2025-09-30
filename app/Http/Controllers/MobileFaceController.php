@@ -7,6 +7,7 @@ use Cloudinary\Api\Upload\UploadApi;
 use App\Models\UserMedia;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Cache;
+use App\Models\User;
 class MobileFaceController extends Controller
 {
     // Obtener URL de KYC para WebView móvil
