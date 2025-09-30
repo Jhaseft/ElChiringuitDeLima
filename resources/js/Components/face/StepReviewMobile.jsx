@@ -102,7 +102,7 @@ export default function StepReviewMobile({
       });
 
       const data = backendRes.data;
-      setMessage(data.mensaje || "ℹ️ Verificación realizada.");
+      setMessage(data.mensaje || "ℹ️Verificación realizada porfavor vuelve ala App.");
       setProblems(data.sugerencias || []);
 
       if (onResultToApp && (data.status === "success" || data.kyc_status === "active")) {
