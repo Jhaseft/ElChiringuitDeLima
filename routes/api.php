@@ -23,6 +23,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/transfers/historymobile', [TransferController::class, 'historymobile']);
 
 });
+Route::get('/mobile-face-view', [MobileFaceController::class, 'viewMobileKyc']);
 
 Route::get('/kyc-temporal/{userId}', function ($userId) {
     $token = bin2hex(random_bytes(16)); // token aleatorio temporal
