@@ -33,7 +33,7 @@ class MobileFaceController extends Controller
     // Verificar KYC desde app
     public function verify(Request $request)
     {
-        $token = $request->input('token');
+         $token = $request->query('token');
         if (!$token) return response()->json(['error' => 'No autenticado'], 401);
 
         $accessToken = PersonalAccessToken::findToken($token);
