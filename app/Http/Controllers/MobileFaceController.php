@@ -22,7 +22,7 @@ class MobileFaceController extends Controller
         }
 
         // Endpoint específico para WebView
-        $kycUrl = url('/mobile-face-view') . '?next=app://kyc-success';
+        $kycUrl = url('/api/mobile-face-view') . '?next=app://kyc-success';
 
         return response()->json([
             'status' => 'pending',
