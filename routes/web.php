@@ -10,6 +10,7 @@ use App\Http\Controllers\AdminTransfers;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminControllerDashboard;
 use App\Http\Controllers\AdminUserMediaController;
+use App\Http\Controllers\MobileFaceController;
 use App\Http\Controllers\TransferController;
 use App\Models\Bank;
 use Illuminate\Http\Request;
@@ -180,5 +181,19 @@ Route::post('/kyc-proxy', function (Request $request) {
 // Tipo de cambio - API pública
 Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'historial']);
 
+
+/////////////////////////MOBILE///////////////////////////////////////
+// Ruta temporal para mobile (genera token y redirige)
+Route::get('/kyc-temporal/{userId}', function ($userId) {
+    $token = bin2hex(random_bytes(16));
+    Cache::put("kyc_temp_$token", $userId, 300); // 5 minutos
+
+    $kycUrl = url('/mobile-face-view') . '?next=app://kyc-success&temp_token=' . $token;
+    return redirect($kycUrl);
+});
+
+// Vista mobile KYC
+Route::get('/mobile-face-view', [MobileFaceController::class, 'viewMobileKyc']);
+Route::post('/mobile-face-verify', [MobileFaceController::class, 'verify']);
 
 require __DIR__.'/auth.php';

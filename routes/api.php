@@ -23,12 +23,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/transfers/historymobile', [TransferController::class, 'historymobile']);
 
 });
-Route::get('/mobile-face-view', [MobileFaceController::class, 'viewMobileKyc']);
 
-Route::get('/kyc-temporal/{userId}', function ($userId) {
-    $token = bin2hex(random_bytes(16)); // token aleatorio temporal
-    Cache::put("kyc_temp_$token", $userId, 300); // válido 5 min
-
-    $kycUrl = url('/api/mobile-face-view') . '?next=app://kyc-success&temp_token=' . $token;
-    return redirect($kycUrl);
-});

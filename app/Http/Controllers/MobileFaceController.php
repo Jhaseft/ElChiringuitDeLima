@@ -3,57 +3,38 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use App\Models\User;
 use Cloudinary\Api\Upload\UploadApi;
 use App\Models\UserMedia;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Cache;
-use App\Models\User;
+
 class MobileFaceController extends Controller
 {
-    // Obtener URL de KYC para WebView móvil
-    public function getKycUrl(Request $request)
+    // Mostrar vista de KYC para mobile
+    public function viewMobileKyc(Request $request)
     {
         $user = $request->user();
 
-        if ($user->kyc_status === 'verified') {
-            return response()->json([
-                'status' => 'verified',
-                'message' => 'Usuario ya verificado',
-            ]);
+        // Si no hay usuario, buscar por temp_token
+        if (!$user && $request->has('temp_token')) {
+            $userId = Cache::pull('kyc_temp_' . $request->query('temp_token'));
+            if ($userId) {
+                $user = User::find($userId);
+            } else {
+                return redirect('/login'); // token expirado
+            }
         }
 
-        // Endpoint específico para WebView
-        $kycUrl = url('/api/mobile-face-view') . '?next=app://kyc-success';
+        if (!$user) return redirect('/login');
 
-        return response()->json([
-            'status' => 'pending',
-            'kyc_url' => $kycUrl,
+        return Inertia::render('Face/FaceKycStepsMobile', [
+            'next' => $request->query('next', 'app://kyc-success'),
+            'user' => $user,
         ]);
     }
 
-   public function viewMobileKyc(Request $request)
-{
-    $user = $request->user();
-
-    // Si viene temp_token, obtener userId del cache
-    if (!$user && $request->has('temp_token')) {
-        $userId = Cache::pull('kyc_temp_'.$request->query('temp_token'));
-        if ($userId) {
-            $user = User::find($userId);
-        } else {
-            return redirect('/login'); // token expirado
-        }
-    }
-
-    if (!$user) return redirect('/login');
-
-    return Inertia::render('Face/FaceKycSteps', [
-        'next' => $request->query('next', 'app://kyc-success'),
-        'user' => $user,
-    ]);
-}
-
-    // Verificar KYC desde móvil
+    // Verificar KYC enviado desde mobile
     public function verify(Request $request)
     {
         $user = $request->user();
@@ -66,7 +47,7 @@ class MobileFaceController extends Controller
             return response()->json(['error' => 'Formato inválido'], 422);
         }
 
-        $docType   = $request->input('doc_type'); 
+        $docType   = $request->input('doc_type');
         $verificado = data_get($resultado, 'verificado', false);
         $similitud  = data_get($resultado, 'similitud_promedio', 0);
         $liveness   = data_get($resultado, 'liveness_movimiento', 0);
@@ -84,9 +65,9 @@ class MobileFaceController extends Controller
             $user->save();
 
             return response()->json([
-                'status' => 'error',
-                'titulo' => '⚠️ Verificación incompleta',
-                'mensaje' => 'No pudimos validar tu identidad',
+                'status'      => 'error',
+                'titulo'      => '⚠️ Verificación incompleta',
+                'mensaje'     => 'No pudimos validar tu identidad',
                 'sugerencias' => $mensajes,
             ]);
         }
@@ -95,6 +76,7 @@ class MobileFaceController extends Controller
         $uploadApi = new UploadApi();
         $folder = "users/{$user->id}";
         $files = ['video' => 3];
+
         if ($docType === 'pasaporte') $files['docFront'] = 1;
         if (in_array($docType, ['ci','licencia'])) {
             $files['docFront'] = 1;
@@ -102,11 +84,13 @@ class MobileFaceController extends Controller
         }
 
         $allUploaded = true;
+
         foreach ($files as $field => $position) {
             if ($request->hasFile($field)) {
                 $file = $request->file($field);
                 $options = ['folder' => $folder];
                 if ($field === 'video') $options['resource_type'] = 'auto';
+
                 try {
                     $uploaded = $uploadApi->upload($file->getRealPath(), $options);
                     UserMedia::updateOrCreate(
@@ -131,9 +115,9 @@ class MobileFaceController extends Controller
             $user->kyc_status = 'rejected';
             $user->save();
             return response()->json([
-                'status' => 'error',
-                'titulo' => '⚠️ Verificación incompleta',
-                'mensaje' => 'No se pudieron subir todos los archivos',
+                'status'      => 'error',
+                'titulo'      => '⚠️ Verificación incompleta',
+                'mensaje'     => 'No se pudieron subir todos los archivos',
                 'sugerencias' => $mensajes,
             ]);
         }
@@ -142,9 +126,9 @@ class MobileFaceController extends Controller
         $user->save();
 
         return response()->json([
-            'status' => 'success',
-            'titulo' => '✅ Verificación aprobada',
-            'mensaje' => 'Identidad verificada',
+            'status'      => 'success',
+            'titulo'      => '✅ Verificación aprobada',
+            'mensaje'     => 'Identidad verificada',
             'sugerencias' => $mensajes,
         ]);
     }
