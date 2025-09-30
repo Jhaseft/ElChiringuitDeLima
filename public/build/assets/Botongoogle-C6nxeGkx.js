@@ -1,4 +1,4 @@
-import{j as s}from"./app-DIxzsM1F.js";function l(){return s.jsxs("a",{href:route("google.login"),id:"btnGoogle",className:`flex items-center justify-center gap-3 w-full sm:w-auto \r
+import{j as s}from"./app-CYhPuoS9.js";function l(){return s.jsxs("a",{href:route("google.login"),id:"btnGoogle",className:`flex items-center justify-center gap-3 w-full sm:w-auto \r
                        bg-white text-gray-700 border border-gray-300 \r
                        rounded-xl px-6 py-2.5 font-medium shadow-sm\r
                        hover:shadow-md hover:bg-gray-50 \r
