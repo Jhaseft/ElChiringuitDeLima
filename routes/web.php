@@ -196,4 +196,27 @@ Route::get('/kyc-temporal/{userId}', function ($userId) {
 Route::get('/mobile-face-view', [MobileFaceController::class, 'viewMobileKyc']);
 Route::post('/mobile-face-verify', [MobileFaceController::class, 'verify']);
 
+// Nueva ruta proxy KYC solo para mobile (sin validación de usuario)
+Route::post('/kyc-proxy-mobile', function (Request $request) {
+
+    $http = Http::withHeaders(['Accept' => 'application/json']);
+
+    if ($request->hasFile('carnet')) {
+        $http = $http->attach('carnet', file_get_contents($request->file('carnet')->getRealPath()), 'documento_frente.jpg');
+    }
+    if ($request->hasFile('carnet_back')) {
+        $http = $http->attach('carnet_back', file_get_contents($request->file('carnet_back')->getRealPath()), 'documento_reverso.jpg');
+    }
+    if ($request->hasFile('video')) {
+        $http = $http->attach('video', file_get_contents($request->file('video')->getRealPath()), 'video.mp4');
+    }
+
+    $params = ['doc_type' => $request->input('doc_type')];
+    $response = $http->post('https://api-face-api-face.ylblfg.easypanel.host/registro-face/verify', $params);
+
+    return response($response->body(), $response->status())
+        ->header('Content-Type', $response->header('Content-Type'));
+});
+
+
 require __DIR__.'/auth.php';

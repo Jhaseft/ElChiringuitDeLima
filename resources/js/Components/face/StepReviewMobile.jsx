@@ -78,7 +78,7 @@ export default function StepReviewMobile({
       formDataKyc.append("doc_type", docType);
       formDataKyc.append("video", videoBlob, "video.mp4");
 
-      const kycRes = await axios.post("/kyc-proxy", formDataKyc, {
+      const kycRes = await axios.post("/kyc-proxy-mobile", formDataKyc, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
