@@ -218,12 +218,12 @@ try {
  
     // Configuración Evolution API
     $server   = "https://prueba-evolution-api-lima.ylblfg.easypanel.host";
-    $instance = "TransferCash";
-    $apikey   = "822640AECF45-4D03-88B6-7AFD82BC61DA";
+    $instance = "tro";
+    $apikey   = "9C2CFD3BD70A-40D3-9AA1-C934FCBA341D"; // Apikey admin
 
     // Payload correcto
     $whatsPayload = [
-        'number' => '59174048209', // número admin
+        'number' => '51947847817', // número admin
         'text'   => $mensaje,
     ];
 
