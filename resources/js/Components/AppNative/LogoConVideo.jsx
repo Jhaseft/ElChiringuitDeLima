@@ -34,7 +34,7 @@ export default function LogoConVideo({
 
         {/* Botón de descarga con ícono */}
         <a
-          href="/TransferCash.apk"
+          href="https://github.com/Jhaseft/ElChiringuitDeLima/releases/download/v1.0.0/TransferCash.apk"
           download
           className="bg-gradient-to-r from-[#0de22a] via-[#00a82d] to-[#154b1b] 
                      hover:from-[#00c738] hover:to-[#0a3d13] text-black font-bold tracking-widest 
