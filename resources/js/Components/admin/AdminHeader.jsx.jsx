@@ -7,7 +7,7 @@ export default function AdminHeader() {
     try {
       await fetch("/admin/logout", {
         method: "POST",
-        headers: {
+        headers: { 
           "Content-Type": "application/json",
           "X-CSRF-TOKEN": token,
           "Accept": "application/json",
