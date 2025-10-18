@@ -28,7 +28,7 @@ export default function InfoAdicionalCard() {
       {/* Beneficios */}
       <div>
         <h3 className="font-semibold text-lg justify-center text-gray-800 mb-2 flex items-center gap-2">
-          ✅ ¿Por qué elegirnos?
+           ¿Por qué elegirnos?
         </h3>
         <ul className="list-disc list-inside text-center text-gray-700 space-y-1 pl-2 text-sm">
           <li>

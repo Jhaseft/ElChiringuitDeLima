@@ -16,6 +16,7 @@ export default function Header() {
     { name: "Inicio", href: "/" },
     { name: "Nosotros", href: "/nosotros" },
     { name: "Contacto", href: "/contacto" },
+    { name: "Descargar App", href: "/App" },
   ];
 
   return (

@@ -51,6 +51,13 @@ Route::get('/nosotros', function () {
     return Inertia::render('Nosotros');
 
 });
+//App Native
+Route::get('/App', function () {
+
+    return Inertia::render('AppNative');
+
+});
+
 // Operaciones
 Route::middleware(['web'])->group(function () {
     //listar bancos existentes en la abase de datos
