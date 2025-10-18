@@ -74,7 +74,7 @@ export default function Step1Personal({ data, setData, errors }) {
       <div>
         <label className="block text-sm font-medium text-gray-700">DNI o CI</label>
         <input
-          type="text"
+          type="number"
           value={data.document_number || ""}
           onChange={(e) => {
             const onlyDigits = e.target.value.replace(/\D/g, "");
