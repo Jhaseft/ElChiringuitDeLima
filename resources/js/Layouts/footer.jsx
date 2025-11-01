@@ -26,7 +26,7 @@ export default function FooterLayout() {
                         <img src="https://ragnarcapital.pe/png/sbs.png" alt="SBS" className="w-16 md:w-20 border-2 border-white p-1 rounded-lg bg-white" />
                         <div className="text-sm md:text-base">
                             <p>Autorizado por la SBS</p>
-                            <a href="#" className="underline hover:text-green-200 transition-colors">Resolución N° 01172-2024</a>
+                           
                         </div>
                     </div>
 
@@ -34,7 +34,7 @@ export default function FooterLayout() {
                         <img src="https://ragnarcapital.pe/png/indecopi.png" alt="Indecopi" className="w-16 md:w-20 border-2 border-white p-1 rounded-lg bg-white" />
                         <div className="text-sm md:text-base">
                             <p>Registrado en INDECOPI</p>
-                            <p>Certificado N° 00167443</p>
+                          
                         </div>
                     </div>
 
