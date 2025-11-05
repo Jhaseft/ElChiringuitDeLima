@@ -40,6 +40,20 @@ Route::get('/politicas', function () {
 
 });
 
+//politicasludo
+Route::get('/PoliticasLudo', function () {
+
+    return Inertia::render('Politicas');
+
+});
+//pasos ludo
+Route::get('/PasosLudo', function () {
+
+    return Inertia::render('Pasos');
+
+});
+
+
 Route::get('/jaime', function () {
 
     return Inertia::render('jaime');
