@@ -37,27 +37,17 @@ export default function ModalOperacion({
   };
 
   useEffect(() => {
-    if (!user?.id) return;
+  if (!user?.id) return;
 
-    const cacheKey = `cuentas_${user.id}`;
-    const cacheData = localStorage.getItem(cacheKey);
-
-    if (cacheData) {
-      setCuentasUsuario(JSON.parse(cacheData));
-      return; // 🔹 evitamos fetch si ya tenemos cache
-    }
-
-    // 🔹 Solo pedimos al servidor si no hay cache
-    setLoadingCuentas(true);
-    fetch(`/operacion/listar-cuentas/${user.id}`)
-      .then(res => res.json())
-      .then(data => {
-        setCuentasUsuario(data);
-        updateCache(user.id, data);
-      })
-      .catch(err => console.error(err))
-      .finally(() => setLoadingCuentas(false));
-  }, [user?.id]);
+  setLoadingCuentas(true);
+  fetch(`/operacion/listar-cuentas/${user.id}`)
+    .then(res => res.json())
+    .then(data => {
+      setCuentasUsuario(data);
+    })
+    .catch(err => console.error(err))
+    .finally(() => setLoadingCuentas(false));
+}, [user?.id]);
 
   if (!isOpen) return null;
 
