@@ -11,7 +11,7 @@ export default function Step3Security({ data, setData, errors, passwordRules }) 
 
   return (
     <div className="space-y-5">
-      {/* Contraseña */}
+      
       <div className="relative">
         <label htmlFor="password" className="block text-sm font-medium text-gray-700">
           Contraseña
@@ -35,7 +35,7 @@ export default function Step3Security({ data, setData, errors, passwordRules }) 
         {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
       </div>
 
-      {/* Confirmación de contraseña */}
+     
       <div className="relative">
         <label htmlFor="password_confirmation" className="block text-sm font-medium text-gray-700">
           Confirmar contraseña
@@ -64,10 +64,10 @@ export default function Step3Security({ data, setData, errors, passwordRules }) 
         )}
       </div>
 
-      {/* Reglas de contraseña */}
+  
       <PasswordRules rules={passwordRules} />
 
-      {/* Términos y condiciones */}
+      
       <div className="flex items-center mt-4">
         <input
           type="checkbox"
