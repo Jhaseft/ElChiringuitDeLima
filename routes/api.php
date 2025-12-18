@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Cache;
 Route::post('/register', [AppNative::class, 'register']);
 Route::post('/verify-code', [AppNative::class, 'verifyCode']);
 
-// Login
+// Login 
 Route::post('/loginapp', [AppNative::class, 'login']);
 
 // Rutas protegidas con token Sanctum

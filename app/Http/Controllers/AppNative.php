@@ -39,7 +39,7 @@ class AppNative extends Controller
             'terms_version'    => '1.0',
             'password'         => Hash::make($request->password),
         ], now()->addMinutes(30));
-
+ 
         try {
             Mail::to($request->email)->send(new VerifyCodeEmail($code));
             return response()->json([
