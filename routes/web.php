@@ -161,7 +161,8 @@ Route::post('/kyc-proxy', function (Request $request) {
     if (!$user) {
         return response()->json(['error' => 'No autenticado'], 401);
     }
-
+    Log::info('PHP upload_max_filesize: ' . ini_get('upload_max_filesize'));
+    Log::info('PHP post_max_size: ' . ini_get('post_max_size'));
     // ==========================
     // Debug: mostrar archivos recibidos
     // ==========================

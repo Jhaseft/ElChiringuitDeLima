@@ -19,7 +19,8 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql pgsql zip mbstring xml gd sockets \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
-
+ #Copiar php.ini personalizado
+COPY php.ini /usr/local/etc/php/
 # Instalar Node.js 20 LTS y npm
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \

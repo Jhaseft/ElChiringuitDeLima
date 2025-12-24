@@ -83,7 +83,7 @@ export default function DocumentUpload({
     setMessage(null);
     setProblems([]);
 
-    // ===== 1️⃣ Revisar FormData KYC =====
+    // ===== 1️ Revisar FormData KYC =====
     const formDataKyc = new FormData();
     formDataKyc.append("carnet", docFrontFile, "documento_frente.jpg");
     if (docBackFile) formDataKyc.append("carnet_back", docBackFile, "documento_reverso.jpg");
@@ -95,14 +95,13 @@ export default function DocumentUpload({
       console.log(pair[0], pair[1]);
     }
 
-    const kycRes = await axios.post("/kyc-proxy", formDataKyc, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const kycRes = await axios.post("/kyc-proxy", formDataKyc);
+
 
     console.log("=== Respuesta KYC ===", kycRes.data);
     setResultado(kycRes.data);
 
-    // ===== 2️⃣ Backend interno =====
+    // ===== 2️ Backend interno =====
     const csrf = getCsrfToken();
     const formDataBackend = new FormData();
     formDataBackend.append("doc_type", docType);
@@ -155,7 +154,7 @@ export default function DocumentUpload({
         Verificación de identidad
       </h2>
 
-      {/* ========= INPUTS ========= */}
+      
       <div>
         <label className="text-sm font-medium">
           {docType === "pasaporte" ? "Pasaporte" : "Documento (Anverso)"}
@@ -187,7 +186,7 @@ export default function DocumentUpload({
         />
       </div>
 
-      {/* ========= PREVIEWS ========= */}
+      
       <div className="grid sm:grid-cols-2 gap-3">
         {frontURL && (
           <img
@@ -214,7 +213,6 @@ export default function DocumentUpload({
         />
       )}
 
-      {/* ========= BOTONES ========= */}
       <div className="flex justify-between pt-4">
         <button
           onClick={onBack}
@@ -238,19 +236,21 @@ export default function DocumentUpload({
         </button>
       </div>
 
-      {/* ========= RESULTADO ========= */}
-      {message && (
-        <div className="bg-gray-100 p-3 rounded">
-          <p className="text-sm">{message}</p>
-          {problems.length > 0 && (
-            <ul className="list-disc ml-5 text-sm text-red-600">
-              {problems.map((p, i) => (
-                <li key={i}>{p}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
+   
+
+    {resultado.problemas && resultado.problemas.length > 0 && (
+      <div>
+        <strong>Problemas detectados:</strong>
+        <ul className="list-disc ml-5 text-red-600">
+          {resultado.problemas.map((p, i) => (
+            <li key={i}>{p}</li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    
+  
     </div>
   );
 }
