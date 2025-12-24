@@ -161,27 +161,14 @@ Route::post('/kyc-proxy', function (Request $request) {
     if (!$user) {
         return response()->json(['error' => 'No autenticado'], 401);
     }
-    Log::info('PHP upload_max_filesize: ' . ini_get('upload_max_filesize'));
-    Log::info('PHP post_max_size: ' . ini_get('post_max_size'));
-    // ==========================
-    // Debug: mostrar archivos recibidos
-    // ==========================
-    Log::info('=== KYC Proxy Debug ===');
-    Log::info('Archivos recibidos:');
-    foreach ($request->allFiles() as $key => $file) {
-        Log::info("$key: " . ($file ? $file->getClientOriginalName() : 'NULL'));
-    }
-    Log::info('Campos recibidos:');
-    Log::info($request->all());
-
-    // Construir petición al API externo
+    
     $http = Http::withHeaders([
         'Accept' => 'application/json',
     ]);
 
     // Adjuntar archivos al request
     if ($request->hasFile('carnet')) {
-        Log::info('Adjuntando carnet');
+        
         $http = $http->attach(
             'carnet',
             file_get_contents($request->file('carnet')->getRealPath()),
@@ -190,7 +177,7 @@ Route::post('/kyc-proxy', function (Request $request) {
     }
 
     if ($request->hasFile('carnet_back')) {
-        Log::info('Adjuntando carnet_back');
+        
         $http = $http->attach(
             'carnet_back',
             file_get_contents($request->file('carnet_back')->getRealPath()),
@@ -199,7 +186,7 @@ Route::post('/kyc-proxy', function (Request $request) {
     }
 
     if ($request->hasFile('video')) {
-        Log::info('Adjuntando video');
+    
         $http = $http->attach(
             'video',
             file_get_contents($request->file('video')->getRealPath()),
@@ -209,8 +196,7 @@ Route::post('/kyc-proxy', function (Request $request) {
 
     // Adjuntar doc_type
     $docType = $request->input('doc_type');
-    Log::info("doc_type: $docType");
-
+   
     // ==========================
     // Hacer POST al API externo
     // ==========================
@@ -218,10 +204,7 @@ Route::post('/kyc-proxy', function (Request $request) {
         'doc_type' => $docType
     ]);
 
-    // Debug: respuesta de la API
-    Log::info('=== Respuesta API Externa ===');
-    Log::info('Status: ' . $response->status());
-    Log::info('Body: ' . $response->body());
+   
 
     return response($response->body(), $response->status())
         ->header('Content-Type', $response->header('Content-Type'));

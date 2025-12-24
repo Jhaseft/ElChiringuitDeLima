@@ -79,7 +79,7 @@ export default function AdminUserMediaTable() {
 
   return (
     <div className="relative bg-white rounded-2xl shadow p-4 sm:p-6">
-      {/* Overlay Loader global */}
+      
       {processing && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="flex flex-col items-center gap-2">

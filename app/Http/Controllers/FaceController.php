@@ -18,13 +18,9 @@ class FaceController extends Controller
             return redirect()->route('welcome');
         }
 
-        //return Inertia::render('Face/FaceKycSteps', [
-        //    'next' => $request->query('next', null)
-       // ]);
-
-       return Inertia::render('Face/FaceKyc', [
-            'next' => $request->query('next', null)
-        ]);
+        return Inertia::render('Face/FaceKycSteps', [
+          'next' => $request->query('next', null)
+        ]);    
     }
 
 public function verify(Request $request)
@@ -49,12 +45,12 @@ public function verify(Request $request)
 
     $mensajes = [];
 
-    // 🔹 Validación mínima
-    if ($similitud < 40) {
+    //  Validación mínima
+    if ($similitud < 10) {
         $mensajes[] = "Rostro no coincide (Similitud baja).";
     }
-    if ($liveness < 30) {
-        $mensajes[] = "Necesitamos confirmar que eres real (Liveness insuficiente).";
+    if ($liveness < 25) {
+        $mensajes[] = "Necesitamos confirmar que eres real (Liveness insuficiente sube otro video).";
     }
     if (!$rostro) {
         $mensajes[] = "No se detectó rostro.";
@@ -144,7 +140,7 @@ public function verify(Request $request)
 
     return response()->json([
         'status'      => 'success',
-        'titulo'      => '✅ Verificación aprobada',
+        'titulo'      => ' Verificación aprobada',
         'mensaje'     => 'Identidad verificada',
         'sugerencias' => $mensajes,
         'score'       => data_get($resultado, 'score', null),

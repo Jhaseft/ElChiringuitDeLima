@@ -54,7 +54,7 @@ class MobileFaceController extends Controller
 
         $mensajes = [];
         if ($similitud < 40) $mensajes[] = "Rostro no coincide (Similitud baja).";
-        if ($liveness < 30)  $mensajes[] = "Necesitamos confirmar que eres real (Liveness insuficiente).";
+        if ($liveness < 30)  $mensajes[] = "Necesitamos confirmar que eres real (Liveness insuficiente sube otro video).";
         if (!$rostro)         $mensajes[] = "No se detectó rostro.";
 
         $aprobado = $verificado && empty($mensajes);
