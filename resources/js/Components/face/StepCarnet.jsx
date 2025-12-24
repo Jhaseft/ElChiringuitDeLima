@@ -48,7 +48,7 @@ export default function DocumentCapture({
     setError("");
     setMessage(
       side === "front"
-        ? "📄 Ajusta tu documento dentro del marco y presiona Capturar."
+        ? " Ajusta tu documento dentro del marco y presiona Capturar."
         : "Preparándote para el reverso..."
     );
 
@@ -85,7 +85,7 @@ export default function DocumentCapture({
       setStream(mediaStream);
     } catch (e) {
       console.error(e);
-      setError("❌Recarga la Pagina , No se pudo activar la cámara .");
+      setError("Recarga la Pagina , No se pudo activar la cámara .");
       setMessage("");
     }
   };
@@ -107,7 +107,7 @@ export default function DocumentCapture({
           if (needsBack) {
             stopCamera();
             setSide("back");
-            setMessage("✅ Frontal capturado. Ahora el reverso.");
+            setMessage(" Frontal capturado. Ahora el reverso.");
             setTimeout(() => startCamera(), 2000);
           } else {
             stopCamera();
@@ -118,7 +118,7 @@ export default function DocumentCapture({
           setDocBackBlob(blob);
           stopCamera();
           setStep("captured");
-          setMessage("✅ Documento completo (anverso y reverso).");
+          setMessage(" Documento completo (anverso y reverso).");
         }
       },
       "image/jpeg",
@@ -132,7 +132,7 @@ export default function DocumentCapture({
     setSide("front");
     setStep("capturing");
     setError("");
-    setMessage("📄 Ajusta tu documento dentro del marco y presiona Capturar.");
+    setMessage(" Ajusta tu documento dentro del marco y presiona Capturar.");
     startCamera();
   };
 
@@ -157,7 +157,7 @@ export default function DocumentCapture({
         </p>
       </div>
 
-      {/* Camera / Preview */}
+      
       <div className="relative border-2 border-dashed border-indigo-400 bg-gray-900 aspect-[3/4] rounded-xl overflow-hidden flex items-center justify-center shadow-inner">
         {((side === "front" && !docFrontBlob) || (side === "back" && !docBackBlob)) ? (
           <>
@@ -178,7 +178,7 @@ export default function DocumentCapture({
         )}
       </div>
 
-      {/* Recomendaciones KYC */}
+      
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
         <div className="flex items-center gap-2 text-blue-700 font-semibold">
           <Info size={18} /> Recomendaciones KYC

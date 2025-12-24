@@ -4,7 +4,7 @@ import DocumentTypePicker from "@/Components/face/DocumentTypePicker";
 import DocumentCapture from "@/Components/face/StepCarnet";
 import StepVideo from "@/Components/face/StepVideo";
 import StepReview from "@/Components/face/StepReview";
-
+ 
 export default function FaceKycSteps() {  
   const [step, setStep] = useState(1); 
 
@@ -39,7 +39,7 @@ export default function FaceKycSteps() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 bg-gradient-to-br from-indigo-50 to-purple-50 space-y-6">
+    <div className="flex  flex-col items-center justify-center min-h-screen p-4 sm:p-6 bg-gradient-to-br from-indigo-50 to-purple-50 space-y-6">
       <div className="w-full max-w-3xl">
         <StepProgress
           step={step}

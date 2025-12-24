@@ -21,6 +21,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta']);
     Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia']);
     Route::get('/transfers/historymobile', [TransferController::class, 'historymobile']);
-
+ 
 });
 

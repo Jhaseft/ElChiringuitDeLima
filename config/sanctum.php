@@ -21,7 +21,7 @@ return [
         Sanctum::currentApplicationUrlWithPort(),
         // Sanctum::currentRequestHost(),
     ))),
-
+ 
     /*
     |--------------------------------------------------------------------------
     | Sanctum Guards
@@ -34,7 +34,7 @@ return [
     |
     */
 
-    'guard' => ['web', 'api'],
+    'guard' => ['web'],
 
     /*
     |--------------------------------------------------------------------------

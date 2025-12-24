@@ -13,6 +13,7 @@ use App\Http\Controllers\AdminUserMediaController;
 use App\Http\Controllers\MobileFaceController;
 use App\Http\Controllers\TransferController;
 use App\Models\Bank;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Foundation\Application;
@@ -155,49 +156,75 @@ Route::prefix('admin')->group(function () {
     });
 });
 
-//ruta oara proxy KYC
 Route::post('/kyc-proxy', function (Request $request) {
-    $user = $request->user(); // opcional, si quieres asociar a usuario logueado
+    $user = $request->user();
     if (!$user) {
         return response()->json(['error' => 'No autenticado'], 401);
     }
 
-    // Construir la petición al API externo
+    // ==========================
+    // Debug: mostrar archivos recibidos
+    // ==========================
+    Log::info('=== KYC Proxy Debug ===');
+    Log::info('Archivos recibidos:');
+    foreach ($request->allFiles() as $key => $file) {
+        Log::info("$key: " . ($file ? $file->getClientOriginalName() : 'NULL'));
+    }
+    Log::info('Campos recibidos:');
+    Log::info($request->all());
+
+    // Construir petición al API externo
     $http = Http::withHeaders([
         'Accept' => 'application/json',
     ]);
 
-    // Adjuntar archivos
+    // Adjuntar archivos al request
     if ($request->hasFile('carnet')) {
+        Log::info('Adjuntando carnet');
         $http = $http->attach(
-            'carnet', file_get_contents($request->file('carnet')->getRealPath()), 'documento_frente.jpg'
+            'carnet',
+            file_get_contents($request->file('carnet')->getRealPath()),
+            $request->file('carnet')->getClientOriginalName()
         );
     }
 
     if ($request->hasFile('carnet_back')) {
+        Log::info('Adjuntando carnet_back');
         $http = $http->attach(
-            'carnet_back', file_get_contents($request->file('carnet_back')->getRealPath()), 'documento_reverso.jpg'
+            'carnet_back',
+            file_get_contents($request->file('carnet_back')->getRealPath()),
+            $request->file('carnet_back')->getClientOriginalName()
         );
     }
 
     if ($request->hasFile('video')) {
+        Log::info('Adjuntando video');
         $http = $http->attach(
-            'video', file_get_contents($request->file('video')->getRealPath()), 'video.mp4'
+            'video',
+            file_get_contents($request->file('video')->getRealPath()),
+            $request->file('video')->getClientOriginalName()
         );
     }
 
-    // Otros campos
-    $params = [
-        'doc_type' => $request->input('doc_type'),
-    ];
+    // Adjuntar doc_type
+    $docType = $request->input('doc_type');
+    Log::info("doc_type: $docType");
 
+    // ==========================
     // Hacer POST al API externo
-    $response = $http->post('https://api-face-api-face.ylblfg.easypanel.host/registro-face/verify', $params);
+    // ==========================
+    $response = $http->post('https://automatizando-api-face.pk1ooa.easypanel.host/registro-face/verify', [
+        'doc_type' => $docType
+    ]);
+
+    // Debug: respuesta de la API
+    Log::info('=== Respuesta API Externa ===');
+    Log::info('Status: ' . $response->status());
+    Log::info('Body: ' . $response->body());
 
     return response($response->body(), $response->status())
         ->header('Content-Type', $response->header('Content-Type'));
 });
- 
 
 // Tipo de cambio - API pública
 Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'historial']);
@@ -233,7 +260,7 @@ Route::post('/kyc-proxy-mobile', function (Request $request) {
     }
 
     $params = ['doc_type' => $request->input('doc_type')];
-    $response = $http->post('https://api-face-api-face.ylblfg.easypanel.host/registro-face/verify', $params);
+    $response = $http->post('https://automatizando-api-face.pk1ooa.easypanel.host/registro-face/verify', $params);
 
     return response($response->body(), $response->status())
         ->header('Content-Type', $response->header('Content-Type'));

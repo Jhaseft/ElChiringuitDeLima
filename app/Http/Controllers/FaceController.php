@@ -18,7 +18,11 @@ class FaceController extends Controller
             return redirect()->route('welcome');
         }
 
-        return Inertia::render('Face/FaceKycSteps', [
+        //return Inertia::render('Face/FaceKycSteps', [
+        //    'next' => $request->query('next', null)
+       // ]);
+
+       return Inertia::render('Face/FaceKyc', [
             'next' => $request->query('next', null)
         ]);
     }
