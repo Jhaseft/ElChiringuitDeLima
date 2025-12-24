@@ -46,7 +46,7 @@ public function verify(Request $request)
     $mensajes = [];
 
     //  Validación mínima
-    if ($similitud < 50) {
+    if ($similitud < 35) {
         $mensajes[] = "Rostro no coincide (Similitud baja).";
     }
     if ($liveness < 30) {
