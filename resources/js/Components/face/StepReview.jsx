@@ -74,7 +74,7 @@ export default function StepReview({
       setMessage(null);
       setProblems([]);
 
-      // 1️⃣ FormData para API KYC (solo frente + video)
+      // 1️ FormData para API KYC (solo frente + video)
       const formDataKyc = new FormData();
       formDataKyc.append("carnet", docFrontBlob, "documento_frente.jpg");
       if (docBackBlob) formDataKyc.append("carnet_back", docBackBlob, "documento_reverso.jpg");
@@ -87,7 +87,7 @@ export default function StepReview({
 
       setResultado(res.data);
 
-      // 2️⃣ FormData para backend interno (frente + reverso opcional + video + resultado)
+      // 2️ FormData para backend interno (frente + reverso opcional + video + resultado)
       const csrf = getCsrfToken();
       const formDataBackend = new FormData();
       formDataBackend.append("doc_type", docType);
@@ -106,7 +106,7 @@ export default function StepReview({
       setMessage(data.mensaje || "ℹ️ Verificación realizada.");
       setProblems(data.sugerencias || []);
 
-      // 3️⃣ Redirigir si todo fue bien
+      // 3️ Redirigir si todo fue bien
       if (data.status === "success" || data.kyc_status === "active") {
         setTimeout(() => {
           const params = new URLSearchParams(window.location.search);
