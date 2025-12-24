@@ -1,12 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
 export default function TransferModal({ selected, isOpen, onClose, onUpdated }) {
   const [editStatus, setEditStatus] = useState(selected.status);
   const [comprobante, setComprobante] = useState(null);
+  const [comprobantePreview, setComprobantePreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  if (!isOpen) return null;
+  // Reset states al cerrar modal
+  useEffect(() => {
+    if (!isOpen) {
+      setComprobante(null);
+      setComprobantePreview(null);
+      setEditStatus(selected.status);
+    }
+  }, [isOpen, selected.status]);
 
   const handleUpdate = async () => {
     setLoading(true);
@@ -69,6 +77,8 @@ export default function TransferModal({ selected, isOpen, onClose, onUpdated }) 
     );
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2">
       <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl overflow-auto max-h-[90vh] p-4 md:p-6 border border-gray-300">
@@ -85,13 +95,8 @@ export default function TransferModal({ selected, isOpen, onClose, onUpdated }) 
             <p><strong>KYC:</strong> {selected.user.kyc_status}</p>
           </Section>
 
-          <Section title="Cuenta Origen">
-            {renderAccount(selected.origin_account)}
-          </Section>
-
-          <Section title="Cuenta Destino">
-            {renderAccount(selected.destination_account)}
-          </Section>
+          <Section title="Cuenta Origen">{renderAccount(selected.origin_account)}</Section>
+          <Section title="Cuenta Destino">{renderAccount(selected.destination_account)}</Section>
 
           <Section title="Detalles de Transferencia">
             <p><strong>Monto:</strong> {selected.amount}</p>
@@ -115,13 +120,33 @@ export default function TransferModal({ selected, isOpen, onClose, onUpdated }) 
 
             {editStatus === "completed" && (
               <div className="mt-2">
-                <label className="block text-sm font-medium text-gray-700">Subir Comprobante</label>
+                <label className="block text-sm font-medium text-gray-700">Subir Comprobante (JPG/PNG)</label>
                 <input
                   type="file"
-                  accept=".pdf,.jpg,.png"
-                  onChange={(e) => setComprobante(e.target.files[0])}
+                  accept=".jpg,.jpeg,.png"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file && file.type.startsWith("image/")) {
+                      setComprobante(file);
+                      setComprobantePreview(URL.createObjectURL(file));
+                    } else {
+                      setComprobante(null);
+                      setComprobantePreview(null);
+                      if (file) alert("Solo se permiten imágenes JPG o PNG.");
+                    }
+                  }}
                   className="mt-1 block w-full text-sm text-gray-600"
                 />
+
+                {comprobantePreview && (
+                  <div className="mt-2">
+                    <img
+                      src={comprobantePreview}
+                      alt="Comprobante"
+                      className="max-w-xs max-h-48 border rounded"
+                    />
+                  </div>
+                )}
               </div>
             )}
           </Section>
