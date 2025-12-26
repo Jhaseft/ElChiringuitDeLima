@@ -1,4 +1,4 @@
-import { Upload, CheckCircle, Info, Check } from "lucide-react";
+import { Upload, CheckCircle } from "lucide-react";
 
 export default function FileUploadCard({
   label,
@@ -6,15 +6,13 @@ export default function FileUploadCard({
   accept,
   file,
   onChange,
-  recommendations = [],
 }) {
   return (
     <div className="space-y-3">
-    <label className="text-sm font-semibold text-gray-700">
+      <label className="text-sm font-semibold text-gray-700">
         {label}
       </label>
 
-      
       <label className="cursor-pointer block">
         <div
           className={`border-2 border-dashed rounded-2xl p-5 text-center transition-all
@@ -53,31 +51,6 @@ export default function FileUploadCard({
           )}
         </div>
       </label>
-
-  
-      {recommendations.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
-          <div className="flex items-center gap-2 text-blue-700 text-sm font-semibold">
-            <Info size={16} />
-            Recomendaciones
-          </div>
-
-          <ul className="space-y-1.5">
-            {recommendations.map((r, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-2 text-xs text-blue-800"
-              >
-                <Check
-                  size={14}
-                  className="mt-0.5 text-blue-600 shrink-0"
-                />
-                <span>{r}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

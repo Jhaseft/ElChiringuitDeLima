@@ -1,9 +1,9 @@
-import { ArrowLeft, ArrowRight, Info } from "lucide-react";
+import { ArrowLeft, ArrowRight, Info, Check } from "lucide-react";
 import FileUploadCard from "@/Components/face/FileUploadCard";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function DocumentCapture({
-  docType, // "ci" | "licencia" | "pasaporte"
+  docType,
   docFrontBlob,
   docBackBlob,
   setDocFrontBlob,
@@ -24,20 +24,17 @@ export default function DocumentCapture({
     "Formato soportado JPG o PNG",
   ];
 
-  // Validación de archivos
   const handleFrontChange = (file) => {
     if (!file) {
       setDocFrontBlob(null);
       setErrorFront("");
       return;
     }
-
     if (!["image/png", "image/jpeg"].includes(file.type)) {
-      setErrorFront(" Solo se permiten imágenes PNG o JPG");
+      setErrorFront("Solo se permiten imágenes PNG o JPG");
       setDocFrontBlob(null);
       return;
     }
-
     setErrorFront("");
     setDocFrontBlob(file);
   };
@@ -48,13 +45,11 @@ export default function DocumentCapture({
       setErrorBack("");
       return;
     }
-
     if (!["image/png", "image/jpeg"].includes(file.type)) {
-      setErrorBack(" Solo se permiten imágenes PNG o JPG");
+      setErrorBack("Solo se permiten imágenes PNG o JPG");
       setDocBackBlob(null);
       return;
     }
-
     setErrorBack("");
     setDocBackBlob(file);
   };
@@ -65,12 +60,10 @@ export default function DocumentCapture({
         <span className="text-sm text-gray-500">Carga de documento</span>
         <p className="font-semibold text-xl text-gray-800 mt-1">
           {docType === "pasaporte" ? "Pasaporte" : "Documento de identidad"}
-          <span className="ml-2 px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-700">
-            {docType.toUpperCase()}
-          </span>
         </p>
       </div>
 
+      {/* Uploads */}
       <div className="space-y-4">
         <FileUploadCard
           label={docType === "pasaporte" ? "Documento" : "Documento – Anverso"}
@@ -78,7 +71,6 @@ export default function DocumentCapture({
           accept="image/png, image/jpeg"
           file={docFrontBlob}
           onChange={handleFrontChange}
-          recommendations={recommendations}
         />
         {errorFront && <p className="text-red-500 text-sm">{errorFront}</p>}
 
@@ -90,13 +82,30 @@ export default function DocumentCapture({
               accept="image/png, image/jpeg"
               file={docBackBlob}
               onChange={handleBackChange}
-              recommendations={recommendations}
             />
             {errorBack && <p className="text-red-500 text-sm">{errorBack}</p>}
           </>
         )}
       </div>
 
+      {/* Recomendaciones (UNA SOLA VEZ) */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
+        <div className="flex items-center gap-2 text-blue-700 text-sm font-semibold">
+          <Info size={16} />
+          Recomendaciones
+        </div>
+
+        <ul className="space-y-1.5">
+          {recommendations.map((r, i) => (
+            <li key={i} className="flex items-start gap-2 text-xs text-blue-800">
+              <Check size={14} className="mt-0.5 text-blue-600 shrink-0" />
+              <span>{r}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Botones */}
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={onBack}
