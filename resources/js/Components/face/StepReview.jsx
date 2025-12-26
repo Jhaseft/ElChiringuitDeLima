@@ -24,30 +24,41 @@ export default function StepReview({
   const [loadedBack, setLoadedBack] = useState(false);
   const [loadedVideo, setLoadedVideo] = useState(false);
 
- useEffect(() => {
-  console.log("🔹 STEP REVIEW: blobs recibidos", { docFrontBlob, docBackBlob, videoBlob });
+  // Convertir blobs a Data URLs
+  useEffect(() => {
+    console.log("🔹 STEP REVIEW: blobs recibidos", { docFrontBlob, docBackBlob, videoBlob });
 
-  const front = docFrontBlob ? URL.createObjectURL(docFrontBlob) : null;
-  const back = docBackBlob ? URL.createObjectURL(docBackBlob) : null;
-  const video = videoBlob ? URL.createObjectURL(videoBlob) : null;
+    const readFile = (file) =>
+      new Promise((resolve, reject) => {
+        if (!file) return resolve(null);
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+      });
 
-  console.log("🔹 STEP REVIEW: URLs creadas", { front, back, video });
+    let isMounted = true;
+    Promise.all([
+      readFile(docFrontBlob),
+      readFile(docBackBlob),
+      readFile(videoBlob),
+    ]).then(([front, back, video]) => {
+      if (!isMounted) return;
+      setFrontURL(front);
+      setBackURL(back);
+      setVideoURL(video);
 
-  setFrontURL(front);
-  setBackURL(back);
-  setVideoURL(video);
+      setLoadedFront(false);
+      setLoadedBack(false);
+      setLoadedVideo(false);
 
-  setLoadedFront(false);
-  setLoadedBack(false);
-  setLoadedVideo(false);
+      console.log("🔹 STEP REVIEW: Data URLs creadas", { front, back, video });
+    });
 
-  return () => {
-    console.log("🔹 STEP REVIEW: revocando URLs", { front, back, video });
-    if (front) URL.revokeObjectURL(front);
-    if (back) URL.revokeObjectURL(back);
-    if (video) URL.revokeObjectURL(video);
-  };
-}, [docFrontBlob, docBackBlob, videoBlob]);
+    return () => {
+      isMounted = false;
+    };
+  }, [docFrontBlob, docBackBlob, videoBlob]);
 
   const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
