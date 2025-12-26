@@ -103,9 +103,10 @@ export default function StepReviewMobile({
 
       const data = backendRes.data;
       setMessage(data.mensaje || "ℹ️Verificación realizada porfavor vuelve ala App.");
+
       if (
         data.mensaje &&
-        data.mensaje.toLowerCase().includes("ℹ️Verificación realizada porfavor vuelve ala App.")
+        data.mensaje.toLowerCase().includes("verificación realizada")
       ) {
         // redirección inmediata, sin historial
         window.location.replace("/");
