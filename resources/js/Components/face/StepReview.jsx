@@ -15,55 +15,66 @@ export default function StepReview({
 }) {
   const [message, setMessage] = useState(null);
   const [problems, setProblems] = useState([]);
+
   const [frontURL, setFrontURL] = useState(null);
   const [backURL, setBackURL] = useState(null);
   const [videoURL, setVideoURL] = useState(null);
 
-  // Estados de carga de recursos
   const [loadedFront, setLoadedFront] = useState(false);
   const [loadedBack, setLoadedBack] = useState(false);
   const [loadedVideo, setLoadedVideo] = useState(false);
 
-  // Crear URLs de blobs y liberar memoria
+  // ---- Crear URLs de blobs de forma segura ----
   useEffect(() => {
-    let front, back, video;
-    if (docFrontBlob) front = URL.createObjectURL(docFrontBlob);
-    if (docBackBlob) back = URL.createObjectURL(docBackBlob);
-    if (videoBlob) video = URL.createObjectURL(videoBlob);
-
-    setFrontURL(front || null);
-    setBackURL(back || null);
-    setVideoURL(video || null);
-
-    setLoadedFront(false);
-    setLoadedBack(false);
-    setLoadedVideo(false);
- 
+    // Revocar URL anterior si cambia el blob
     return () => {
-      if (front) URL.revokeObjectURL(front);
-      if (back) URL.revokeObjectURL(back);
-      if (video) URL.revokeObjectURL(video);
+      if (frontURL) URL.revokeObjectURL(frontURL);
+      if (backURL) URL.revokeObjectURL(backURL);
+      if (videoURL) URL.revokeObjectURL(videoURL);
     };
-  }, [docFrontBlob, docBackBlob, videoBlob]);
+  }, []);
 
-  const getCsrfToken = () => {
-    const el = document.querySelector('meta[name="csrf-token"]');
-    return el?.getAttribute("content") || "";
-  };
+  useEffect(() => {
+    if (docFrontBlob) {
+      if (frontURL) URL.revokeObjectURL(frontURL);
+      setFrontURL(URL.createObjectURL(docFrontBlob));
+      setLoadedFront(false);
+    } else {
+      if (frontURL) URL.revokeObjectURL(frontURL);
+      setFrontURL(null);
+    }
+  }, [docFrontBlob]);
+
+  useEffect(() => {
+    if (docBackBlob) {
+      if (backURL) URL.revokeObjectURL(backURL);
+      setBackURL(URL.createObjectURL(docBackBlob));
+      setLoadedBack(false);
+    } else {
+      if (backURL) URL.revokeObjectURL(backURL);
+      setBackURL(null);
+    }
+  }, [docBackBlob]);
+
+  useEffect(() => {
+    if (videoBlob) {
+      if (videoURL) URL.revokeObjectURL(videoURL);
+      setVideoURL(URL.createObjectURL(videoBlob));
+      setLoadedVideo(false);
+    } else {
+      if (videoURL) URL.revokeObjectURL(videoURL);
+      setVideoURL(null);
+    }
+  }, [videoBlob]);
+
+  // ---- Funciones y submit igual que antes ----
+  const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
   const handleSubmit = async () => {
-    if (!docFrontBlob || !videoBlob) {
-      alert("⚠️ Debes capturar al menos documento frontal y video.");
+    if (!docFrontBlob || !videoBlob || (["ci","licencia"].includes(docType) && !docBackBlob)) {
+      alert("⚠️ Debes capturar todos los archivos requeridos.");
       return;
     }
-
-    if (docType === "ci" || docType === "licencia") {
-      if (!docBackBlob) {
-        alert("⚠️ Debes capturar también el reverso.");
-        return;
-      }
-    }
-
     if (!(loadedFront && (docBackBlob ? loadedBack : true) && loadedVideo)) {
       alert("⚠️ Espera a que todos los recursos se carguen completamente.");
       return;
@@ -74,39 +85,28 @@ export default function StepReview({
       setMessage(null);
       setProblems([]);
 
-      // 1️ FormData para API KYC (solo frente + video)
       const formDataKyc = new FormData();
       formDataKyc.append("carnet", docFrontBlob, "documento_frente.jpg");
       if (docBackBlob) formDataKyc.append("carnet_back", docBackBlob, "documento_reverso.jpg");
       formDataKyc.append("doc_type", docType);
       formDataKyc.append("video", videoBlob, "video.mp4");
 
-      const res = await axios.post("/kyc-proxy", formDataKyc, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
+      const res = await axios.post("/kyc-proxy", formDataKyc, { headers: { "Content-Type": "multipart/form-data" } });
       setResultado(res.data);
 
-      // 2️ FormData para backend interno (frente + reverso opcional + video + resultado)
       const csrf = getCsrfToken();
       const formDataBackend = new FormData();
       formDataBackend.append("doc_type", docType);
       formDataBackend.append("docFront", docFrontBlob, "documento_frente.jpg");
-      if (docBackBlob) {
-        formDataBackend.append("docBack", docBackBlob, "documento_reverso.jpg");
-      }
+      if (docBackBlob) formDataBackend.append("docBack", docBackBlob, "documento_reverso.jpg");
       formDataBackend.append("video", videoBlob, "video.mp4");
       formDataBackend.append("resultado", JSON.stringify(res.data));
 
-      const backendRes = await axios.post("/face/verify", formDataBackend, {
-        headers: { "X-CSRF-TOKEN": csrf },
-      });
-
+      const backendRes = await axios.post("/face/verify", formDataBackend, { headers: { "X-CSRF-TOKEN": csrf } });
       const data = backendRes.data;
       setMessage(data.mensaje || "ℹ️ Verificación realizada.");
       setProblems(data.sugerencias || []);
 
-      // 3️ Redirigir si todo fue bien
       if (data.status === "success" || data.kyc_status === "active") {
         setTimeout(() => {
           const params = new URLSearchParams(window.location.search);
@@ -116,7 +116,6 @@ export default function StepReview({
       }
     } catch (err) {
       console.error("❌ Error en verificación:", err);
-
       if (err.response?.status === 422) {
         setMessage("⚠️ Datos inválidos: revisa los campos requeridos.");
         setProblems(err.response.data?.errors || []);
@@ -130,38 +129,25 @@ export default function StepReview({
     }
   };
 
+  // ---- Renderizado de imágenes y video ----
   const renderResultado = () => {
     if (!resultado) return null;
-
     return (
       <div className="mt-4 p-4 border rounded-lg bg-gray-100 shadow-inner space-y-2">
         <h3 className="font-semibold text-lg">Resultado de verificación</h3>
-
         {message && <p className="text-sm"><strong>📢 Mensaje:</strong> {message}</p>}
-
-        {resultado.score !== undefined && (
-          <p className="text-sm"><strong>⭐ Score:</strong> {resultado.score}</p>
-        )}
-
+        {resultado.score !== undefined && <p className="text-sm"><strong>⭐ Score:</strong> {resultado.score}</p>}
         {problems.length > 0 && (
           <div>
             <strong className="text-sm">⚠️ Sugerencias:</strong>
             <ul className="list-disc ml-5 text-sm text-red-600">
-              {problems.map((p, i) => (<li key={`problem-${i}`}>{p}</li>))}
+              {problems.map((p,i)=><li key={i}>{p}</li>)}
             </ul>
           </div>
         )}
-
         <details className="mt-3">
-          <summary className="cursor-pointer text-xs text-gray-500">
-            Ver JSON completo
-          </summary>
-          <pre
-            key={JSON.stringify(resultado)}
-            className="text-xs bg-white rounded-md p-2 overflow-auto max-h-60 border"
-          >
-            {JSON.stringify(resultado, null, 2)}
-          </pre>
+          <summary className="cursor-pointer text-xs text-gray-500">Ver JSON completo</summary>
+          <pre className="text-xs bg-white rounded-md p-2 overflow-auto max-h-60 border">{JSON.stringify(resultado,null,2)}</pre>
         </details>
       </div>
     );
@@ -174,27 +160,14 @@ export default function StepReview({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {frontURL && (
           <div>
-            <p className="text-sm font-medium mb-1">
-              {docType === "pasaporte" ? "Pasaporte" : "Anverso"}
-            </p>
-            <img
-              src={frontURL}
-              alt="Documento anverso"
-              onLoad={() => setLoadedFront(true)}
-              className="rounded-lg border shadow w-full h-auto object-cover"
-            />
+            <p className="text-sm font-medium mb-1">{docType==="pasaporte"?"Pasaporte":"Anverso"}</p>
+            <img src={frontURL} alt="Documento anverso" onLoad={()=>setLoadedFront(true)} className="rounded-lg border shadow w-full h-auto object-cover" />
           </div>
         )}
-
         {backURL && (
           <div>
             <p className="text-sm font-medium mb-1">Reverso</p>
-            <img
-              src={backURL}
-              alt="Documento reverso"
-              onLoad={() => setLoadedBack(true)}
-              className="rounded-lg border shadow w-full h-auto object-cover opacity-80"
-            />
+            <img src={backURL} alt="Documento reverso" onLoad={()=>setLoadedBack(true)} className="rounded-lg border shadow w-full h-auto object-cover opacity-80" />
           </div>
         )}
       </div>
@@ -202,12 +175,7 @@ export default function StepReview({
       {videoURL && (
         <div className="mt-2">
           <p className="text-sm font-medium mb-1">Video selfie</p>
-          <video
-            src={videoURL}
-            controls
-            onLoadedData={() => setLoadedVideo(true)}
-            className="rounded-lg border shadow w-full h-auto object-cover"
-          />
+          <video src={videoURL} controls onLoadedData={()=>setLoadedVideo(true)} className="rounded-lg border shadow w-full h-auto object-cover" />
         </div>
       )}
 
@@ -216,17 +184,8 @@ export default function StepReview({
       ) : null}
 
       <div className="flex flex-wrap justify-center gap-3 mt-4">
-        <button
-          onClick={prevStep}
-          className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg"
-        >
-          Atrás
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={loading || !(loadedFront && (docBackBlob ? loadedBack : true) && loadedVideo)}
-          className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-        >
+        <button onClick={prevStep} className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg">Atrás</button>
+        <button onClick={handleSubmit} disabled={loading || !(loadedFront && (docBackBlob?loadedBack:true) && loadedVideo)} className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg flex items-center gap-2">
           {loading && <Loader2 className="h-4 w-4 animate-spin" />} Verificar
         </button>
       </div>

@@ -63,7 +63,6 @@ export default function DocumentCapture({
         </p>
       </div>
 
-      {/* Uploads */}
       <div className="space-y-4">
         <FileUploadCard
           label={docType === "pasaporte" ? "Documento" : "Documento – Anverso"}
@@ -88,7 +87,6 @@ export default function DocumentCapture({
         )}
       </div>
 
-      {/* Recomendaciones (UNA SOLA VEZ) */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
         <div className="flex items-center gap-2 text-blue-700 text-sm font-semibold">
           <Info size={16} />
@@ -105,7 +103,7 @@ export default function DocumentCapture({
         </ul>
       </div>
 
-      {/* Botones */}
+ 
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={onBack}
