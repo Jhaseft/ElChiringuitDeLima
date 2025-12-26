@@ -36,7 +36,9 @@ public function verify(Request $request)
     if (!is_array($resultado)) {
         return response()->json(['error' => 'Formato inválido'], 422);
     }
-
+    if ($user->kyc_status === 'verified') {
+       return redirect('/');
+        }
     $docType   = $request->input('doc_type'); // pasaporte, ci, licencia
     $verificado = data_get($resultado, 'verificado', false);
     $similitud  = data_get($resultado, 'similitud_promedio', 0);

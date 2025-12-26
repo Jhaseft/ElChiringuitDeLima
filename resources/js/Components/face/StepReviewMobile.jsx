@@ -102,6 +102,7 @@ export default function StepReviewMobile({
       });
 
       const data = backendRes.data;
+      console.log("data:",data);
       setMessage(data.mensaje || "ℹ️Verificación realizada porfavor vuelve ala App.");
 
       if (

@@ -41,7 +41,9 @@ class MobileFaceController extends Controller
 
         $user = $accessToken->tokenable;
         if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 401);
-
+        if ($user->kyc_status === 'verified') {
+       return redirect('/');
+        }
         // Procesar resultado KYC
         $resultado = json_decode($request->input('resultado'), true);
         if (!is_array($resultado)) return response()->json(['error' => 'Formato inválido'], 422);
