@@ -24,26 +24,30 @@ export default function StepReview({
   const [loadedBack, setLoadedBack] = useState(false);
   const [loadedVideo, setLoadedVideo] = useState(false);
 
-  // 🔹 Crear URLs de blobs de forma segura
-  useEffect(() => {
-    const front = docFrontBlob ? URL.createObjectURL(docFrontBlob) : null;
-    const back = docBackBlob ? URL.createObjectURL(docBackBlob) : null;
-    const video = videoBlob ? URL.createObjectURL(videoBlob) : null;
+ useEffect(() => {
+  console.log("🔹 STEP REVIEW: blobs recibidos", { docFrontBlob, docBackBlob, videoBlob });
 
-    setFrontURL(front);
-    setBackURL(back);
-    setVideoURL(video);
+  const front = docFrontBlob ? URL.createObjectURL(docFrontBlob) : null;
+  const back = docBackBlob ? URL.createObjectURL(docBackBlob) : null;
+  const video = videoBlob ? URL.createObjectURL(videoBlob) : null;
 
-    setLoadedFront(false);
-    setLoadedBack(false);
-    setLoadedVideo(false);
+  console.log("🔹 STEP REVIEW: URLs creadas", { front, back, video });
 
-    return () => {
-      if (front) URL.revokeObjectURL(front);
-      if (back) URL.revokeObjectURL(back);
-      if (video) URL.revokeObjectURL(video);
-    };
-  }, [docFrontBlob, docBackBlob, videoBlob]);
+  setFrontURL(front);
+  setBackURL(back);
+  setVideoURL(video);
+
+  setLoadedFront(false);
+  setLoadedBack(false);
+  setLoadedVideo(false);
+
+  return () => {
+    console.log("🔹 STEP REVIEW: revocando URLs", { front, back, video });
+    if (front) URL.revokeObjectURL(front);
+    if (back) URL.revokeObjectURL(back);
+    if (video) URL.revokeObjectURL(video);
+  };
+}, [docFrontBlob, docBackBlob, videoBlob]);
 
   const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
