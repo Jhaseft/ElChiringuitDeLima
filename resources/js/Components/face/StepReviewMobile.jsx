@@ -105,7 +105,7 @@ export default function StepReviewMobile({
       setMessage(data.mensaje || "ℹ️Verificación realizada porfavor vuelve ala App.");
       setProblems(data.sugerencias || []);
 
-      if (onResultToApp && (data.status === "success" || data.kyc_status === "active")) {
+      if (onResultToApp && (data.status === "success" || data.kyc_status === "verified")) {
         onResultToApp({
           status: data.status || data.kyc_status,
           mensaje: data.mensaje,
@@ -142,7 +142,7 @@ export default function StepReviewMobile({
   if (verificationComplete) {
     return (
       <div className="fixed inset-0 bg-green-600 text-white flex flex-col items-center justify-center p-4 text-center">
-        <h1 className="text-4xl font-bold mb-4">✅ Identidad Verificada</h1>
+        <h1 className="text-4xl font-bold mb-4"> Identidad Verificada</h1>
         <p className="text-xl">
           Gracias por completar la verificación. Por seguridad, cierra esta ventana y vuelve a la app.
         </p>
