@@ -15,7 +15,6 @@ export default function StepReview({
 }) {
   const [message, setMessage] = useState(null);
   const [problems, setProblems] = useState([]);
-
   const [frontURL, setFrontURL] = useState(null);
   const [backURL, setBackURL] = useState(null);
   const [videoURL, setVideoURL] = useState(null);
@@ -24,48 +23,31 @@ export default function StepReview({
   const [loadedBack, setLoadedBack] = useState(false);
   const [loadedVideo, setLoadedVideo] = useState(false);
 
- useEffect(() => {
-  console.log("🔹 STEP REVIEW: blobs recibidos", { docFrontBlob, docBackBlob, videoBlob });
+  // --- Crear URLs de blobs y limpiar memoria ---
+  useEffect(() => {
+    const urls = {
+      front: docFrontBlob ? URL.createObjectURL(docFrontBlob) : null,
+      back: docBackBlob ? URL.createObjectURL(docBackBlob) : null,
+      video: videoBlob ? URL.createObjectURL(videoBlob) : null,
+    };
 
-  // FRONT
-  if (docFrontBlob) {
-    const readerFront = new FileReader();
-    readerFront.onload = () => setFrontURL(readerFront.result);
-    readerFront.onerror = (err) => console.error("Error leyendo imagen frontal:", err);
-    readerFront.readAsDataURL(docFrontBlob);
-    setLoadedFront(false);
-  } else {
-    setFrontURL(null);
-    setLoadedFront(true);
-  }
+    setFrontURL(urls.front);
+    setBackURL(urls.back);
+    setVideoURL(urls.video);
 
-  // BACK
-  if (docBackBlob) {
-    const readerBack = new FileReader();
-    readerBack.onload = () => setBackURL(readerBack.result);
-    readerBack.onerror = (err) => console.error("Error leyendo imagen reverso:", err);
-    readerBack.readAsDataURL(docBackBlob);
-    setLoadedBack(false);
-  } else {
-    setBackURL(null);
-    setLoadedBack(true);
-  }
+    setLoadedFront(!urls.front);
+    setLoadedBack(!urls.back);
+    setLoadedVideo(!urls.video);
 
-  // VIDEO (si quieres mantenerlo igual que antes)
-  if (videoBlob) {
-    const readerVideo = new FileReader();
-    readerVideo.onload = () => setVideoURL(readerVideo.result);
-    readerVideo.onerror = (err) => console.error("Error leyendo video:", err);
-    readerVideo.readAsDataURL(videoBlob);
-    setLoadedVideo(false);
-  } else {
-    setVideoURL(null);
-    setLoadedVideo(true);
-  }
+    return () => {
+      if (urls.front) URL.revokeObjectURL(urls.front);
+      if (urls.back) URL.revokeObjectURL(urls.back);
+      if (urls.video) URL.revokeObjectURL(urls.video);
+    };
+  }, [docFrontBlob, docBackBlob, videoBlob]);
 
-}, [docFrontBlob, docBackBlob, videoBlob]);
-
-  const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+  const getCsrfToken = () =>
+    document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
   const handleSubmit = async () => {
     if (!docFrontBlob || !videoBlob || ((docType === "ci" || docType === "licencia") && !docBackBlob)) {
@@ -88,7 +70,10 @@ export default function StepReview({
       formDataKyc.append("doc_type", docType);
       formDataKyc.append("video", videoBlob, "video.mp4");
 
-      const res = await axios.post("/kyc-proxy", formDataKyc, { headers: { "Content-Type": "multipart/form-data" } });
+      const res = await axios.post("/kyc-proxy", formDataKyc, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
       setResultado(res.data);
 
       const csrf = getCsrfToken();
@@ -99,9 +84,11 @@ export default function StepReview({
       formDataBackend.append("video", videoBlob, "video.mp4");
       formDataBackend.append("resultado", JSON.stringify(res.data));
 
-      const backendRes = await axios.post("/face/verify", formDataBackend, { headers: { "X-CSRF-TOKEN": csrf } });
-      const data = backendRes.data;
+      const backendRes = await axios.post("/face/verify", formDataBackend, {
+        headers: { "X-CSRF-TOKEN": csrf },
+      });
 
+      const data = backendRes.data;
       setMessage(data.mensaje || "ℹ️ Verificación realizada.");
       setProblems(data.sugerencias || []);
 
@@ -124,6 +111,7 @@ export default function StepReview({
 
   const renderResultado = () => {
     if (!resultado) return null;
+
     return (
       <div className="mt-4 p-4 border rounded-lg bg-gray-100 shadow-inner space-y-2">
         <h3 className="font-semibold text-lg">Resultado de verificación</h3>
@@ -133,13 +121,13 @@ export default function StepReview({
           <div>
             <strong className="text-sm">⚠️ Sugerencias:</strong>
             <ul className="list-disc ml-5 text-sm text-red-600">
-              {problems.map((p,i) => <li key={i}>{p}</li>)}
+              {problems.map((p, i) => <li key={i}>{p}</li>)}
             </ul>
           </div>
         )}
         <details className="mt-3">
           <summary className="cursor-pointer text-xs text-gray-500">Ver JSON completo</summary>
-          <pre key={JSON.stringify(resultado)} className="text-xs bg-white rounded-md p-2 overflow-auto max-h-60 border">
+          <pre className="text-xs bg-white rounded-md p-2 overflow-auto max-h-60 border">
             {JSON.stringify(resultado, null, 2)}
           </pre>
         </details>
@@ -154,9 +142,8 @@ export default function StepReview({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {frontURL && (
           <div>
-            <p className="text-sm font-medium mb-1">{docType==="pasaporte"?"Pasaporte":"Anverso"}</p>
+            <p className="text-sm font-medium mb-1">{docType === "pasaporte" ? "Pasaporte" : "Anverso"}</p>
             <img
-              key={frontURL}
               src={frontURL}
               alt="Documento anverso"
               onLoad={() => setLoadedFront(true)}
@@ -168,7 +155,6 @@ export default function StepReview({
           <div>
             <p className="text-sm font-medium mb-1">Reverso</p>
             <img
-              key={backURL}
               src={backURL}
               alt="Documento reverso"
               onLoad={() => setLoadedBack(true)}
@@ -182,7 +168,6 @@ export default function StepReview({
         <div className="mt-2">
           <p className="text-sm font-medium mb-1">Video selfie</p>
           <video
-            key={videoURL}
             src={videoURL}
             controls
             onLoadedData={() => setLoadedVideo(true)}
