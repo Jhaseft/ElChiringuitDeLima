@@ -106,10 +106,9 @@ export default function StepReviewMobile({
      setMessage(data.mensaje || "ℹ️ Verificación realizada, por favor vuelve a la App.");
 console.log("mensaje", data.mensaje);
 
-// solo intentar toLowerCase si data.mensaje existe
-if (data.mensaje && data.mensaje.toLowerCase().includes("verificación realizada")) {
-    // redirección inmediata, sin historial
-    window.location.replace("/"); // reemplaza la ruta actual
+// redirigir si no hay mensaje o si dice "verificación realizada"
+if (!data.mensaje || data.mensaje.toLowerCase().includes("verificación realizada")) {
+    window.location.replace("/"); // redirección inmediata
     return;
 }
       setProblems(data.sugerencias || []);
