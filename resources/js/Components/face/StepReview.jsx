@@ -24,54 +24,31 @@ export default function StepReview({
   const [loadedBack, setLoadedBack] = useState(false);
   const [loadedVideo, setLoadedVideo] = useState(false);
 
-  // ---- Crear URLs de blobs de forma segura ----
+  // 🔹 Crear URLs de blobs de forma segura
   useEffect(() => {
-    // Revocar URL anterior si cambia el blob
+    const front = docFrontBlob ? URL.createObjectURL(docFrontBlob) : null;
+    const back = docBackBlob ? URL.createObjectURL(docBackBlob) : null;
+    const video = videoBlob ? URL.createObjectURL(videoBlob) : null;
+
+    setFrontURL(front);
+    setBackURL(back);
+    setVideoURL(video);
+
+    setLoadedFront(false);
+    setLoadedBack(false);
+    setLoadedVideo(false);
+
     return () => {
-      if (frontURL) URL.revokeObjectURL(frontURL);
-      if (backURL) URL.revokeObjectURL(backURL);
-      if (videoURL) URL.revokeObjectURL(videoURL);
+      if (front) URL.revokeObjectURL(front);
+      if (back) URL.revokeObjectURL(back);
+      if (video) URL.revokeObjectURL(video);
     };
-  }, []);
+  }, [docFrontBlob, docBackBlob, videoBlob]);
 
-  useEffect(() => {
-    if (docFrontBlob) {
-      if (frontURL) URL.revokeObjectURL(frontURL);
-      setFrontURL(URL.createObjectURL(docFrontBlob));
-      setLoadedFront(false);
-    } else {
-      if (frontURL) URL.revokeObjectURL(frontURL);
-      setFrontURL(null);
-    }
-  }, [docFrontBlob]);
-
-  useEffect(() => {
-    if (docBackBlob) {
-      if (backURL) URL.revokeObjectURL(backURL);
-      setBackURL(URL.createObjectURL(docBackBlob));
-      setLoadedBack(false);
-    } else {
-      if (backURL) URL.revokeObjectURL(backURL);
-      setBackURL(null);
-    }
-  }, [docBackBlob]);
-
-  useEffect(() => {
-    if (videoBlob) {
-      if (videoURL) URL.revokeObjectURL(videoURL);
-      setVideoURL(URL.createObjectURL(videoBlob));
-      setLoadedVideo(false);
-    } else {
-      if (videoURL) URL.revokeObjectURL(videoURL);
-      setVideoURL(null);
-    }
-  }, [videoBlob]);
-
-  // ---- Funciones y submit igual que antes ----
   const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
   const handleSubmit = async () => {
-    if (!docFrontBlob || !videoBlob || (["ci","licencia"].includes(docType) && !docBackBlob)) {
+    if (!docFrontBlob || !videoBlob || ((docType === "ci" || docType === "licencia") && !docBackBlob)) {
       alert("⚠️ Debes capturar todos los archivos requeridos.");
       return;
     }
@@ -104,6 +81,7 @@ export default function StepReview({
 
       const backendRes = await axios.post("/face/verify", formDataBackend, { headers: { "X-CSRF-TOKEN": csrf } });
       const data = backendRes.data;
+
       setMessage(data.mensaje || "ℹ️ Verificación realizada.");
       setProblems(data.sugerencias || []);
 
@@ -116,20 +94,14 @@ export default function StepReview({
       }
     } catch (err) {
       console.error("❌ Error en verificación:", err);
-      if (err.response?.status === 422) {
-        setMessage("⚠️ Datos inválidos: revisa los campos requeridos.");
-        setProblems(err.response.data?.errors || []);
-      } else if (err.response?.data?.mensaje) {
-        setMessage("❌ " + err.response.data.mensaje);
-      } else {
-        setMessage("❌ Error inesperado en la verificación KYC.");
-      }
+      if (err.response?.status === 422) setMessage("⚠️ Datos inválidos: revisa los campos requeridos.");
+      else if (err.response?.data?.mensaje) setMessage("❌ " + err.response.data.mensaje);
+      else setMessage("❌ Error inesperado en la verificación KYC.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ---- Renderizado de imágenes y video ----
   const renderResultado = () => {
     if (!resultado) return null;
     return (
@@ -141,13 +113,15 @@ export default function StepReview({
           <div>
             <strong className="text-sm">⚠️ Sugerencias:</strong>
             <ul className="list-disc ml-5 text-sm text-red-600">
-              {problems.map((p,i)=><li key={i}>{p}</li>)}
+              {problems.map((p,i) => <li key={i}>{p}</li>)}
             </ul>
           </div>
         )}
         <details className="mt-3">
           <summary className="cursor-pointer text-xs text-gray-500">Ver JSON completo</summary>
-          <pre className="text-xs bg-white rounded-md p-2 overflow-auto max-h-60 border">{JSON.stringify(resultado,null,2)}</pre>
+          <pre key={JSON.stringify(resultado)} className="text-xs bg-white rounded-md p-2 overflow-auto max-h-60 border">
+            {JSON.stringify(resultado, null, 2)}
+          </pre>
         </details>
       </div>
     );
@@ -161,13 +135,25 @@ export default function StepReview({
         {frontURL && (
           <div>
             <p className="text-sm font-medium mb-1">{docType==="pasaporte"?"Pasaporte":"Anverso"}</p>
-            <img src={frontURL} alt="Documento anverso" onLoad={()=>setLoadedFront(true)} className="rounded-lg border shadow w-full h-auto object-cover" />
+            <img
+              key={frontURL}
+              src={frontURL}
+              alt="Documento anverso"
+              onLoad={() => setLoadedFront(true)}
+              className="rounded-lg border shadow w-full h-auto object-cover"
+            />
           </div>
         )}
         {backURL && (
           <div>
             <p className="text-sm font-medium mb-1">Reverso</p>
-            <img src={backURL} alt="Documento reverso" onLoad={()=>setLoadedBack(true)} className="rounded-lg border shadow w-full h-auto object-cover opacity-80" />
+            <img
+              key={backURL}
+              src={backURL}
+              alt="Documento reverso"
+              onLoad={() => setLoadedBack(true)}
+              className="rounded-lg border shadow w-full h-auto object-cover opacity-80"
+            />
           </div>
         )}
       </div>
@@ -175,7 +161,13 @@ export default function StepReview({
       {videoURL && (
         <div className="mt-2">
           <p className="text-sm font-medium mb-1">Video selfie</p>
-          <video src={videoURL} controls onLoadedData={()=>setLoadedVideo(true)} className="rounded-lg border shadow w-full h-auto object-cover" />
+          <video
+            key={videoURL}
+            src={videoURL}
+            controls
+            onLoadedData={() => setLoadedVideo(true)}
+            className="rounded-lg border shadow w-full h-auto object-cover"
+          />
         </div>
       )}
 
@@ -185,7 +177,11 @@ export default function StepReview({
 
       <div className="flex flex-wrap justify-center gap-3 mt-4">
         <button onClick={prevStep} className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg">Atrás</button>
-        <button onClick={handleSubmit} disabled={loading || !(loadedFront && (docBackBlob?loadedBack:true) && loadedVideo)} className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg flex items-center gap-2">
+        <button
+          onClick={handleSubmit}
+          disabled={loading || !(loadedFront && (docBackBlob ? loadedBack : true) && loadedVideo)}
+          className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
           {loading && <Loader2 className="h-4 w-4 animate-spin" />} Verificar
         </button>
       </div>
