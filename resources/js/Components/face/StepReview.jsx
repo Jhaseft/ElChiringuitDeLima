@@ -24,21 +24,27 @@ export default function StepReview({
   const [loadedVideo, setLoadedVideo] = useState(false);
 
   // --- Crear URLs de blobs y limpiar memoria solo al desmontar ---
-  useEffect(() => {
-    if (docFrontBlob) setFrontURL(URL.createObjectURL(docFrontBlob));
-    if (docBackBlob) setBackURL(URL.createObjectURL(docBackBlob));
-    if (videoBlob) setVideoURL(URL.createObjectURL(videoBlob));
+ useEffect(() => {
+  let front = null, back = null, video = null;
 
-    setLoadedFront(!docFrontBlob);
-    setLoadedBack(!docBackBlob);
-    setLoadedVideo(!videoBlob);
+  if (docFrontBlob) front = URL.createObjectURL(docFrontBlob);
+  if (docBackBlob) back = URL.createObjectURL(docBackBlob);
+  if (videoBlob) video = URL.createObjectURL(videoBlob);
 
-    return () => {
-      frontURL && URL.revokeObjectURL(frontURL);
-      backURL && URL.revokeObjectURL(backURL);
-      videoURL && URL.revokeObjectURL(videoURL);
-    };
-  }, [docFrontBlob, docBackBlob, videoBlob]);
+  setFrontURL(front);
+  setBackURL(back);
+  setVideoURL(video);
+
+  setLoadedFront(!front);
+  setLoadedBack(!back);
+  setLoadedVideo(!video);
+
+  return () => {
+    front && URL.revokeObjectURL(front);
+    back && URL.revokeObjectURL(back);
+    video && URL.revokeObjectURL(video);
+  };
+}, [docFrontBlob, docBackBlob, videoBlob]);
 
   const getCsrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
