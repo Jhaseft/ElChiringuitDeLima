@@ -24,45 +24,37 @@ export default function StepReviewMobile({
   const [loadedBack, setLoadedBack] = useState(false);
   const [loadedVideo, setLoadedVideo] = useState(false);
 
-  const [verificationComplete, setVerificationComplete] = useState(false); // Nueva flag
+  const [verificationComplete, setVerificationComplete] = useState(false);
 
+  // --- Manejo seguro de blobs ---
   useEffect(() => {
-    let front, back, video;
-    if (docFrontBlob) front = URL.createObjectURL(docFrontBlob);
-    if (docBackBlob) back = URL.createObjectURL(docBackBlob);
-    if (videoBlob) video = URL.createObjectURL(videoBlob);
+    let front = docFrontBlob ? URL.createObjectURL(docFrontBlob) : null;
+    let back = docBackBlob ? URL.createObjectURL(docBackBlob) : null;
+    let video = videoBlob ? URL.createObjectURL(videoBlob) : null;
 
-    setFrontURL(front || null);
-    setBackURL(back || null);
-    setVideoURL(video || null);
+    setFrontURL(front);
+    setBackURL(back);
+    setVideoURL(video);
 
-    setLoadedFront(false);
-    setLoadedBack(false);
-    setLoadedVideo(false);
+    setLoadedFront(!front);
+    setLoadedBack(!back);
+    setLoadedVideo(!video);
 
+    // Cleanup: revocar solo los blobs creados en este efecto
     return () => {
-      if (front) URL.revokeObjectURL(front);
-      if (back) URL.revokeObjectURL(back);
-      if (video) URL.revokeObjectURL(video);
+      front && URL.revokeObjectURL(front);
+      back && URL.revokeObjectURL(back);
+      video && URL.revokeObjectURL(video);
     };
   }, [docFrontBlob, docBackBlob, videoBlob]);
 
-  const getCsrfToken = () => {
-    const el = document.querySelector('meta[name="csrf-token"]');
-    return el?.getAttribute("content") || "";
-  };
+  const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
   const handleSubmit = async () => {
-    if (!docFrontBlob || !videoBlob) {
-      alert("⚠️ Debes capturar al menos documento frontal y video.");
+    if (!docFrontBlob || !videoBlob || ((docType === "ci" || docType === "licencia") && !docBackBlob)) {
+      alert("⚠️ Debes capturar todos los archivos requeridos.");
       return;
     }
-
-    if ((docType === "ci" || docType === "licencia") && !docBackBlob) {
-      alert("⚠️ Debes capturar también el reverso.");
-      return;
-    }
-
     if (!(loadedFront && (docBackBlob ? loadedBack : true) && loadedVideo)) {
       alert("⚠️ Espera a que todos los recursos se carguen completamente.");
       return;
@@ -102,7 +94,7 @@ export default function StepReviewMobile({
       });
 
       const data = backendRes.data;
-      setMessage(data.mensaje || "ℹ️Verificación realizada porfavor vuelve ala App.");
+      setMessage(data.mensaje || "ℹ️ Verificación realizada, por favor vuelve a la App.");
       setProblems(data.sugerencias || []);
 
       if (onResultToApp && (data.status === "success" || data.kyc_status === "active")) {
@@ -113,9 +105,8 @@ export default function StepReviewMobile({
           kyc: kycRes.data,
         });
 
-        // Mostrar pantalla final
         setVerificationComplete(true);
-        // Intentar cerrar ventana si se puede
+
         setTimeout(() => {
           try {
             window.close();
@@ -142,10 +133,8 @@ export default function StepReviewMobile({
   if (verificationComplete) {
     return (
       <div className="fixed inset-0 bg-green-600 text-white flex flex-col items-center justify-center p-4 text-center">
-        <h1 className="text-4xl font-bold mb-4"> Identidad Verificada</h1>
-        <p className="text-xl">
-          Gracias por completar la verificación. Por seguridad, cierra esta ventana y vuelve a la app.
-        </p>
+        <h1 className="text-4xl font-bold mb-4">Identidad Verificada</h1>
+        <p className="text-xl">Gracias por completar la verificación. Por seguridad, cierra esta ventana y vuelve a la app.</p>
       </div>
     );
   }
@@ -156,30 +145,19 @@ export default function StepReviewMobile({
     return (
       <div className="mt-4 p-4 border rounded-lg bg-gray-100 shadow-inner space-y-2">
         <h3 className="font-semibold text-lg">Resultado de verificación</h3>
-
         {message && <p className="text-sm"><strong>📢 Mensaje:</strong> {message}</p>}
-
-        {resultado.score !== undefined && (
-          <p className="text-sm"><strong>⭐ Score:</strong> {resultado.score}</p>
-        )}
-
+        {resultado.score !== undefined && <p className="text-sm"><strong>⭐ Score:</strong> {resultado.score}</p>}
         {problems.length > 0 && (
           <div>
             <strong className="text-sm">⚠️ Sugerencias:</strong>
             <ul className="list-disc ml-5 text-sm text-red-600">
-              {problems.map((p, i) => (<li key={`problem-${i}`}>{p}</li>))}
+              {problems.map((p, i) => (<li key={i}>{p}</li>))}
             </ul>
           </div>
         )}
-
         <details className="mt-3">
-          <summary className="cursor-pointer text-xs text-gray-500">
-            Ver JSON completo
-          </summary>
-          <pre
-            key={JSON.stringify(resultado)}
-            className="text-xs bg-white rounded-md p-2 overflow-auto max-h-60 border"
-          >
+          <summary className="cursor-pointer text-xs text-gray-500">Ver JSON completo</summary>
+          <pre className="text-xs bg-white rounded-md p-2 overflow-auto max-h-60 border">
             {JSON.stringify(resultado, null, 2)}
           </pre>
         </details>
@@ -194,9 +172,7 @@ export default function StepReviewMobile({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {frontURL && (
           <div>
-            <p className="text-sm font-medium mb-1">
-              {docType === "pasaporte" ? "Pasaporte" : "Anverso"}
-            </p>
+            <p className="text-sm font-medium mb-1">{docType === "pasaporte" ? "Pasaporte" : "Anverso"}</p>
             <img
               src={frontURL}
               alt="Documento anverso"
@@ -205,7 +181,6 @@ export default function StepReviewMobile({
             />
           </div>
         )}
-
         {backURL && (
           <div>
             <p className="text-sm font-medium mb-1">Reverso</p>
