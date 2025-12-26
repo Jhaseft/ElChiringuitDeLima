@@ -23,26 +23,20 @@ export default function StepReview({
   const [loadedBack, setLoadedBack] = useState(false);
   const [loadedVideo, setLoadedVideo] = useState(false);
 
-  // --- Crear URLs de blobs y limpiar memoria ---
+  // --- Crear URLs de blobs y limpiar memoria solo al desmontar ---
   useEffect(() => {
-    const urls = {
-      front: docFrontBlob ? URL.createObjectURL(docFrontBlob) : null,
-      back: docBackBlob ? URL.createObjectURL(docBackBlob) : null,
-      video: videoBlob ? URL.createObjectURL(videoBlob) : null,
-    };
+    if (docFrontBlob) setFrontURL(URL.createObjectURL(docFrontBlob));
+    if (docBackBlob) setBackURL(URL.createObjectURL(docBackBlob));
+    if (videoBlob) setVideoURL(URL.createObjectURL(videoBlob));
 
-    setFrontURL(urls.front);
-    setBackURL(urls.back);
-    setVideoURL(urls.video);
-
-    setLoadedFront(!urls.front);
-    setLoadedBack(!urls.back);
-    setLoadedVideo(!urls.video);
+    setLoadedFront(!docFrontBlob);
+    setLoadedBack(!docBackBlob);
+    setLoadedVideo(!videoBlob);
 
     return () => {
-      if (urls.front) URL.revokeObjectURL(urls.front);
-      if (urls.back) URL.revokeObjectURL(urls.back);
-      if (urls.video) URL.revokeObjectURL(urls.video);
+      frontURL && URL.revokeObjectURL(frontURL);
+      backURL && URL.revokeObjectURL(backURL);
+      videoURL && URL.revokeObjectURL(videoURL);
     };
   }, [docFrontBlob, docBackBlob, videoBlob]);
 
@@ -54,6 +48,7 @@ export default function StepReview({
       alert("⚠️ Debes capturar todos los archivos requeridos.");
       return;
     }
+
     if (!(loadedFront && (docBackBlob ? loadedBack : true) && loadedVideo)) {
       alert("⚠️ Espera a que todos los recursos se carguen completamente.");
       return;
@@ -64,6 +59,7 @@ export default function StepReview({
       setMessage(null);
       setProblems([]);
 
+      // --- FormData para KYC ---
       const formDataKyc = new FormData();
       formDataKyc.append("carnet", docFrontBlob, "documento_frente.jpg");
       if (docBackBlob) formDataKyc.append("carnet_back", docBackBlob, "documento_reverso.jpg");
@@ -73,9 +69,9 @@ export default function StepReview({
       const res = await axios.post("/kyc-proxy", formDataKyc, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-
       setResultado(res.data);
 
+      // --- FormData para backend interno ---
       const csrf = getCsrfToken();
       const formDataBackend = new FormData();
       formDataBackend.append("doc_type", docType);
