@@ -24,41 +24,46 @@ export default function StepReview({
   const [loadedBack, setLoadedBack] = useState(false);
   const [loadedVideo, setLoadedVideo] = useState(false);
 
-  // Convertir blobs a Data URLs
-  useEffect(() => {
-    console.log("🔹 STEP REVIEW: blobs recibidos", { docFrontBlob, docBackBlob, videoBlob });
+ useEffect(() => {
+  console.log("🔹 STEP REVIEW: blobs recibidos", { docFrontBlob, docBackBlob, videoBlob });
 
-    const readFile = (file) =>
-      new Promise((resolve, reject) => {
-        if (!file) return resolve(null);
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(file);
-      });
+  // FRONT
+  if (docFrontBlob) {
+    const readerFront = new FileReader();
+    readerFront.onload = () => setFrontURL(readerFront.result);
+    readerFront.onerror = (err) => console.error("Error leyendo imagen frontal:", err);
+    readerFront.readAsDataURL(docFrontBlob);
+    setLoadedFront(false);
+  } else {
+    setFrontURL(null);
+    setLoadedFront(true);
+  }
 
-    let isMounted = true;
-    Promise.all([
-      readFile(docFrontBlob),
-      readFile(docBackBlob),
-      readFile(videoBlob),
-    ]).then(([front, back, video]) => {
-      if (!isMounted) return;
-      setFrontURL(front);
-      setBackURL(back);
-      setVideoURL(video);
+  // BACK
+  if (docBackBlob) {
+    const readerBack = new FileReader();
+    readerBack.onload = () => setBackURL(readerBack.result);
+    readerBack.onerror = (err) => console.error("Error leyendo imagen reverso:", err);
+    readerBack.readAsDataURL(docBackBlob);
+    setLoadedBack(false);
+  } else {
+    setBackURL(null);
+    setLoadedBack(true);
+  }
 
-      setLoadedFront(false);
-      setLoadedBack(false);
-      setLoadedVideo(false);
+  // VIDEO (si quieres mantenerlo igual que antes)
+  if (videoBlob) {
+    const readerVideo = new FileReader();
+    readerVideo.onload = () => setVideoURL(readerVideo.result);
+    readerVideo.onerror = (err) => console.error("Error leyendo video:", err);
+    readerVideo.readAsDataURL(videoBlob);
+    setLoadedVideo(false);
+  } else {
+    setVideoURL(null);
+    setLoadedVideo(true);
+  }
 
-      console.log("🔹 STEP REVIEW: Data URLs creadas", { front, back, video });
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [docFrontBlob, docBackBlob, videoBlob]);
+}, [docFrontBlob, docBackBlob, videoBlob]);
 
   const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
