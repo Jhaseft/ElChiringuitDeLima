@@ -103,15 +103,15 @@ export default function StepReviewMobile({
 
       const data = backendRes.data;
       
-      setMessage(data.mensaje || "ℹ️Verificación realizada porfavor vuelve ala App.");
-      console.log("mendaje",data.mensaje);
-      if (
-        data.mensaje.toLowerCase().includes("verificación realizada")
-      ) {
-        // redirección inmediata, sin historial
-        window.location.replace("/");
-        return;
-      }
+     setMessage(data.mensaje || "ℹ️ Verificación realizada, por favor vuelve a la App.");
+console.log("mensaje", data.mensaje);
+
+// solo intentar toLowerCase si data.mensaje existe
+if (data.mensaje && data.mensaje.toLowerCase().includes("verificación realizada")) {
+    // redirección inmediata, sin historial
+    window.location.replace("/"); // reemplaza la ruta actual
+    return;
+}
       setProblems(data.sugerencias || []);
 
       if (onResultToApp && (data.status === "success" || data.kyc_status === "verified")) {
