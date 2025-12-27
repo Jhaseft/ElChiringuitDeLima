@@ -10,7 +10,7 @@ export default function LogoConVideo({
 }) {
   return (
     <>
-      {/* IZQUIERDA */}
+      
       <motion.div
         initial={{ opacity: 0, x: -100 }}
         whileInView={{ opacity: 1, x: 0 }}
@@ -21,20 +21,17 @@ export default function LogoConVideo({
         <p className="text-2xl  text-black font-extrabold sm:text-xl md:text-6xl font-montserrat leading-snug sm:leading-tight max-w-[600px] mx-auto">
           ¡La App que Transfiere tu Dinero al Instante!
         </p>
-
-        {/* Logo */}
+ 
         <img
           src={logoSrc}
           alt="logo corte beniano"
           className="w-auto max-w-[150px] sm:max-w-[180px] md:max-w-[220px] h-auto"
         />
 
-        {/* Contenido dinámico */}
         {children}
 
-        {/* Botón de descarga con ícono */}
         <a
-          href="https://github.com/Jhaseft/ElChiringuitDeLima/releases/download/v3.0.0/Transfer-Cash.apk"
+          href="https://github.com/Jhaseft/ElChiringuitDeLima/releases/download/V2.1.0/Transfer--Cash.apk"
           download
           className="bg-gradient-to-r from-[#0de22a] via-[#00a82d] to-[#154b1b] 
                      hover:from-[#00c738] hover:to-[#0a3d13] text-black font-bold tracking-widest 
@@ -45,7 +42,6 @@ export default function LogoConVideo({
         </a>
       </motion.div>
 
-      {/* DERECHA */}
       <motion.div
         initial={{ opacity: 0, y: 100 }}
         whileInView={{ opacity: 1, y: 0 }}
