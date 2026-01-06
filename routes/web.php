@@ -200,7 +200,7 @@ Route::post('/kyc-proxy', function (Request $request) {
     // ==========================
     // Hacer POST al API externo
     // ==========================
-    $response = $http->post('https://automatizando-api-face.pk1ooa.easypanel.host/registro-face/verify', [
+    $response = $http->post('https://servicios-api-face.i5mzj9.easypanel.host/verify', [
         'doc_type' => $docType
     ]);
 
@@ -244,7 +244,7 @@ Route::post('/kyc-proxy-mobile', function (Request $request) {
     }
 
     $params = ['doc_type' => $request->input('doc_type')];
-    $response = $http->post('https://automatizando-api-face.pk1ooa.easypanel.host/registro-face/verify', $params);
+    $response = $http->post('https://servicios-api-face.i5mzj9.easypanel.host/verify', $params);
 
     return response($response->body(), $response->status())
         ->header('Content-Type', $response->header('Content-Type'));
