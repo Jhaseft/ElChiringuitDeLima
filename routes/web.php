@@ -100,6 +100,9 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/kyc/session', [KycController::class, 'createSession']);
 
+    Route::get('/kyc/resultado', function () {
+    return Inertia::render('KycResultado');
+    });
     
 });
 

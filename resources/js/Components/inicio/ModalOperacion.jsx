@@ -38,95 +38,92 @@ export default function ModalOperacion({
   };
 
   useEffect(() => {
-  if (!user?.id) return;
+    if (!user?.id) return;
 
-  setLoadingCuentas(true);
-  fetch(`/operacion/listar-cuentas/${user.id}`)
-    .then(res => res.json())
-    .then(data => {
-      setCuentasUsuario(data);
-    })
-    .catch(err => console.error(err))
-    .finally(() => setLoadingCuentas(false));
-}, [user?.id]);
+    setLoadingCuentas(true);
+    fetch(`/operacion/listar-cuentas/${user.id}`)
+      .then(res => res.json())
+      .then(data => {
+        setCuentasUsuario(data);
+      })
+      .catch(err => console.error(err))
+      .finally(() => setLoadingCuentas(false));
+  }, [user?.id]);
 
   if (!isOpen) return null;
 
-const cuentasOrigen = cuentasUsuario.filter(c => {
-  const banco = bancos.find(b => b.id === c.bank_id);
-  if (!banco) return false;
+  const cuentasOrigen = cuentasUsuario.filter(c => {
+    const banco = bancos.find(b => b.id === c.bank_id);
+    if (!banco) return false;
 
-  if (modo === "PENtoBOB") {
-    // origen → Perú
-    return c.account_type === "origin" && banco.country === "peru";
-  } else if (modo === "BOBtoPEN") {
-    // origen → Bolivia
-    return c.account_type === "origin" && banco.country === "bolivia";
-  }
-  return false;
-});
+    if (modo === "PENtoBOB") {
+      // origen → Perú
+      return c.account_type === "origin" && banco.country === "peru";
+    } else if (modo === "BOBtoPEN") {
+      // origen → Bolivia
+      return c.account_type === "origin" && banco.country === "bolivia";
+    }
+    return false;
+  });
 
-const cuentasDestino = cuentasUsuario.filter(c => {
-  const banco = bancos.find(b => b.id === c.bank_id);
-  if (!banco) return false;
+  const cuentasDestino = cuentasUsuario.filter(c => {
+    const banco = bancos.find(b => b.id === c.bank_id);
+    if (!banco) return false;
 
-  if (modo === "PENtoBOB") {
-    // destino → Bolivia
-    return c.account_type === "destination" && banco.country === "bolivia";
-  } else if (modo === "BOBtoPEN") {
-    // destino → Perú
-    return c.account_type === "destination" && banco.country === "peru";
-  }
-  return false;
-});
+    if (modo === "PENtoBOB") {
+      // destino → Bolivia
+      return c.account_type === "destination" && banco.country === "bolivia";
+    } else if (modo === "BOBtoPEN") {
+      // destino → Perú
+      return c.account_type === "destination" && banco.country === "peru";
+    }
+    return false;
+  });
 
-   
 
- const handleSiguiente = async () => {
-  if (loading) return;
-  if (!(juramento && terminos && cuentaOrigen && cuentaDestino)) return;
 
-  if (user.kyc_status === "pending" || user.kyc_status === "rejected") {
-    try {
-      alert("Debes completar tu KYC antes de continuar.");
+  const handleSiguiente = async () => {
+    if (loading) return;
+    if (!(juramento && terminos && cuentaOrigen && cuentaDestino)) return;
 
-      const response = await axios.post("/kyc/session", {
-        next_url: window.location.href
-      });
+    if (user.kyc_status === "pending" || user.kyc_status === "rejected") {
+      try {
+        alert("Debes completar tu KYC antes de continuar.");
 
-      const data = response.data;
+        const response = await axios.post("/kyc/session", {
+          next_url: window.location.origin + "/kyc/resultado"
+        });
 
-      console.log("📦 respuesta del backend:", data);
+        const data = response.data;
 
-      if (!data.redirect_url) {
-        throw new Error("No se recibió redirect_url");
+        if (!data.redirect_url) {
+          throw new Error("No se recibió redirect_url");
+        }
+
+        window.location.href = data.redirect_url;
+
+      } catch (error) {
+        console.error("❌ Error KYC:", error);
+
+        if (error.response) {
+          console.log("📥 response error:", error.response.data);
+        }
+
+        alert("Error iniciando verificación KYC");
       }
 
-      // 🔥 REDIRECCIÓN
-      window.location.href = data.redirect_url;
-
-    } catch (error) {
-      console.error("❌ Error KYC:", error);
-
-      if (error.response) {
-        console.log("📥 response error:", error.response.data);
-      }
-
-      alert("Error iniciando verificación KYC");
+      return;
     }
 
-    return;
-  }
-
-  setOpenTransferencia(true);
-};
-
+    setOpenTransferencia(true);
+  };
+  
   return (
     <>
-   
+
       <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 px-2">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative animate-fadeIn max-h-[90vh] overflow-y-auto mt-11">
-      
+
           <button
             className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition"
             onClick={onClose}
@@ -138,13 +135,13 @@ const cuentasDestino = cuentasUsuario.filter(c => {
             Registro de Operación
           </h2>
 
-        
+
           <div className="mb-4 border rounded-lg bg-blue-50 p-3 text-center">
             <p className="font-semibold text-blue-800">Operación</p>
             <p className="text-blue-900">{modoDescripcion}</p>
           </div>
 
-        
+
           <div className="flex flex-wrap gap-4 mb-4 text-sm">
             <div className="flex-1 min-w-[140px] border rounded-lg bg-gray-50 p-3">
               <p className="font-semibold text-gray-700">Monto</p>
@@ -156,7 +153,7 @@ const cuentasDestino = cuentasUsuario.filter(c => {
             </div>
           </div>
 
-      
+
           <div className="mb-4 text-sm border p-3 rounded-lg bg-gray-50">
             <div className="grid grid-cols-2 gap-4">
               <p>
@@ -185,7 +182,7 @@ const cuentasDestino = cuentasUsuario.filter(c => {
           </div>
 
 
-   
+
           <div className="mb-4">
             <p className="text-sm font-semibold mb-2">Cuenta Origen</p>
             {loadingCuentas ? (
@@ -206,7 +203,7 @@ const cuentasDestino = cuentasUsuario.filter(c => {
                 >
                   <Plus size={18} />
                 </button>
-                
+
               </div>
             )}
           </div>
@@ -231,7 +228,7 @@ const cuentasDestino = cuentasUsuario.filter(c => {
                 >
                   <Plus size={18} />
                 </button>
-                
+
               </div>
             )}
           </div>
@@ -260,7 +257,7 @@ const cuentasDestino = cuentasUsuario.filter(c => {
             </label>
           </div>
 
-        
+
           <div className="flex flex-col md:flex-row md:justify-end gap-2">
             <button
               onClick={onClose}
@@ -286,11 +283,11 @@ const cuentasDestino = cuentasUsuario.filter(c => {
         </div>
       )}
 
-     
+
       <ModalCuentaBancaria
         isOpen={openCuentaOrigen}
         bancos={bancos}
-        modo={modo }  // Pasamos el modo BOBtoPEN o PENtoBOB
+        modo={modo}  // Pasamos el modo BOBtoPEN o PENtoBOB
         onClose={() => setOpenCuentaOrigen(false)}
         user={user}
         nationality={user.nationality}
@@ -316,7 +313,7 @@ const cuentasDestino = cuentasUsuario.filter(c => {
       <ModalCuentaDestino
         isOpen={openCuentaDestino}
         bancos={bancos}
-        modo={modo }  // Pasamos el modo BOBtoPEN o PENtoBOB
+        modo={modo}  // Pasamos el modo BOBtoPEN o PENtoBOB
         onClose={() => setOpenCuentaDestino(false)}
         user={user}
         nationality={user.nationality}

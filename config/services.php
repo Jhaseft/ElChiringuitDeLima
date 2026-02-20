@@ -39,11 +39,17 @@ return [
     'client_id'     => env('GOOGLE_CLIENT_ID'),
     'client_secret' => env('GOOGLE_CLIENT_SECRET'),
     'redirect'      => env('GOOGLE_REDIRECT_URI'),
-],
-'telegram' => [
+    ],
+
+    'telegram' => [
     'bot_token' => env('TELEGRAM_BOT_TOKEN'),
     'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
     'allowed_ids' => env('TELEGRAM_ALLOWED_IDS', ''), // CSV
-],
+    ],
+
+    'kyc' => [
+        'key' => env('KYC_API_KEY'),
+        'url' => env('KYC_BASE_URL'),
+    ],
 
 ];
