@@ -20,7 +20,7 @@ export default function Login({ status, canResetPassword }) {
             <Head title="Iniciar sesión" />
 
             <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
-                {/* Columna izquierda: Imagen */}
+
                 <div className="hidden md:flex md:w-1/2 bg-gray-100 relative">
                     <img
                         src="https://images.unsplash.com/photo-1507842217343-583bb7270b66"
@@ -37,7 +37,7 @@ export default function Login({ status, canResetPassword }) {
                     </div>
                 </div>
 
-                {/* Columna derecha: Formulario */}
+
                 <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
                     <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-6">
                         Iniciar sesión
@@ -50,7 +50,7 @@ export default function Login({ status, canResetPassword }) {
                     )}
 
                     <form onSubmit={submit} className="space-y-5">
-                        {/* Email */}
+
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                                 Correo electrónico
@@ -70,7 +70,7 @@ export default function Login({ status, canResetPassword }) {
                             )}
                         </div>
 
-                        {/* Password */}
+
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                                 Contraseña
@@ -89,9 +89,9 @@ export default function Login({ status, canResetPassword }) {
                             )}
                         </div>
 
-                       
 
-                        {/* Botón + link */}
+
+
                         <div className="flex items-center justify-between">
                             {canResetPassword && (
                                 <Link
@@ -110,7 +110,7 @@ export default function Login({ status, canResetPassword }) {
                             </button>
                         </div>
 
-                        {/* Registro */}
+
                         <p className="text-sm text-gray-600 text-center mt-4">
                             ¿No tienes cuenta?{" "}
                             <Link
@@ -122,7 +122,6 @@ export default function Login({ status, canResetPassword }) {
                         </p>
                     </form>
 
-                    {/* Divider + Google */}
                     <div className="flex items-center my-6">
                         <div className="flex-grow border-t border-gray-300"></div>
                         <span className="mx-3 text-gray-500 text-sm">o continúa con</span>

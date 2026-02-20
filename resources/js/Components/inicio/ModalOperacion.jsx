@@ -5,6 +5,7 @@ import ModalCuentaBancaria from "./ModalCuentaBancaria";
 import ModalCuentaDestino from "./ModalCuentaDestino";
 import ModalTransferencia from "./ModalTransferencia";
 import CuentaSelect from "./CuentaSelect";
+import axios from "axios";
 
 export default function ModalOperacion({
   isOpen,
@@ -31,7 +32,7 @@ export default function ModalOperacion({
   const [cuentasUsuario, setCuentasUsuario] = useState([]);
   const [loadingCuentas, setLoadingCuentas] = useState(false);
 
-  // 🔹 Función para actualizar cache
+  //  Función para actualizar cache
   const updateCache = (userId, cuentas) => {
     localStorage.setItem(`cuentas_${userId}`, JSON.stringify(cuentas));
   };
@@ -79,28 +80,53 @@ const cuentasDestino = cuentasUsuario.filter(c => {
   return false;
 });
 
-  
+   
 
-  const handleSiguiente = () => {
-    if (loading) return;
-    if (!(juramento && terminos && cuentaOrigen && cuentaDestino)) return;
+ const handleSiguiente = async () => {
+  if (loading) return;
+  if (!(juramento && terminos && cuentaOrigen && cuentaDestino)) return;
 
-    if (user.kyc_status === "pending" || user.kyc_status === "rejected") {
-      alert("Debes completar tu KYC antes de continuar con la operación.");
-      const next = encodeURIComponent(window.location.pathname + window.location.search);
-      window.location.href = `/face?next=${next}`;
-      return;
+  if (user.kyc_status === "pending" || user.kyc_status === "rejected") {
+    try {
+      alert("Debes completar tu KYC antes de continuar.");
+
+      const response = await axios.post("/kyc/session", {
+        next_url: window.location.href
+      });
+
+      const data = response.data;
+
+      console.log("📦 respuesta del backend:", data);
+
+      if (!data.redirect_url) {
+        throw new Error("No se recibió redirect_url");
+      }
+
+      // 🔥 REDIRECCIÓN
+      window.location.href = data.redirect_url;
+
+    } catch (error) {
+      console.error("❌ Error KYC:", error);
+
+      if (error.response) {
+        console.log("📥 response error:", error.response.data);
+      }
+
+      alert("Error iniciando verificación KYC");
     }
 
-    setOpenTransferencia(true);
-  };
+    return;
+  }
+
+  setOpenTransferencia(true);
+};
 
   return (
     <>
-      {/* Fondo del modal */}
+   
       <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 px-2">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative animate-fadeIn max-h-[90vh] overflow-y-auto mt-11">
-          {/* Botón cerrar */}
+      
           <button
             className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 transition"
             onClick={onClose}
@@ -112,13 +138,13 @@ const cuentasDestino = cuentasUsuario.filter(c => {
             Registro de Operación
           </h2>
 
-          {/* Tipo de operación */}
+        
           <div className="mb-4 border rounded-lg bg-blue-50 p-3 text-center">
             <p className="font-semibold text-blue-800">Operación</p>
             <p className="text-blue-900">{modoDescripcion}</p>
           </div>
 
-          {/* Monto y Conversión */}
+        
           <div className="flex flex-wrap gap-4 mb-4 text-sm">
             <div className="flex-1 min-w-[140px] border rounded-lg bg-gray-50 p-3">
               <p className="font-semibold text-gray-700">Monto</p>
@@ -130,7 +156,7 @@ const cuentasDestino = cuentasUsuario.filter(c => {
             </div>
           </div>
 
-          {/* Info usuario */}
+      
           <div className="mb-4 text-sm border p-3 rounded-lg bg-gray-50">
             <div className="grid grid-cols-2 gap-4">
               <p>
@@ -159,7 +185,7 @@ const cuentasDestino = cuentasUsuario.filter(c => {
           </div>
 
 
-          {/* Cuenta Origen */}
+   
           <div className="mb-4">
             <p className="text-sm font-semibold mb-2">Cuenta Origen</p>
             {loadingCuentas ? (
@@ -185,7 +211,6 @@ const cuentasDestino = cuentasUsuario.filter(c => {
             )}
           </div>
 
-          {/* Cuenta Destino */}
           <div className="mb-4">
             <p className="text-sm font-semibold mb-2">Cuenta Destino</p>
             {loadingCuentas ? (
@@ -211,7 +236,6 @@ const cuentasDestino = cuentasUsuario.filter(c => {
             )}
           </div>
 
-          {/* Checkboxes */}
           <div className="mb-4 text-xs text-gray-600 flex flex-col gap-2">
             <label className="flex items-start gap-2">
               <input
@@ -236,7 +260,7 @@ const cuentasDestino = cuentasUsuario.filter(c => {
             </label>
           </div>
 
-          {/* Botones */}
+        
           <div className="flex flex-col md:flex-row md:justify-end gap-2">
             <button
               onClick={onClose}
@@ -256,14 +280,13 @@ const cuentasDestino = cuentasUsuario.filter(c => {
         </div>
       </div>
 
-      {/* Overlay de carga */}
       {loading && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50">
           <div className="w-16 h-16 border-4 border-t-blue-500 border-solid rounded-full animate-spin"></div>
         </div>
       )}
 
-      {/* Submodales */}
+     
       <ModalCuentaBancaria
         isOpen={openCuentaOrigen}
         bancos={bancos}

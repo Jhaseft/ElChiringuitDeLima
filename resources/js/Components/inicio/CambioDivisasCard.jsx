@@ -55,7 +55,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
       }
     }
   };
-
+ 
   const iniciarOperacion = () => {
     if (!monto || !conversion) {
       setError("Debes ingresar un monto válido para iniciar la operación.");
@@ -76,7 +76,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
     setError("");
   };
 
-  // 🔹 Texto descriptivo del modo
+  // Texto descriptivo del modo
   const modoDescripcion =
     modo === "BOBtoPEN" ? "Bolivianos → Soles" : "Soles → Bolivianos";
 
@@ -85,7 +85,6 @@ export default function CambioDivisasCard({ tasas, bancos }) {
       {error && <ErrorBanner message={error} onClose={() => setError("")} />}
 
       <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col gap-5 border border-gray-100 transition hover:shadow-2xl hover:scale-[1.01] duration-300 relative">
-        {/* Título */}
         <div className="flex flex-col items-center mb-2">
           <h1 className="text-2xl font-bold text-gray-800">TransferCash</h1>
           <p className="text-sm text-gray-500 text-center">
@@ -98,7 +97,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
           />
         </div>
 
-        {/* Tasas */}
+      
         <div className="flex justify-between text-base font-semibold px-2">
           <span className="text-blue-700">
             COMPRA: <span className="font-bold">{tasaPENtoBOB.toFixed(2)}</span>
@@ -108,7 +107,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
           </span>
         </div>
 
-        {/* Inputs */}
+       
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex flex-col w-full">
             <label className="text-sm font-medium text-gray-600 mb-1 text-center">
@@ -145,7 +144,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
           </div>
         </div>
 
-        {/* Botones */}
+       
         <div className="grid grid-cols-1 sm:grid-cols-1 gap-3 mt-3">
           <button
             onClick={iniciarOperacion}
@@ -155,7 +154,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
           </button>
         </div>
 
-        {/* Login / Registro */}
+        
         {!user && (
           <div className="flex flex-col sm:flex-row gap-2 justify-center mt-2">
             <Link
@@ -192,7 +191,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
         </div>
       </div>
 
-      {/* Modal */}
+   
       {modalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
           <ModalOperacion

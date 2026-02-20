@@ -6,6 +6,9 @@ use App\Http\Controllers\OperacionController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\MobileFaceController;
 use Illuminate\Support\Facades\Cache;
+use App\Http\Controllers\KycController;
+
+
 // Registro y verificación
 Route::post('/register', [AppNative::class, 'register']);
 Route::post('/verify-code', [AppNative::class, 'verifyCode']);
@@ -21,6 +24,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta']);
     Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia']);
     Route::get('/transfers/historymobile', [TransferController::class, 'historymobile']);
- 
+    
+    
 });
 
+Route::post('/kyc/webhook', [KycController::class, 'webhook'])->name('kyc.webhook');

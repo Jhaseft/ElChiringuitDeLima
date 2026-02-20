@@ -27,6 +27,7 @@ class User extends Authenticatable
         'provider_id',
         'accepted_terms_at',
         'terms_version',
+        'kyc_sesion_id',
         'kyc_status',
     ];
 

@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-
+use App\Http\Controllers\KycController;
 
 // Página principal
 Route::get('/', function () {
@@ -93,8 +93,14 @@ Route::middleware('auth')->group(function () {
     //rutas para verificar el Kyc
     Route::get('/face', [FaceController::class, 'index'])->name('face.index');
     Route::post('/face/verify', [FaceController::class, 'verify'])->name('face.verify');
+    
     //ver historial de tranferencias del usuario
     Route::get('/transfers/history', [TransferController::class, 'history'])->name('transfers.history');
+
+
+    Route::post('/kyc/session', [KycController::class, 'createSession']);
+
+    
 });
 
 // Login Google
@@ -156,99 +162,8 @@ Route::prefix('admin')->group(function () {
     });
 });
 
-Route::post('/kyc-proxy', function (Request $request) {
-    $user = $request->user();
-    if (!$user) {
-        return response()->json(['error' => 'No autenticado'], 401);
-    }
-    
-    $http = Http::withHeaders([
-        'Accept' => 'application/json',
-    ]);
-
-    // Adjuntar archivos al request
-    if ($request->hasFile('carnet')) {
-        
-        $http = $http->attach(
-            'carnet',
-            file_get_contents($request->file('carnet')->getRealPath()),
-            $request->file('carnet')->getClientOriginalName()
-        );
-    }
-
-    if ($request->hasFile('carnet_back')) {
-        
-        $http = $http->attach(
-            'carnet_back',
-            file_get_contents($request->file('carnet_back')->getRealPath()),
-            $request->file('carnet_back')->getClientOriginalName()
-        );
-    }
-
-    if ($request->hasFile('video')) {
-    
-        $http = $http->attach(
-            'video',
-            file_get_contents($request->file('video')->getRealPath()),
-            $request->file('video')->getClientOriginalName()
-        );
-    }
-
-    // Adjuntar doc_type
-    $docType = $request->input('doc_type');
-   
-    // ==========================
-    // Hacer POST al API externo
-    // ==========================
-    $response = $http->post('https://servicios-api-face.i5mzj9.easypanel.host/verify', [
-        'doc_type' => $docType
-    ]);
-
-   
-
-    return response($response->body(), $response->status())
-        ->header('Content-Type', $response->header('Content-Type'));
-});
-
 // Tipo de cambio - API pública
 Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'historial']);
-
-
-/////////////////////////MOBILE///////////////////////////////////////
-// Ruta temporal para mobile (genera token y redirige)
-Route::get('/kyc-temporal/{userId}', function ($userId) {
-    $token = bin2hex(random_bytes(16));
-    Cache::put("kyc_temp_$token", $userId, 300); // 5 minutos
-
-    $kycUrl = url('/mobile-face-view') . '?next=app://kyc-success&temp_token=' . $token;
-    return redirect($kycUrl);
-});
-
-// Vista mobile KYC
-Route::get('/mobile-face-view', [MobileFaceController::class, 'viewMobileKyc']);
-Route::post('/mobile-face-verify', [MobileFaceController::class, 'verify']);
-
-// Nueva ruta proxy KYC solo para mobile (sin validación de usuario)
-Route::post('/kyc-proxy-mobile', function (Request $request) {
-
-    $http = Http::withHeaders(['Accept' => 'application/json']);
-
-    if ($request->hasFile('carnet')) {
-        $http = $http->attach('carnet', file_get_contents($request->file('carnet')->getRealPath()), 'documento_frente.jpg');
-    }
-    if ($request->hasFile('carnet_back')) {
-        $http = $http->attach('carnet_back', file_get_contents($request->file('carnet_back')->getRealPath()), 'documento_reverso.jpg');
-    }
-    if ($request->hasFile('video')) {
-        $http = $http->attach('video', file_get_contents($request->file('video')->getRealPath()), 'video.mp4');
-    }
-
-    $params = ['doc_type' => $request->input('doc_type')];
-    $response = $http->post('https://servicios-api-face.i5mzj9.easypanel.host/verify', $params);
-
-    return response($response->body(), $response->status())
-        ->header('Content-Type', $response->header('Content-Type'));
-});
 
 
 require __DIR__.'/auth.php';
