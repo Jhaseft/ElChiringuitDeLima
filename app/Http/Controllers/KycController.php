@@ -61,8 +61,6 @@ class KycController extends Controller
     public function webhook(Request $request)
     {
 
-    \Log::info("📥 [KYC WEBHOOK] recibido", $request->all());
-
     $sessionId = $request->input('session_id');
     $status    = $request->input('status');
 

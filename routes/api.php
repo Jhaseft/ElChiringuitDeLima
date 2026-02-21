@@ -7,7 +7,7 @@ use App\Http\Controllers\TransferController;
 use App\Http\Controllers\MobileFaceController;
 use Illuminate\Support\Facades\Cache;
 use App\Http\Controllers\KycController;
-
+ 
 
 // Registro y verificación
 Route::post('/register', [AppNative::class, 'register']);

@@ -2,7 +2,6 @@
 use App\Http\Controllers\AppNative;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\FaceController; 
 use App\Http\Controllers\CompleteProfileController;
 use App\Http\Controllers\OperacionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
@@ -10,7 +9,6 @@ use App\Http\Controllers\AdminTransfers;
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminControllerDashboard;
 use App\Http\Controllers\AdminUserMediaController;
-use App\Http\Controllers\MobileFaceController;
 use App\Http\Controllers\TransferController;
 use App\Models\Bank;
 use Illuminate\Support\Facades\Log;
@@ -89,11 +87,7 @@ Route::middleware(['web'])->group(function () {
 Route::middleware('auth')->group(function () {
     //completar perfil si viene de google
     Route::get('/complete-profile', [CompleteProfileController::class, 'index'])->name('complete-profile');
-    Route::post('/complete-profile', [CompleteProfileController::class, 'store'])->name('complete-profile.store');
-    //rutas para verificar el Kyc
-    Route::get('/face', [FaceController::class, 'index'])->name('face.index');
-    Route::post('/face/verify', [FaceController::class, 'verify'])->name('face.verify');
-    
+    Route::post('/complete-profile', [CompleteProfileController::class, 'store'])->name('complete-profile.store');    
     //ver historial de tranferencias del usuario
     Route::get('/transfers/history', [TransferController::class, 'history'])->name('transfers.history');
 
