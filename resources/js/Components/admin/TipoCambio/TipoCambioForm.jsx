@@ -32,7 +32,7 @@ export default function TipoCambioForm({ tipoCambio }) {
       }
     } catch (err) {
       console.error(err);
-      setMessage("Error de conexión ❌");
+      setMessage("Error de conexión ");
     } finally {
       setLoading(false);
     }
@@ -40,7 +40,9 @@ export default function TipoCambioForm({ tipoCambio }) {
 
   return (
     <div className="w-full flex flex-col items-center">
-      {/* Tabla con tipo de cambio actual */}
+      <h2 className="text-3xl font-semibold mb-6 text-gray-700 mb-5">
+        Actualizar Tipo de Cambio
+      </h2>
       <div className="w-full max-w-lg overflow-x-auto mb-6">
         <table className="bg-white shadow-md rounded w-full min-w-[400px]">
           <thead>
@@ -60,7 +62,7 @@ export default function TipoCambioForm({ tipoCambio }) {
         </table>
       </div>
 
-      {/* Formulario para actualizar */}
+
       <form
         onSubmit={handleSubmit}
         className="bg-white p-6 sm:p-8 rounded shadow-md w-full max-w-md flex flex-col gap-4"

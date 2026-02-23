@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AdminUserMediaController extends Controller
 {
@@ -39,16 +41,41 @@ class AdminUserMediaController extends Controller
 }
 
 
-    public function show(User $user)
-    {
-        $user->load([
-            'media' => fn($q) => $q->orderBy('position'),
-            'accounts.bank',
-            'accounts.owner'
-        ]);
+    public function showUsers(User $user)
+{
+    $user->load([
+        'media' => fn($q) => $q->orderBy('position')
+    ]);
+ 
+    return response()->json([
+        'id' => $user->id,
+        'first_name' => $user->first_name,
+        'last_name' => $user->last_name,
+        'email' => $user->email,
+        'phone' => $user->phone,
+        'nationality' => $user->nationality,
+        'document_number' => $user->document_number,
+        'kyc_status' => $user->kyc_status,
+        'kyc_session_id'=>$user->kyc_session_id,
+        'media' => $user->media
+    ]);
+}
+ 
 
-        return response()->json($user);
-    }
+
+   public function showAccounts(User $user)
+{
+    $accounts = $user->accounts()
+        ->with(['bank', 'owner'])
+        ->get();
+
+    Log::info('Accounts enviadas al frontend:', [
+        'user_id' => $user->id,
+        'accounts' => $accounts->toArray()
+    ]);
+
+    return response()->json($accounts);
+}
 
 
 }

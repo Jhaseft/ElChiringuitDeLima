@@ -5,10 +5,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompleteProfileController;
 use App\Http\Controllers\OperacionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\AdminTransfers;
-use App\Http\Controllers\AdminAuthController;
-use App\Http\Controllers\AdminControllerDashboard;
-use App\Http\Controllers\AdminUserMediaController;
+use App\Http\Controllers\Admin\AdminTransfers;
+use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\AdminControllerDashboard;
+use App\Http\Controllers\Admin\AdminUserMediaController;
 use App\Http\Controllers\TransferController;
 use App\Models\Bank;
 use Illuminate\Support\Facades\Log;
@@ -53,11 +53,6 @@ Route::get('/PasosLudo', function () {
 });
 
 
-Route::get('/jaime', function () {
-
-    return Inertia::render('jaime');
-
-});
 //Nosotros
 Route::get('/nosotros', function () {
 
@@ -141,19 +136,30 @@ Route::prefix('admin')->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
     Route::middleware('auth:admin')->group(function () {
-        Route::get('/dashboard', [AdminControllerDashboard::class, 'index']);
+
+        //primera pantalla
+        Route::get('/dashboard', [AdminControllerDashboard::class, 'Dashboard']);
+        //segunda pantalla
+        Route::get('/dashboard/tipo-cambio', [AdminControllerDashboard::class, 'tipoCambio']);
+        //tercera pantalla
+        Route::get('/dashboard/usuarios', [AdminControllerDashboard::class, 'usuarios']);
+        //cuarta pantalla
+        Route::get('/dashboard/transferencias', [AdminControllerDashboard::class, 'transferencias']);
+
+        //tipo de cambio
         Route::post('/tipo-cambio', [AdminControllerDashboard::class, 'update']);
-        
-    Route::get('/users', [AdminUserMediaController::class, 'index']);
-    Route::get('/users/{user}/detail', [AdminUserMediaController::class, 'show']);
+         
+        //usuarios
+        Route::get('/users', [AdminUserMediaController::class, 'index']);
+        Route::get('/users/{user}/detail/info', [AdminUserMediaController::class, 'showUsers']);
+        Route::get('/users/{user}/detail/accounts', [AdminUserMediaController::class, 'showAccounts']);
 
-
-
-    Route::get('/transfers', [AdminTransfers::class, 'index']);
-    Route::get('/transfers/{id}', [AdminTransfers::class, 'show']);
-    Route::post('/transfers', [AdminTransfers::class, 'store']);
-    Route::put('/transfers/{id}', [AdminTransfers::class, 'update']);
-    Route::delete('/transfers/{id}', [AdminTransfers::class, 'destroy']);
+        //transferencias
+        Route::get('/transfers', [AdminTransfers::class, 'index']);
+        Route::get('/transfers/{id}', [AdminTransfers::class, 'show']);
+        Route::post('/transfers', [AdminTransfers::class, 'store']);
+        Route::put('/transfers/{id}', [AdminTransfers::class, 'update']);
+        Route::delete('/transfers/{id}', [AdminTransfers::class, 'destroy']);
 
     
     });

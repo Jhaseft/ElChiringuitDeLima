@@ -2,9 +2,9 @@
 import { useRef } from "react";
 import { motion } from "framer-motion";
 import AdminHeader from "@/Components/admin/AdminHeader.jsx";
-import TipoCambioForm from "@/Components/admin/TipoCambioForm";
-import AdminUserMediaTable from "@/Components/admin/AdminUserMediaTable";
-import AdminTransfers from "@/Components/admin/AdminTranfers";
+import TipoCambioForm from "@/Components/admin/TipoCambio/TipoCambioForm";
+import AdminUserMediaTable from "@/Components/admin/Users/AdminUserMediaTable";
+import AdminTransfers from "@/Components/admin/Transfers/AdminTranfers";
 
 export default function AdminTipoCambio({ tipoCambio }) {
   const tipoCambioRef = useRef(null);
@@ -21,10 +21,9 @@ export default function AdminTipoCambio({ tipoCambio }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-100 via-yellow-100 to-blue-100 flex flex-col">
-      {/* Header */}
+   
       <AdminHeader onLogout={handleLogout} />
 
-      {/* Hero Section */}
       <section className="min-h-screen flex flex-col justify-center items-center text-center space-y-10 px-4">
         <motion.h1
           className="text-3xl sm:text-5xl lg:text-7xl font-extrabold text-gray-800 drop-shadow-lg leading-tight"
@@ -35,7 +34,6 @@ export default function AdminTipoCambio({ tipoCambio }) {
           Bienvenido <span className="text-pink-500">Admin</span> 🚀
         </motion.h1>
 
-        {/* Botones de acciones */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 w-full max-w-4xl">
           <button
             onClick={() => scrollToSection(tipoCambioRef)}
@@ -58,7 +56,6 @@ export default function AdminTipoCambio({ tipoCambio }) {
         </div>
       </section>
 
-      {/* Sección Tipo de Cambio */}
       <section
         ref={tipoCambioRef}
         className="min-h-screen flex justify-center items-center px-4"
@@ -71,7 +68,6 @@ export default function AdminTipoCambio({ tipoCambio }) {
         </div>
       </section>
 
-      {/* Sección Usuarios */}
       <section
         ref={usuariosRef}
         className="min-h-screen flex justify-center items-center px-4"
@@ -84,7 +80,6 @@ export default function AdminTipoCambio({ tipoCambio }) {
         </div>
       </section>
 
-      {/* Sección Transferencias */}
       <section
         ref={transferenciasRef}
         className="min-h-screen flex justify-center items-center px-4"

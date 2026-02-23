@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TransferVerifiedMail; // vamos a crear este Mailable
 use Illuminate\Http\Request;

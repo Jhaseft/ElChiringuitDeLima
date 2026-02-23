@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\TipoCambio;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -12,7 +13,13 @@ use App\Mail\TipoCambioActualizadoMail;
 class AdminControllerDashboard extends Controller
 {
     // Ver tipo de cambio
-    public function index()
+    public function Dashboard()
+{
+    return Inertia::render('Admin/Dashboard');
+}
+
+    // Ver tipo de cambio
+    public function tipoCambio()
 {
     $tipoCambio = TipoCambio::select('id', 'compra', 'venta', 'fecha_actualizacion')
                 ->orderBy('id', 'desc')
@@ -20,10 +27,23 @@ class AdminControllerDashboard extends Controller
                 ->get()
                 ->first();
 
-    return Inertia::render('Admin/AdminTipoCambio', [
+    return Inertia::render('Admin/TipoCambio', [
         'tipoCambio' => $tipoCambio
     ]);
 }
+  
+    // Ver tipo de cambio
+    public function usuarios(){
+    return Inertia::render('Admin/Usuarios');
+}
+
+
+    // Ver tipo de cambio
+    public function transferencias(){
+    return Inertia::render('Admin/Transferencias');
+}
+
+
 
 
 
