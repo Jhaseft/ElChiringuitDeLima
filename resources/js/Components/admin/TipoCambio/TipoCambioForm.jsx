@@ -1,14 +1,21 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import AdminOverlay from "../AdminOverlay";
 
 export default function TipoCambioForm({ tipoCambio }) {
   const [compra, setCompra] = useState(tipoCambio?.compra || "");
   const [venta, setVenta] = useState(tipoCambio?.venta || "");
   const [overlay, setOverlay] = useState(null);
+  const [overlayMsg, setOverlayMsg] = useState(null);
+
+  const handleDismiss = useCallback(() => {
+    setOverlay(null);
+    setOverlayMsg(null);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setOverlay("loading");
+    setOverlayMsg(null);
     const token = document.querySelector('meta[name="csrf-token"]').content;
 
     try {
@@ -25,12 +32,15 @@ export default function TipoCambioForm({ tipoCambio }) {
       const data = await res.json();
 
       if (res.ok && data.success) {
+        setOverlayMsg("Tipo de cambio actualizado. Emails enviados a la cola.");
         setOverlay("success");
       } else {
+        setOverlayMsg(data?.message || "Error al actualizar el tipo de cambio.");
         setOverlay("error");
       }
     } catch (err) {
       console.error(err);
+      setOverlayMsg("Error de conexión. Intente nuevamente.");
       setOverlay("error");
     }
   };
@@ -40,7 +50,9 @@ export default function TipoCambioForm({ tipoCambio }) {
 
       <AdminOverlay
         state={overlay}
-        onDismiss={() => setOverlay(null)}
+        message={overlayMsg}
+        autoDismiss={3000}
+        onDismiss={handleDismiss}
       />
 
       <h2 className="text-3xl font-semibold mb-6 text-gray-700">

@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use App\Mail\TipoCambioActualizadoMail;
-
+ 
 class AdminControllerDashboard extends Controller
 {
     // Ver tipo de cambio
@@ -31,22 +31,8 @@ class AdminControllerDashboard extends Controller
         'tipoCambio' => $tipoCambio
     ]);
 }
-  
-    // Ver tipo de cambio
-    public function usuarios(){
-    return Inertia::render('Admin/Usuarios');
-}
 
-
-    // Ver tipo de cambio
-    public function transferencias(){
-    return Inertia::render('Admin/Transferencias');
-}
-
-
-
-
-
+ 
     // Actualizar tipo de cambio
     public function update(Request $request)
 {

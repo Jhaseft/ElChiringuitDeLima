@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { router } from "@inertiajs/react";
 import axios from "axios";
 import DetailModalUser from "./DetailModalUsers";
 import DetailModalAccount from "./DetailModalAccount";
@@ -11,39 +12,36 @@ const kycBadge = {
   pending: "bg-yellow-100 text-yellow-700",
 };
 
-export default function AdminUserMediaTable() {
-  const [rows, setRows] = useState([]);
-  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, per_page: 10, total: 0 });
+export default function AdminUserMediaTable({ users, filters = {} }) {
+  const rows = users?.data || [];
+  const meta = {
+    current_page: users?.current_page ?? 1,
+    last_page: users?.last_page ?? 1,
+    per_page: users?.per_page ?? 10,
+    total: users?.total ?? 0,
+  };
+
+  const [search, setSearch] = useState(filters.search || "");
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
-  //users
   const [detailOpenUser, setDetailOpenUser] = useState(false);
   const [detailUser, setDetailUser] = useState(null);
-  //Accounts
   const [detailOpenAccounts, setDetailOpenAccounts] = useState(false);
   const [detailAccount, setDetailAccount] = useState(null);
-    // "loading" | "success" | "error" | null
   const [overlay, setOverlay] = useState(null);
 
-  const fetchList = async (page = 1, perPage = meta.per_page, q = search) => {
-    try {
-      setLoading(true);
-      const { data } = await axios.get("/admin/users", {
-        params: { page, perPage, search: q },
-      });
-      setRows(data.data || []);
-      setMeta({
-        current_page: data.current_page,
-        last_page: data.last_page,
-        per_page: data.per_page,
-        total: data.total,
-      });
-    } catch (e) {
-      console.error(e);
-      alert("Error al cargar la tabla.");
-    } finally {
-      setLoading(false);
-    }
+  const navigate = (params) => {
+    router.get("/admin/dashboard/usuarios", params, {
+      preserveState: true,
+      preserveScroll: true,
+      replace: true,
+      onStart: () => setLoading(true),
+      onFinish: () => setLoading(false),
+    });
+  };
+
+  const onSearch = (e) => {
+    e.preventDefault();
+    navigate({ page: 1, perPage: meta.per_page, search });
   };
 
   const openDetailuser = async (id) => {
@@ -52,12 +50,11 @@ export default function AdminUserMediaTable() {
       const { data } = await axios.get(`/admin/users/${id}/detail/info`);
       setDetailUser(data);
       setOverlay(null);
-      setDetailOpenUser(true); 
+      setDetailOpenUser(true);
     } catch (e) {
       console.error(e);
+      setOverlay(null);
       alert("No se pudo cargar el detalle.");
-    } finally {
-      setProcessing(false);
     }
   };
 
@@ -70,36 +67,21 @@ export default function AdminUserMediaTable() {
       setDetailOpenAccounts(true);
     } catch (e) {
       console.error(e);
+      setOverlay(null);
       alert("No se pudo cargar el detalle.");
-    } finally {
-      setProcessing(false);
     }
   };
 
-  useEffect(() => {
-    fetchList(1);
-  }, []);
-
-   const busy = overlay === "loading";
-
-  const onSearch = async (e) => {
-    e.preventDefault();
-    await fetchList(1);
-  };
+  const busy = overlay === "loading" || loading;
 
   return (
     <div className="relative">
 
-   
       <AdminOverlay
-              state={overlay}
-              onDismiss={() => {
-                if (overlay === "success") fetchList(meta.current_page);
-                setOverlay(null);
-              }}
-            />
+        state={overlay}
+        onDismiss={() => setOverlay(null)}
+      />
 
-     
       <form onSubmit={onSearch} className="flex gap-2 mb-4">
         <div className="relative flex-1 sm:flex-none">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -153,7 +135,7 @@ export default function AdminUserMediaTable() {
                     <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${kycBadge[r.kyc_status] || "bg-gray-100 text-gray-600"}`}>
                       {r.kyc_status}
                     </span>
-                  </td> 
+                  </td>
                   <td className="py-3 px-4">
                     <div className="flex gap-2">
                       <button
@@ -181,7 +163,6 @@ export default function AdminUserMediaTable() {
         </table>
       </div>
 
-
       <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-2">
         <p className="text-xs text-gray-500">
           Página {meta.current_page} de {meta.last_page} — {meta.total} registros
@@ -189,14 +170,14 @@ export default function AdminUserMediaTable() {
         <div className="flex gap-2">
           <button
             disabled={meta.current_page <= 1 || busy}
-            onClick={() => fetchList(meta.current_page - 1)}
+            onClick={() => navigate({ page: meta.current_page - 1, perPage: meta.per_page, search })}
             className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-gray-50 transition"
           >
             ← Anterior
           </button>
           <button
             disabled={meta.current_page >= meta.last_page || busy}
-            onClick={() => fetchList(meta.current_page + 1)}
+            onClick={() => navigate({ page: meta.current_page + 1, perPage: meta.per_page, search })}
             className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-gray-50 transition"
           >
             Siguiente →

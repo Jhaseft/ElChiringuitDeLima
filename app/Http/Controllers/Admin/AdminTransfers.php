@@ -1,5 +1,5 @@
 <?php
-
+ 
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -8,47 +8,43 @@ use App\Mail\TransferVerifiedMail; // vamos a crear este Mailable
 use Illuminate\Http\Request;
 use App\Models\Transfer;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 
 class AdminTransfers extends Controller
 {
     // Listar todas las transferencias de forma amigable
- public function index(Request $request)
+    public function index(Request $request)
     {
-        try {
-            $perPage = (int) $request->query('perPage', 10);
-            $search  = trim($request->query('search', ''));
+        $perPage = (int) $request->query('perPage', 10);
+        $search  = trim($request->query('search', ''));
 
-            $query = Transfer::with([
-                'user',
-                'originAccount.bank',
-                'destinationAccount.bank',
-            ])->orderBy('created_at', 'desc');
+        $query = Transfer::with([
+            'user',
+            'originAccount.bank',
+            'destinationAccount.bank',
+        ])->orderBy('created_at', 'desc');
 
-            if ($search !== '') {
-                $query->whereHas('user', function ($q) use ($search) {
-                    $q->where('first_name', 'LIKE', "$search%")
-                      ->orWhere('last_name', 'LIKE', "$search%")
-                      ->orWhere('email', 'LIKE', "$search%");
-                })
-                ->orWhereHas('originAccount', function ($q) use ($search) {
-                    $q->where('account_number', 'LIKE', "$search%");
-                })
-                ->orWhereHas('destinationAccount', function ($q) use ($search) {
-                    $q->where('account_number', 'LIKE', "$search%");
-                })
-                ->orWhere('status', 'LIKE', "$search%");
-            }
-
-            $transfers = $query->paginate($perPage);
-
-            return response()->json($transfers);
-
-        } catch (\Throwable $e) {
-            return response()->json([
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ], 500);
+        if ($search !== '') {
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('first_name', 'LIKE', "$search%")
+                  ->orWhere('last_name', 'LIKE', "$search%")
+                  ->orWhere('email', 'LIKE', "$search%");
+            })
+            ->orWhereHas('originAccount', function ($q) use ($search) {
+                $q->where('account_number', 'LIKE', "$search%");
+            })
+            ->orWhereHas('destinationAccount', function ($q) use ($search) {
+                $q->where('account_number', 'LIKE', "$search%");
+            })
+            ->orWhere('status', 'LIKE', "$search%");
         }
+
+        $transfers = $query->paginate($perPage)->withQueryString();
+
+        return Inertia::render('Admin/Transferencias', [
+            'transfers' => $transfers,
+            'filters'   => ['search' => $search, 'perPage' => $perPage],
+        ]);
     }
 
 

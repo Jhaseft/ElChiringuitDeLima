@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { router } from "@inertiajs/react";
 import axios from "axios";
 import TransferModal from "./TransferModal";
-import UserModal from "./UserModal"; 
+import UserModal from "./UserModal";
 import AdminOverlay from "../AdminOverlay";
 import { Search, Trash2, UserRoundCog, BanknoteArrowUp } from "lucide-react";
 
@@ -17,41 +18,36 @@ const statusLabel = {
   rejected: "Rechazado",
 };
 
-export default function AdminTransfersTable() {
-  const [rows, setRows] = useState([]);
-  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, per_page: 10, total: 0 });
+export default function AdminTransfersTable({ transfers, filters = {} }) {
+  const rows = transfers?.data || [];
+  const meta = {
+    current_page: transfers?.current_page ?? 1,
+    last_page: transfers?.last_page ?? 1,
+    per_page: transfers?.per_page ?? 10,
+    total: transfers?.total ?? 0,
+  };
+
+  const [search, setSearch] = useState(filters.search || "");
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
-  //Usuarios
   const [detailOpenUser, setDetailOpenUser] = useState(false);
   const [detailUser, setDetailUser] = useState(null);
-  //Transferencias detalle
   const [detailOpenTransfer, setDetailOpenTransfer] = useState(false);
   const [detailTransfer, setDetailTranfer] = useState(null);
-
-  // "loading" | "success" | "error" | null
   const [overlay, setOverlay] = useState(null);
 
-  const fetchList = async (page = 1, perPage = meta.per_page, q = search) => {
-    try {
-      setLoading(true);
-      const { data } = await axios.get("/admin/transfers", {
-        params: { page, perPage, search: q },
-        withCredentials: true,
-      });
-      setRows(data.data || []);
-      setMeta({
-        current_page: data.current_page,
-        last_page: data.last_page,
-        per_page: data.per_page,
-        total: data.total,
-      });
-    } catch (e) {
-      console.error(e);
-      alert("Error al cargar la tabla de transferencias.");
-    } finally {
-      setLoading(false);
-    }
+  const navigate = (params) => {
+    router.get("/admin/dashboard/transferencias", params, {
+      preserveState: true,
+      preserveScroll: true,
+      replace: true,
+      onStart: () => setLoading(true),
+      onFinish: () => setLoading(false),
+    });
+  };
+
+  const onSearch = (e) => {
+    e.preventDefault();
+    navigate({ page: 1, perPage: meta.per_page, search });
   };
 
   const openDetailUser = async (id) => {
@@ -92,16 +88,7 @@ export default function AdminTransfersTable() {
     }
   };
 
-  const onSearch = async (e) => {
-    e.preventDefault();
-    await fetchList(1);
-  };
-
-  useEffect(() => {
-    fetchList(1);
-  }, []);
-
-  const busy = overlay === "loading";
+  const busy = overlay === "loading" || loading;
 
   return (
     <div>
@@ -109,7 +96,7 @@ export default function AdminTransfersTable() {
       <AdminOverlay
         state={overlay}
         onDismiss={() => {
-          if (overlay === "success") fetchList(meta.current_page);
+          if (overlay === "success") router.reload({ preserveScroll: true });
           setOverlay(null);
         }}
       />
@@ -217,14 +204,14 @@ export default function AdminTransfersTable() {
         <div className="flex gap-2">
           <button
             disabled={meta.current_page <= 1 || busy}
-            onClick={() => fetchList(meta.current_page - 1)}
+            onClick={() => navigate({ page: meta.current_page - 1, perPage: meta.per_page, search })}
             className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-gray-50 transition"
           >
             ← Anterior
           </button>
           <button
             disabled={meta.current_page >= meta.last_page || busy}
-            onClick={() => fetchList(meta.current_page + 1)}
+            onClick={() => navigate({ page: meta.current_page + 1, perPage: meta.per_page, search })}
             className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-gray-50 transition"
           >
             Siguiente →
@@ -245,7 +232,7 @@ export default function AdminTransfersTable() {
           selected={detailTransfer}
           isOpen={detailOpenTransfer}
           onClose={() => setDetailOpenTransfer(false)}
-          onUpdated={() => fetchList(meta.current_page)}
+          onUpdated={() => router.reload({ preserveScroll: true })}
         />
       )}
     </div>

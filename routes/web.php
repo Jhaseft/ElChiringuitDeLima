@@ -141,22 +141,20 @@ Route::prefix('admin')->group(function () {
         Route::get('/dashboard', [AdminControllerDashboard::class, 'Dashboard']);
         //segunda pantalla
         Route::get('/dashboard/tipo-cambio', [AdminControllerDashboard::class, 'tipoCambio']);
+        
         //tercera pantalla
-        Route::get('/dashboard/usuarios', [AdminControllerDashboard::class, 'usuarios']);
+        Route::get('/dashboard/usuarios', [AdminUserMediaController::class, 'index']);
         //cuarta pantalla
-        Route::get('/dashboard/transferencias', [AdminControllerDashboard::class, 'transferencias']);
+        Route::get('/dashboard/transferencias', [AdminTransfers::class, 'index']);
 
         //tipo de cambio
         Route::post('/tipo-cambio', [AdminControllerDashboard::class, 'update']);
          
         //usuarios
-        Route::get('/users', [AdminUserMediaController::class, 'index']);
         Route::get('/users/{user}/detail/info', [AdminUserMediaController::class, 'showUsers']);
         Route::get('/users/{user}/detail/accounts', [AdminUserMediaController::class, 'showAccounts']);
 
-
-        //listar transferencias
-        Route::get('/transfers', [AdminTransfers::class, 'index']);
+ 
         //ver tranferencia especifica de usuario
         Route::get('/transfers/user/{id}', [AdminTransfers::class, 'showUser']);
          Route::get('/transfers/detail/{id}', [AdminTransfers::class, 'transferDetail']);
