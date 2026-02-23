@@ -4,12 +4,17 @@ import Stepper from "@/Components/register_and_complete/complete-profile/Stepper
 import Step1Personal from "@/Components/register_and_complete/complete-profile/Step1Personal";
 import Step2Security from "@/Components/register_and_complete/complete-profile/Step2Security";
 import Step3Terms from "@/Components/register_and_complete/complete-profile/Step3Terms";
+import StatusMessage from "@/Components/ui/StatusMessage";
 
 /**
  * Wizard para completar el perfil de un usuario ya registrado.
  */
 export default function CompleteProfile({ user }) {
   const [step, setStep] = useState(1);
+  
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
 
   const { data, setData, post, processing, errors } = useForm({
     nationality: user?.nationality || "",
@@ -34,7 +39,7 @@ export default function CompleteProfile({ user }) {
     if (step === 1) return !data.nationality || !data.phone || !data.document_number;
     if (step === 2)
       return !passwordRules.length || !passwordRules.upper || !passwordRules.lower ||
-             !passwordRules.number || !passwordRules.special || !passwordRules.match;
+        !passwordRules.number || !passwordRules.special || !passwordRules.match;
     if (step === 3) return !data.terms;
     return false;
   };
@@ -48,7 +53,18 @@ export default function CompleteProfile({ user }) {
       nextStep();
     } else {
       post(route("complete-profile.store"), {
-        onError: () => console.log(errors),
+        onStart:   () => setLoading(true),
+        onSuccess: () => {
+          setLoading(false);
+          setMessageType("success");
+          setMessage("¡Perfil completado con éxito!");
+        },
+        onError: (errs) => {
+          setLoading(false);
+          setMessageType("error");
+          setMessage(Object.values(errs)[0] || "Hubo un error al guardar el perfil.");
+        },
+        onFinish: () => setLoading(false),
       });
     }
   };
@@ -57,16 +73,23 @@ export default function CompleteProfile({ user }) {
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
       <h1 className="text-xl font-bold mb-6 text-center">Completa tu perfil</h1>
 
+      {loading && (
+        <StatusMessage
+          type="loading"
+          title="Guardando tu perfil..."
+        />
+      )}
+
+      {message && (
+        <StatusMessage
+          type={messageType}
+          title={message}
+          onClose={() => setMessage("")}
+          actionLabel={messageType === "success" ? "Entendido" : "Cerrar"}
+        />
+      )}
+
       <Stepper step={step} />
-{Object.keys(errors).length > 0 && (
-  <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded">
-    <ul className="list-disc list-inside">
-      {Object.values(errors).map((error, idx) => (
-        <li key={idx}>{error}</li>
-      ))}
-    </ul>
-  </div>
-)}
       <form onSubmit={submit} className="space-y-4">
         {step === 1 && (
           <Step1Personal data={data} setData={setData} errors={errors} />

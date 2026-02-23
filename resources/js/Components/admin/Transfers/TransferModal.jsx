@@ -71,6 +71,19 @@ export default function TransferModal({ selected, isOpen, onClose, onUpdated }) 
   const formatDate = (d) =>
     d ? new Date(d).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
 
+  let currencyA;
+  let currencyB
+
+  if(selected.modo==='PENtoBOB'){
+    currencyA='Pen';
+    currencyB='Bob';
+  }else{
+    currencyA='Bob';
+    currencyB='Pen';
+  }
+
+
+
   if (!isOpen) return null;
 
   return (
@@ -99,8 +112,8 @@ export default function TransferModal({ selected, isOpen, onClose, onUpdated }) 
      
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-3 text-center">
-              <p className="text-xs text-blue-400 mb-1">Monto enviado</p>
-              <p className="text-xl font-bold text-blue-700">{selected.amount}</p>
+              <p className="text-xs text-blue-400 mb-1">Monto Recibido</p>
+              <p className="text-xl font-bold text-blue-700">{selected.amount} {currencyA}</p>
             </div>
             <div className="flex items-center justify-center">
               <div className="flex flex-col items-center">
@@ -109,12 +122,8 @@ export default function TransferModal({ selected, isOpen, onClose, onUpdated }) 
               </div>
             </div>
             <div className="bg-green-50 border border-green-100 rounded-xl px-3 py-3 text-center">
-              <p className="text-xs text-green-400 mb-1">Monto recibido</p>
-              <p className="text-xl font-bold text-green-700">{selected.converted_amount || "—"}</p>
-            </div>
-            <div className="bg-gray-50 border border-gray-100 rounded-xl px-3 py-3 text-center">
-              <p className="text-xs text-gray-400 mb-1">Modo</p>
-              <p className="text-sm font-semibold text-gray-700">{selected.modo || "—"}</p>
+              <p className="text-xs text-green-400 mb-1">Monto A enviar</p>
+              <p className="text-xl font-bold text-green-700">{selected.converted_amount || "—"} {currencyB}</p>
             </div>
           </div>
 

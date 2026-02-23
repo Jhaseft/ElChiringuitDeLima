@@ -1,5 +1,6 @@
-import { X, Copy, Loader2, CheckCircle2 } from "lucide-react";
+import { X, Copy } from "lucide-react";
 import { useState } from "react";
+import StatusMessage from "@/Components/ui/StatusMessage";
 
 export default function ModalTransferencia({
   isOpen,
@@ -72,7 +73,7 @@ export default function ModalTransferencia({
     }
   };
 
-  // 🔥 Configuración escalable
+  //  Configuración escalable
   const transferOptions = {
     BOBtoPEN: [
       {
@@ -136,7 +137,7 @@ export default function ModalTransferencia({
               Registro de Transferencia
             </h2>
 
-            {/* Resumen */}
+          
             <div className="border rounded-lg bg-gray-50 p-4 mb-4 text-sm">
               <table className="w-full text-sm">
                 <tbody>
@@ -172,14 +173,14 @@ export default function ModalTransferencia({
               </table>
             </div>
 
-            {/* Mensaje central */}
+          
             <div className="text-center mb-6">
               <p className="font-semibold mb-2">
                 Por favor, realiza el depósito del monto de{" "}
                 <span className="text-green-600">{montoTexto}</span>
               </p>
 
-              {/* Render dinámico */}
+          
               <div className="flex flex-col gap-4 mt-4 items-center">
                 {opciones.map((op, idx) => {
                   if (op.type === "qr") {
@@ -227,7 +228,6 @@ export default function ModalTransferencia({
               </div>
             </div>
 
-            {/* Subir comprobante */}
             <div className="mb-4">
               <label className="block text-sm font-semibold mb-2">
                 Subir comprobante
@@ -247,7 +247,7 @@ export default function ModalTransferencia({
 
             {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
 
-            {/* Botones */}
+       
             <div className="flex gap-2 justify-end">
               <button
                 onClick={onClose}
@@ -264,36 +264,21 @@ export default function ModalTransferencia({
             </div>
           </>
         ) : (
-          // ✅ Mensaje de éxito
-          <div className="flex flex-col items-center justify-center text-center py-8">
-            <CheckCircle2 className="text-green-600 mb-3" size={48} />
-            <h3 className="text-lg font-bold text-gray-800">
-              ¡Transferencia registrada con éxito!
-            </h3>
-            <p className="text-gray-600 text-sm mt-2">
-              Recibirá un correo con el comprobante en breve.
-            </p>
-            <button
-              onClick={onClose}
-              className="mt-6 bg-green-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition"
-            >
-              Entendido
-            </button>
-          </div>
+          <StatusMessage
+            type="success"
+            title="¡Transferencia registrada con éxito!"
+            description="Recibirá un correo con el comprobante en breve."
+            onClose={onClose}
+          />
         )}
       </div>
 
-      {/* Overlay de carga */}
       {loading && (
-        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/60">
-          <Loader2 className="animate-spin text-white mb-4" size={48} />
-          <p className="text-white font-semibold text-lg">
-            Procesando su operación...
-          </p>
-          <p className="text-gray-300 text-sm mt-1">
-            Estamos registrando la transferencia y enviando el correo
-          </p>
-        </div>
+        <StatusMessage
+          type="loading"
+          title="Procesando su operación..."
+          description="Estamos registrando la transferencia y enviando el correo"
+        />
       )}
     </div>
   );

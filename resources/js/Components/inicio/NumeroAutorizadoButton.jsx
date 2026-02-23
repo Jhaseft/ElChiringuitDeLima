@@ -11,7 +11,7 @@ export default function NumeroAutorizadoButton({ nombre, numero }) {
       className="flex items-center justify-center gap-2 bg-green-600 text-white py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition text-sm font-medium"
     >
       <MessageCircle size={18} />
-      {nombre} {/* Ahora se muestra el nombre en lugar del número */}
+      {nombre} 
     </a>
   );
 }

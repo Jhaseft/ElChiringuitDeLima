@@ -5,6 +5,7 @@ import Stepper from "@/Components/register_and_complete/register/Stepper";
 import Step1Personal from "@/Components/register_and_complete/register/Step1Personal";
 import Step2Extras from "@/Components/register_and_complete/register/Step2Extras";
 import Step3Security from "@/Components/register_and_complete/register/Step3Security";
+import StatusMessage from "@/Components/ui/StatusMessage";
 import axios from "axios";
 import { router } from "@inertiajs/react";
 /**
@@ -12,8 +13,9 @@ import { router } from "@inertiajs/react";
  */
 export default function Register() {
   const [step, setStep] = useState(1);
-  const [message, setMessage] = useState(""); // mensaje global de error
-  const [loading, setLoading] = useState(false); // estado de pantalla de carga
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
+  const [loading, setLoading] = useState(false);
 
   const { data, setData, post, processing, errors, reset } = useForm({
     first_name: "",
@@ -61,23 +63,23 @@ export default function Register() {
       try {
         const response = await axios.post("/register-provisional", data);
 
-        // Mostrar mensaje del backend
+        setMessageType("success");
         setMessage(response.data.message || "Correo enviado correctamente.");
 
         reset("password", "password_confirmation");
 
-        // Si todo salió bien, redirige después de 1 segundo
         if (response.data.status === "success") {
           setTimeout(() => {
-            router.get("/"); // aquí pones la ruta principal
-          }, 1000); // 1000 ms = 1 segundo
+            router.get("/");
+          }, 1000);
         }
       } catch (err) {
+        setMessageType("error");
         setMessage(
           err.response?.data?.message || "Hubo un error al enviar el correo."
         );
       } finally {
-        
+        setLoading(false);
       }
     }
   };
@@ -89,27 +91,10 @@ export default function Register() {
 
 
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-xl p-6 flex flex-col items-center space-y-4 shadow-lg w-96 relative">
-            <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
-            <p className="text-gray-700 font-semibold">Enviando correo de verificación...</p>
-
-            {message && (
-              <div className={`mt-4 w-full p-3 rounded border flex justify-between items-center
-          ${message.startsWith("✅")
-                  ? "bg-green-100 border-green-400 text-green-700"
-                  : "bg-red-100 border-red-400 text-red-700"}`}>
-                <span>{message}</span>
-                <button
-                  onClick={() => setMessage("")}
-                  className="text-xl font-bold leading-none focus:outline-none"
-                >
-                  ×
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+        <StatusMessage
+          type="loading"
+          title="Enviando correo de verificación..."
+        />
       )}
 
       <div className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden p-8 sm:p-12">
@@ -118,14 +103,12 @@ export default function Register() {
         </h1>
 
         {message && (
-          <div
-            className={`mb-4 p-3 rounded border ${message.startsWith("✅")
-              ? "bg-green-100 border-green-400 text-green-700"
-              : "bg-red-100 border-red-400 text-red-700"
-              }`}
-          >
-            {message}
-          </div>
+          <StatusMessage
+            type={messageType}
+            title={message}
+            onClose={() => setMessage("")}
+            actionLabel={messageType === "success" ? "Entendido" : "Cerrar"}
+          />
         )}
 
 
@@ -166,16 +149,6 @@ export default function Register() {
       </div>
 
 
-      <style>{`
-        .loader {
-          border-top-color: #4f46e5;
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }
