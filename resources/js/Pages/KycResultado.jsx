@@ -46,7 +46,7 @@ export default function KycResultado() {
             
                 {!loading && status === "verified" && (
                     <div className="flex flex-col items-center gap-4">
-                        <div className="text-5xl">✅</div>
+                        
                         <h2 className="text-xl font-semibold text-green-600">
                             KYC aprobado
                         </h2>
