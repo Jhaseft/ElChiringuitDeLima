@@ -154,11 +154,15 @@ Route::prefix('admin')->group(function () {
         Route::get('/users/{user}/detail/info', [AdminUserMediaController::class, 'showUsers']);
         Route::get('/users/{user}/detail/accounts', [AdminUserMediaController::class, 'showAccounts']);
 
-        //transferencias
+
+        //listar transferencias
         Route::get('/transfers', [AdminTransfers::class, 'index']);
-        Route::get('/transfers/{id}', [AdminTransfers::class, 'show']);
-        Route::post('/transfers', [AdminTransfers::class, 'store']);
+        //ver tranferencia especifica de usuario
+        Route::get('/transfers/user/{id}', [AdminTransfers::class, 'showUser']);
+         Route::get('/transfers/detail/{id}', [AdminTransfers::class, 'transferDetail']);
+        //actualizar transferemcia
         Route::put('/transfers/{id}', [AdminTransfers::class, 'update']);
+        //elimianr tranferencia
         Route::delete('/transfers/{id}', [AdminTransfers::class, 'destroy']);
 
     

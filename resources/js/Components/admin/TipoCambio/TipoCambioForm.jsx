@@ -1,15 +1,14 @@
 import { useState } from "react";
+import AdminOverlay from "../AdminOverlay";
 
 export default function TipoCambioForm({ tipoCambio }) {
   const [compra, setCompra] = useState(tipoCambio?.compra || "");
   const [venta, setVenta] = useState(tipoCambio?.venta || "");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [overlay, setOverlay] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage("");
+    setOverlay("loading");
     const token = document.querySelector('meta[name="csrf-token"]').content;
 
     try {
@@ -26,21 +25,25 @@ export default function TipoCambioForm({ tipoCambio }) {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setMessage("Tipo de cambio actualizado ✅");
+        setOverlay("success");
       } else {
-        setMessage(data.message || "Error al actualizar ❌");
+        setOverlay("error");
       }
     } catch (err) {
       console.error(err);
-      setMessage("Error de conexión ");
-    } finally {
-      setLoading(false);
+      setOverlay("error");
     }
   };
 
   return (
     <div className="w-full flex flex-col items-center">
-      <h2 className="text-3xl font-semibold mb-6 text-gray-700 mb-5">
+
+      <AdminOverlay
+        state={overlay}
+        onDismiss={() => setOverlay(null)}
+      />
+
+      <h2 className="text-3xl font-semibold mb-6 text-gray-700">
         Actualizar Tipo de Cambio
       </h2>
       <div className="w-full max-w-lg overflow-x-auto mb-6">
@@ -61,7 +64,6 @@ export default function TipoCambioForm({ tipoCambio }) {
           </tbody>
         </table>
       </div>
-
 
       <form
         onSubmit={handleSubmit}
@@ -93,13 +95,11 @@ export default function TipoCambioForm({ tipoCambio }) {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={overlay === "loading"}
           className="bg-blue-500 text-white rounded p-2 mt-2 hover:bg-blue-600 disabled:opacity-50 transition-colors"
         >
-          {loading ? "Actualizando..." : "Actualizar Tipo de Cambio"}
+          Actualizar Tipo de Cambio
         </button>
-
-        {message && <p className="mt-2 text-center text-sm">{message}</p>}
       </form>
     </div>
   );

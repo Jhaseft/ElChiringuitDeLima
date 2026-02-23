@@ -62,11 +62,11 @@ class AdminControllerDashboard extends Controller
     $tipoCambio->fecha_actualizacion = now();
     $tipoCambio->save();
 
-    // Enviar mail a todos los usuarios
-  $users = User::all();
-foreach ($users as $user) {
-    Mail::to($user->email)->send(new TipoCambioActualizadoMail($tipoCambio));
-}
+    // Enviar mail a todos los usuarios (en cola, para no bloquear el request)
+    $users = User::all();
+    foreach ($users as $user) {
+        Mail::to($user->email)->queue(new TipoCambioActualizadoMail($tipoCambio));
+    }
 
     return response()->json(['success' => true, 'tipoCambio' => $tipoCambio]);
 }

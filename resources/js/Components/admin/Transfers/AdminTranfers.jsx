@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import TransferModal from "./TransferModal";
-import { Search, Eye, Trash2 } from "lucide-react";
+import UserModal from "./UserModal"; 
+import AdminOverlay from "../AdminOverlay";
+import { Search, Trash2, UserRoundCog, BanknoteArrowUp } from "lucide-react";
 
 const statusBadge = {
   pending: "bg-yellow-100 text-yellow-700",
-  verified: "bg-blue-100 text-blue-700",
   completed: "bg-green-100 text-green-700",
   rejected: "bg-red-100 text-red-700",
+};
+
+const statusLabel = {
+  pending: "Pendiente",
+  completed: "Completado",
+  rejected: "Rechazado",
 };
 
 export default function AdminTransfersTable() {
@@ -15,9 +22,15 @@ export default function AdminTransfersTable() {
   const [meta, setMeta] = useState({ current_page: 1, last_page: 1, per_page: 10, total: 0 });
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [detail, setDetail] = useState(null);
-  const [processing, setProcessing] = useState(false);
+  //Usuarios
+  const [detailOpenUser, setDetailOpenUser] = useState(false);
+  const [detailUser, setDetailUser] = useState(null);
+  //Transferencias detalle
+  const [detailOpenTransfer, setDetailOpenTransfer] = useState(false);
+  const [detailTransfer, setDetailTranfer] = useState(null);
+
+  // "loading" | "success" | "error" | null
+  const [overlay, setOverlay] = useState(null);
 
   const fetchList = async (page = 1, perPage = meta.per_page, q = search) => {
     try {
@@ -41,28 +54,41 @@ export default function AdminTransfersTable() {
     }
   };
 
-  const openDetail = async (id) => {
+  const openDetailUser = async (id) => {
     try {
-      setProcessing(true);
-      const { data } = await axios.get(`/admin/transfers/${id}`, { withCredentials: true });
-      setDetail(data);
-      setDetailOpen(true);
+      setOverlay("loading");
+      const { data } = await axios.get(`/admin/transfers/user/${id}`, { withCredentials: true });
+      setDetailUser(data);
+      setOverlay(null);
+      setDetailOpenUser(true);
     } catch (e) {
       console.error(e);
-      alert("No se pudo cargar el detalle de la transferencia.");
-    } finally {
-      setProcessing(false);
+      setOverlay("error");
+    }
+  };
+
+  const openDetailTransfer = async (id) => {
+    try {
+      setOverlay("loading");
+      const { data } = await axios.get(`/admin/transfers/detail/${id}`, { withCredentials: true });
+      setDetailTranfer(data);
+      setOverlay(null);
+      setDetailOpenTransfer(true);
+    } catch (e) {
+      console.error(e);
+      setOverlay("error");
     }
   };
 
   const handleDelete = async (id) => {
     if (!confirm("¿Eliminar esta transferencia?")) return;
     try {
+      setOverlay("loading");
       await axios.delete(`/admin/transfers/${id}`, { withCredentials: true });
-      fetchList(meta.current_page, meta.per_page, search);
+      setOverlay("success");
     } catch (e) {
       console.error(e);
-      alert("No se pudo eliminar la transferencia.");
+      setOverlay("error");
     }
   };
 
@@ -75,20 +101,19 @@ export default function AdminTransfersTable() {
     fetchList(1);
   }, []);
 
+  const busy = overlay === "loading";
+
   return (
-    <div className="relative">
+    <div>
 
-  
-      {processing && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 rounded-2xl">
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-10 h-10 border-4 border-t-blue-600 border-gray-200 rounded-full animate-spin" />
-            <p className="text-white text-sm font-medium">Procesando…</p>
-          </div>
-        </div>
-      )}
+      <AdminOverlay
+        state={overlay}
+        onDismiss={() => {
+          if (overlay === "success") fetchList(meta.current_page);
+          setOverlay(null);
+        }}
+      />
 
-  
       <form onSubmit={onSearch} className="flex gap-2 mb-4">
         <div className="relative flex-1 sm:flex-none">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -107,7 +132,6 @@ export default function AdminTransfersTable() {
         </button>
       </form>
 
-  
       <div className="overflow-x-auto rounded-xl border border-gray-100">
         <table className="min-w-full text-sm divide-y divide-gray-100">
           <thead className="bg-gray-50">
@@ -145,24 +169,34 @@ export default function AdminTransfersTable() {
                   </td>
                   <td className="py-3 px-4 font-semibold text-gray-800">{r.amount}</td>
                   <td className="py-3 px-4">
-                    <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${statusBadge[r.status] || "bg-gray-100 text-gray-600"}`}>
-                      {r.status}
+                    <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${statusBadge[r.status] || "bg-gray-100 text-gray-600"}`}>
+                      {statusLabel[r.status] || r.status}
                     </span>
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex gap-2">
                       <button
-                        onClick={() => openDetail(r.id)}
-                        title="Ver detalle"
-                        disabled={processing}
+                        onClick={() => openDetailUser(r.id)}
+                        title="Ver usuario"
+                        disabled={busy}
                         className="p-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
                       >
-                        <Eye size={15} />
+                        <UserRoundCog size={20} />
                       </button>
+
+                      <button
+                        onClick={() => openDetailTransfer(r.id)}
+                        title="Ver transferencia"
+                        disabled={busy}
+                        className="p-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50"
+                      >
+                        <BanknoteArrowUp size={20} />
+                      </button>
+
                       <button
                         onClick={() => handleDelete(r.id)}
                         title="Eliminar"
-                        disabled={processing}
+                        disabled={busy}
                         className="p-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50"
                       >
                         <Trash2 size={15} />
@@ -182,14 +216,14 @@ export default function AdminTransfersTable() {
         </p>
         <div className="flex gap-2">
           <button
-            disabled={meta.current_page <= 1 || processing}
+            disabled={meta.current_page <= 1 || busy}
             onClick={() => fetchList(meta.current_page - 1)}
             className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-gray-50 transition"
           >
             ← Anterior
           </button>
           <button
-            disabled={meta.current_page >= meta.last_page || processing}
+            disabled={meta.current_page >= meta.last_page || busy}
             onClick={() => fetchList(meta.current_page + 1)}
             className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-gray-50 transition"
           >
@@ -198,11 +232,19 @@ export default function AdminTransfersTable() {
         </div>
       </div>
 
-      {detailOpen && detail && (
+      {detailOpenUser && detailUser && (
+        <UserModal
+          selected={detailUser}
+          isOpen={detailOpenUser}
+          onClose={() => setDetailOpenUser(false)}
+        />
+      )}
+
+      {detailOpenTransfer && detailTransfer && (
         <TransferModal
-          selected={detail}
-          isOpen={detailOpen}
-          onClose={() => setDetailOpen(false)}
+          selected={detailTransfer}
+          isOpen={detailOpenTransfer}
+          onClose={() => setDetailOpenTransfer(false)}
           onUpdated={() => fetchList(meta.current_page)}
         />
       )}

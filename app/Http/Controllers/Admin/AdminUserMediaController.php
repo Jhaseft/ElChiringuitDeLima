@@ -41,12 +41,12 @@ class AdminUserMediaController extends Controller
 }
 
 
-    public function showUsers(User $user)
+public function showUsers(User $user)
 {
     $user->load([
         'media' => fn($q) => $q->orderBy('position')
     ]);
- 
+
     return response()->json([
         'id' => $user->id,
         'first_name' => $user->first_name,
@@ -56,7 +56,6 @@ class AdminUserMediaController extends Controller
         'nationality' => $user->nationality,
         'document_number' => $user->document_number,
         'kyc_status' => $user->kyc_status,
-        'kyc_session_id'=>$user->kyc_session_id,
         'media' => $user->media
     ]);
 }
@@ -68,11 +67,6 @@ class AdminUserMediaController extends Controller
     $accounts = $user->accounts()
         ->with(['bank', 'owner'])
         ->get();
-
-    Log::info('Accounts enviadas al frontend:', [
-        'user_id' => $user->id,
-        'accounts' => $accounts->toArray()
-    ]);
 
     return response()->json($accounts);
 }

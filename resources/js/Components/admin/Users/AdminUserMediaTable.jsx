@@ -3,6 +3,7 @@ import axios from "axios";
 import DetailModalUser from "./DetailModalUsers";
 import DetailModalAccount from "./DetailModalAccount";
 import { Eye, Wallet, Search } from "lucide-react";
+import AdminOverlay from "../AdminOverlay";
 
 const kycBadge = {
   verified: "bg-green-100 text-green-700",
@@ -21,8 +22,8 @@ export default function AdminUserMediaTable() {
   //Accounts
   const [detailOpenAccounts, setDetailOpenAccounts] = useState(false);
   const [detailAccount, setDetailAccount] = useState(null);
-  //Pocesando
-  const [processing, setProcessing] = useState(false);
+    // "loading" | "success" | "error" | null
+  const [overlay, setOverlay] = useState(null);
 
   const fetchList = async (page = 1, perPage = meta.per_page, q = search) => {
     try {
@@ -47,9 +48,10 @@ export default function AdminUserMediaTable() {
 
   const openDetailuser = async (id) => {
     try {
-      setProcessing(true);
+      setOverlay("loading");
       const { data } = await axios.get(`/admin/users/${id}/detail/info`);
       setDetailUser(data);
+      setOverlay(null);
       setDetailOpenUser(true); 
     } catch (e) {
       console.error(e);
@@ -61,9 +63,10 @@ export default function AdminUserMediaTable() {
 
   const openDetailaccount = async (id) => {
     try {
-      setProcessing(true);
+      setOverlay("loading");
       const { data } = await axios.get(`/admin/users/${id}/detail/accounts`);
       setDetailAccount(data);
+      setOverlay(null);
       setDetailOpenAccounts(true);
     } catch (e) {
       console.error(e);
@@ -77,6 +80,8 @@ export default function AdminUserMediaTable() {
     fetchList(1);
   }, []);
 
+   const busy = overlay === "loading";
+
   const onSearch = async (e) => {
     e.preventDefault();
     await fetchList(1);
@@ -86,14 +91,13 @@ export default function AdminUserMediaTable() {
     <div className="relative">
 
    
-      {processing && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 rounded-2xl">
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-10 h-10 border-4 border-t-blue-600 border-gray-200 rounded-full animate-spin" />
-            <p className="text-white text-sm font-medium">Cargando…</p>
-          </div>
-        </div>
-      )}
+      <AdminOverlay
+              state={overlay}
+              onDismiss={() => {
+                if (overlay === "success") fetchList(meta.current_page);
+                setOverlay(null);
+              }}
+            />
 
      
       <form onSubmit={onSearch} className="flex gap-2 mb-4">
@@ -155,7 +159,7 @@ export default function AdminUserMediaTable() {
                       <button
                         onClick={() => openDetailuser(r.id)}
                         title="Ver detalle"
-                        disabled={processing}
+                        disabled={busy}
                         className="p-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
                       >
                         <Eye size={15} />
@@ -163,7 +167,7 @@ export default function AdminUserMediaTable() {
                       <button
                         onClick={() => openDetailaccount(r.id)}
                         title="Ver cuenta"
-                        disabled={processing}
+                        disabled={busy}
                         className="p-1.5 rounded-lg bg-amber-400 text-white hover:bg-amber-500 transition disabled:opacity-50"
                       >
                         <Wallet size={15} />
@@ -184,14 +188,14 @@ export default function AdminUserMediaTable() {
         </p>
         <div className="flex gap-2">
           <button
-            disabled={meta.current_page <= 1 || processing}
+            disabled={meta.current_page <= 1 || busy}
             onClick={() => fetchList(meta.current_page - 1)}
             className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-gray-50 transition"
           >
             ← Anterior
           </button>
           <button
-            disabled={meta.current_page >= meta.last_page || processing}
+            disabled={meta.current_page >= meta.last_page || busy}
             onClick={() => fetchList(meta.current_page + 1)}
             className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-gray-50 transition"
           >
