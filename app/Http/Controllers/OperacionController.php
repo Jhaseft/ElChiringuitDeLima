@@ -249,9 +249,9 @@ class OperacionController extends Controller
                     url('/admin/login');
     
         // Configuración Evolution API
-        $server   = "https://prueba-evolution-api-lima.ylblfg.easypanel.host";
-        $instance = "tro";
-        $apikey   = "9C2CFD3BD70A-40D3-9AA1-C934FCBA341D"; // Apikey admin
+        $server   = "https://servicios-evolution-api.b5lsqc.easypanel.host";
+        $instance = "JHASEFT";
+        $apikey   = "80DB5110EBBF-4B03-9272-CA011C2902EF"; // Apikey admin
 
         // Payload correcto
         $whatsPayload = [
