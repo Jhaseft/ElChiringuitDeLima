@@ -47,9 +47,26 @@
                                 @endif
                             </ul>
 
-                            @if($comprobante)
-                                <h2 style="color:#333333;">📎 Comprobante</h2>
-                                <p>Se adjunta el comprobante de la transferencia.</p>
+                            @if(!empty($adminReceipt))
+                                <h2 style="color:#333333;">📎 Comprobante aprobado</h2>
+
+                                <p>
+                                    Puedes visualizar tu comprobante oficial haciendo clic en el siguiente botón:
+                                </p>
+
+                                <div style="margin:20px 0; text-align:center;">
+                                    <a href="{{ $adminReceipt }}"
+                                    target="_blank"
+                                    style="background-color:#10b981;
+                                            color:#ffffff;
+                                            padding:12px 25px;
+                                            text-decoration:none;
+                                            border-radius:6px;
+                                            font-weight:bold;
+                                            display:inline-block;">
+                                        Ver comprobante
+                                    </a>
+                                </div>
                             @endif
 
 

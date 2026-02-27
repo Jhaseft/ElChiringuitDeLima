@@ -4,7 +4,7 @@ import axios from "axios";
 import TransferModal from "./TransferModal";
 import UserModal from "./UserModal";
 import AdminOverlay from "../AdminOverlay";
-import { Search, Trash2, UserRoundCog, BanknoteArrowUp } from "lucide-react";
+import { Search, Trash2, UserRoundCog, BanknoteArrowUp, Receipt, ShieldCheck } from "lucide-react";
 
 const statusBadge = {
   pending: "bg-yellow-100 text-yellow-700",
@@ -76,17 +76,7 @@ export default function AdminTransfersTable({ transfers, filters = {} }) {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("¿Eliminar esta transferencia?")) return;
-    try {
-      setOverlay("loading");
-      await axios.delete(`/admin/transfers/${id}`, { withCredentials: true });
-      setOverlay("success");
-    } catch (e) {
-      console.error(e);
-      setOverlay("error");
-    }
-  };
+ 
 
   const busy = overlay === "loading" || loading;
 
@@ -144,7 +134,7 @@ export default function AdminTransfersTable({ transfers, filters = {} }) {
               rows.map((r) => (
                 <tr key={r.id} className="hover:bg-blue-50/30 transition">
                   <td className="py-3 px-4 font-medium text-gray-800">
-                    {r.user.first_name} {r.user.last_name}
+                    {r.user?.first_name} {r.user?.last_name}
                   </td>
                   <td className="py-3 px-4 text-gray-600 hidden md:table-cell">
                     <span className="font-medium">{r.origin_account?.bank?.name || "—"}</span>
@@ -164,7 +154,7 @@ export default function AdminTransfersTable({ transfers, filters = {} }) {
                     <div className="flex gap-2">
                       <button
                         onClick={() => openDetailUser(r.id)}
-                        title="Ver usuario"
+                        title="Ver informacion del  usuario"
                         disabled={busy}
                         className="p-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
                       >
@@ -173,7 +163,7 @@ export default function AdminTransfersTable({ transfers, filters = {} }) {
 
                       <button
                         onClick={() => openDetailTransfer(r.id)}
-                        title="Ver transferencia"
+                        title="Ver detalle de la transferencia"
                         disabled={busy}
                         className="p-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50"
                       >
@@ -181,13 +171,24 @@ export default function AdminTransfersTable({ transfers, filters = {} }) {
                       </button>
 
                       <button
-                        onClick={() => handleDelete(r.id)}
-                        title="Eliminar"
-                        disabled={busy}
-                        className="p-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition disabled:opacity-50"
+                        onClick={() => window.open(`${r.client_receipt}`, "_blank")}
+                        title="Ver comprobante del cliente"
+                        disabled={busy || !r.client_receipt}
+                        className="p-1.5 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-30 disabled:cursor-not-allowed"
                       >
-                        <Trash2 size={15} />
+                        <Receipt size={20} />
                       </button>
+
+                      <button
+                        onClick={() => window.open(`${r.admin_receipt}`, "_blank")}
+                        title="Ver comprobante del admin"
+                        disabled={busy || !r.admin_receipt}
+                        className="p-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <ShieldCheck size={20} />
+                      </button>
+
+
                     </div>
                   </td>
                 </tr>

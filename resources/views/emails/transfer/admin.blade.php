@@ -74,7 +74,16 @@
                             @endif
 
                             <h2 style="color:#333333;">📎 Comprobante</h2>
-                            <p>Verificar con el comprobante adjunto.</p>
+                            @if(!empty($data['comprobantePath']))
+                                <p>
+                                    <a href="{{ $data['comprobantePath'] }}" target="_blank"
+                                    style="display:inline-block; padding:10px 18px; background-color:#1a73e8; color:#ffffff; text-decoration:none; border-radius:5px;">
+                                        Ver comprobante
+                                    </a>
+                                </p>
+                            @else
+                                <p>No se adjuntó comprobante.</p>
+                            @endif
 
                             <!-- Botón -->
                             <p style="text-align:center; margin:30px 0;">

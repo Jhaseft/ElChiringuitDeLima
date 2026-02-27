@@ -53,6 +53,7 @@ public function showUsers(User $user)
         'nationality' => $user->nationality,
         'document_number' => $user->document_number,
         'kyc_status' => $user->kyc_status,
+        'kyc_session_id'=>$user->kyc_session_id,
         'media' => $user->media
     ]);
 }

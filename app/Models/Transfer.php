@@ -10,15 +10,17 @@ class Transfer extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
-        'origin_account_id',
-        'destination_account_id',
-        'amount',
-        'exchange_rate',
-        'converted_amount',   // monto convertido
-        'modo',               // <--- agregar aquí
-        'status',
-    ];
+    'user_id',
+    'origin_account_id',
+    'destination_account_id',
+    'amount',
+    'exchange_rate',
+    'converted_amount',
+    'modo',
+    'status',
+    'client_receipt',
+    'admin_receipt',
+];
 
     public function user()
     {

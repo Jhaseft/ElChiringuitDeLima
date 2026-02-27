@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Mail;
-
+ 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
@@ -14,15 +14,9 @@ class NuevaTransferenciaAdmin extends Mailable
 
     public function __construct(array $data) { $this->data = $data; }
 
-    public function build()
-    {
-        $mail = $this->subject("Nueva transferencia: {$this->data['transferNumber']}")
-                     ->markdown('emails.transfer.admin');
+    public function build(){
 
-        if (!empty($this->data['comprobantePath'])) {
-            $mail->attach(storage_path('app/public/' . $this->data['comprobantePath']));
-        }
-
-        return $mail;
+    return $this->subject("Nueva transferencia: {$this->data['transferNumber']}")
+                ->markdown('emails.transfer.admin');
     }
 }

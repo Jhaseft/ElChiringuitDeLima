@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\TransferVerifiedMail; // vamos a crear este Mailable
+use App\Mail\TransferVerifiedMail; 
 use Illuminate\Http\Request;
 use App\Models\Transfer;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Cloudinary\Api\Upload\UploadApi;
 
 class AdminTransfers extends Controller
 {
@@ -89,31 +90,55 @@ public function transferDetail($id)
 
    
 
-
+ 
 public function update(Request $request, $id)
 {
     $transfer = Transfer::findOrFail($id);
 
     $request->validate([
         'status' => 'required|in:pending,completed,rejected',
-        'comprobante' => 'nullable|file|mimes:jpg,jpeg,png|required_if:status,completed',
+        'comprobante' => 'nullable|file|mimes:jpg,jpeg,png,pdf|required_if:status,completed',
     ]);
 
-    // Actualizar solo el estado
+    // Si se completa y hay comprobante → subir a Cloudinary
+    if ($request->status === 'completed' && $request->hasFile('comprobante')) {
+
+        try {
+
+            $uploadApi = new UploadApi();
+
+            $uploaded = $uploadApi->upload(
+                $request->file('comprobante')->getRealPath(),
+                [
+                    'folder' => 'transferencias/admin/'.$transfer->id,
+                    'resource_type' => 'auto'
+                ]
+            );
+
+            //  Guardamos la URL en admin_receipt
+            $transfer->admin_receipt = $uploaded['secure_url'];
+
+        } catch (\Exception $e) {
+
+            Log::error('Error subiendo comprobante admin', [
+                'message' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'message' => 'Error subiendo el comprobante.'
+            ], 500);
+        }
+    }
+
+    // Actualizar estado
     $transfer->status = $request->status;
     $transfer->save();
 
-    // Si el status es verified, enviar correo
+    // Enviar correo si se completó
     if ($transfer->status === 'completed') {
-        $comprobante = null;
 
-        // Guardar temporalmente el archivo para enviarlo
-        if ($request->hasFile('comprobante')) {
-            $comprobante = $request->file('comprobante');
-        }
-
-        // Pasar el archivo al Mailable (puedes manejarlo allí temporalmente)
-        Mail::to($transfer->user->email)->send(new TransferVerifiedMail($transfer, $comprobante));
+        Mail::to($transfer->user->email)
+            ->send(new TransferVerifiedMail($transfer, $transfer->admin_receipt));
     }
 
     return response()->json($transfer);
