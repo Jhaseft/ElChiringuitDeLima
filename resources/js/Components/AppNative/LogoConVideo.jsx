@@ -10,7 +10,7 @@ export default function LogoConVideo({
 }) {
   return (
     <>
-      
+
       <motion.div
         initial={{ opacity: 0, x: -100 }}
         whileInView={{ opacity: 1, x: 0 }}
@@ -21,25 +21,28 @@ export default function LogoConVideo({
         <p className="text-2xl  text-black font-extrabold sm:text-xl md:text-6xl font-montserrat leading-snug sm:leading-tight max-w-[600px] mx-auto">
           ¡La App que Transfiere tu Dinero al Instante!
         </p>
- 
+
         <img
           src={logoSrc}
-          alt="logo corte beniano"
+          alt="logo transfer cash"
           className="w-auto max-w-[150px] sm:max-w-[180px] md:max-w-[220px] h-auto"
         />
 
         {children}
 
         <a
-          href="https://github.com/Jhaseft/ElChiringuitDeLima/releases/download/V2.1.0/Transfer--Cash.apk"
+          href="https://play.google.com/store/apps/details?id=com.transfercash.lima"
           download
-          className="bg-gradient-to-r from-[#0de22a] via-[#00a82d] to-[#154b1b] 
-                     hover:from-[#00c738] hover:to-[#0a3d13] text-black font-bold tracking-widest 
-                     py-3 px-10 sm:py-4 sm:px-16 rounded-full shadow-lg transition-all duration-300 text-base sm:text-lg md:text-[25px] font-montserrat flex items-center justify-center gap-3"
+          className="flex items-center  rounded-lg"
         >
-          <span className="md:p-2 p-1">{linkText}</span>
-          <ArrowDownTrayIcon className="w-6 h-6 sm:w-7 sm:h-7 text-black" />
+          <img
+            src="/images/google-play-badge-es.png"
+            alt="Google Play"
+            className="w-52 h-16"
+          />
+
         </a>
+
       </motion.div>
 
       <motion.div
