@@ -11,7 +11,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
 
-  // 🔹 Links base
+  //  Links base
   const links = [
     { name: "Inicio", href: "/" },
     { name: "Nosotros", href: "/nosotros" },
@@ -22,16 +22,16 @@ export default function Header() {
   return (
     <header className="bg-white/90 backdrop-blur-sm fixed top-0 left-0 w-full shadow-md z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-">
-        {/* Logo */}
+    
         <a href="/" className="flex items-center">
           <img
-            src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756305635/logo_n6nqqr.jpg"
+            src="https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png"
             alt="Logo"
             className="h-20 w-auto hover:scale-105 transition-transform duration-300"
           />
         </a>
 
-        {/* Navegación escritorio */}
+      
         <DesktopNav
           links={links}
           user={user}
@@ -39,7 +39,7 @@ export default function Header() {
           setUserMenu={setUserMenu}
         />
 
-        {/* Botón menú móvil */}
+     
         <div className="md:hidden">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
@@ -54,7 +54,6 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Menú móvil */}
       <MobileNav
         links={links}
         user={user}

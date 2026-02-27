@@ -14,7 +14,7 @@
                     <!-- Logo -->
                     <tr>
                         <td align="center" style="padding:30px 0;">
-                            <img src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756305635/logo_n6nqqr.jpg" alt="{{ config('app.name') }}" style="width:150px; height:auto;">
+                            <img src="https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png" alt="{{ config('app.name') }}" style="width:150px; height:auto;">
                         </td>
                     </tr>
 

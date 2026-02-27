@@ -9,10 +9,10 @@ export default function Politicas() {
         <div className="min-h-screen bg-gray-50 px-4 lg:px-52 py-10 flex justify-center">
           <div className="max-w-4xl w-full bg-white p-10 rounded-2xl shadow-lg">
             
-            {/* Logo + título */}
+         
             <div className="flex flex-col items-center text-center mb-10">
               <img 
-                src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756305635/logo_n6nqqr.jpg" 
+                src="https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png" 
                 alt="Transfer Cash Logo" 
                 className="w-32 h-auto mb-4"
               />
@@ -24,7 +24,7 @@ export default function Politicas() {
               </p>
             </div>
 
-            {/* Contenido dividido */}
+        
             <div className="space-y-6 divide-y divide-gray-200">
               <section className="pt-2">
                 <h2 className="text-lg font-semibold text-gray-800 mb-1">Objeto</h2>

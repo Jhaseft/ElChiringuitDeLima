@@ -91,7 +91,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
             Cambio de divisas rápido, seguro y confiable
           </p>
           <img
-            src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756305635/logo_n6nqqr.jpg"
+            src="https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png"
             alt="Logo"
             className="mt-3 w-20 h-20 object-contain rounded-full border border-gray-200 shadow-sm"
           />

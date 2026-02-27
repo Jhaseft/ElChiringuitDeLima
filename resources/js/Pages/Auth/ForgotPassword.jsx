@@ -13,7 +13,7 @@ export default function ForgotPassword({ status }) {
     return (
         <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 px-4">
             <img
-                src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756305635/logo_n6nqqr.jpg"
+                src="https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png"
                 alt="Logo"
                 className="w-32 mb-6"
             />

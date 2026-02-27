@@ -10,7 +10,7 @@ export default function Nosotros() {
           
           <div className="relative w-full h-64 rounded-lg overflow-hidden mb-10">
             <img
-              src="https://res.cloudinary.com/dnbklbswg/image/upload/v1756305635/logo_n6nqqr.jpg"
+              src="https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png"
               alt="Transfer Cash"
               className="w-full h-full object-contain"
             />
