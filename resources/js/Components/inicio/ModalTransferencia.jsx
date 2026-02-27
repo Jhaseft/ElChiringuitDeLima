@@ -47,8 +47,6 @@ export default function ModalTransferencia({
       formData.append("origin_account_id", cuentaOrigen.id);
       formData.append("destination_account_id", cuentaDestino.id);
       formData.append("amount", monto);
-      formData.append("exchange_rate", tasa);
-      formData.append("converted_amount", conversion);
       formData.append("comprobante", comprobante);
       formData.append("modo", modo);
 

@@ -6,6 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 class TipoCambio extends Model
 {
     protected $table = 'tipo_cambio';
-    protected $fillable = ['compra', 'venta'];
+    protected $fillable = ['compra', 'venta', 'fecha_actualizacion'];
     public $timestamps = true;
 }

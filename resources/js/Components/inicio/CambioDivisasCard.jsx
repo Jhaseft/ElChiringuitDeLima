@@ -7,7 +7,7 @@ import ErrorBanner from "./ErrorBanner";
 export default function CambioDivisasCard({ tasas, bancos }) {
   const { auth } = usePage().props;
   const user = auth?.user ?? null;
-
+ 
   const [monto, setMonto] = useState("");
   const [conversion, setConversion] = useState("");
   const [modo, setModo] = useState("PENtoBOB"); // "BOBtoPEN" o "PENtoBOB"

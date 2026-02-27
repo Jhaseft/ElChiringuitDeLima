@@ -22,10 +22,12 @@ use App\Http\Controllers\KycController;
 // Página principal
 Route::get('/', function () {
     $bancos = Bank::all();
+    $tc = \App\Models\TipoCambio::latest()->first();
     return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
+        'canLogin'  => Route::has('login'),
         'canRegister' => Route::has('register'),
-        'bancos' => $bancos,
+        'bancos'    => $bancos,
+        'tasas'     => $tc ? ['compra' => (float)$tc->compra, 'venta' => (float)$tc->venta] : null,
     ]);
 })->name('welcome');
 //contacto
@@ -170,5 +172,8 @@ Route::prefix('admin')->group(function () {
 // Tipo de cambio - API pública
 Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'historial']);
 
+
+// Tipo de cambio - API pública
+Route::get('/api/tipo-cambio/compra', [AdminControllerDashboard::class, 'actualizarTipoCambioAutomatico']);
 
 require __DIR__.'/auth.php';

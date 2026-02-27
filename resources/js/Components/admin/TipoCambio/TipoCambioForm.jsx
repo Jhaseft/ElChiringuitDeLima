@@ -21,7 +21,7 @@ export default function TipoCambioForm({ tipoCambio }) {
     try {
       const res = await fetch("/admin/tipo-cambio", {
         method: "POST",
-        headers: {
+        headers: { 
           "Content-Type": "application/json",
           "X-CSRF-TOKEN": token,
           Accept: "application/json",

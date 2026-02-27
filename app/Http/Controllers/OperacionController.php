@@ -8,6 +8,7 @@ use App\Models\Account;
 use App\Models\AccountOwner;
 use App\Models\Bank;
 use App\Models\Transfer;
+use App\Models\TipoCambio;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
 use Cloudinary\Api\Upload\UploadApi;
@@ -111,16 +112,34 @@ class OperacionController extends Controller
         }
 
 
-        // Validación
+        // Validación (exchange_rate y converted_amount se calculan en el backend)
         $validated = $request->validate([
             'origin_account_id'       => ['required','exists:accounts,id'],
             'destination_account_id'  => ['required','exists:accounts,id','different:origin_account_id'],
             'amount'                  => ['required','numeric','min:0.01'],
-            'exchange_rate'           => ['required','numeric','min:0.0001'],
-            'converted_amount'        => ['nullable','numeric','min:0'],
             'comprobante'             => ['nullable','file','mimes:jpg,jpeg,png,pdf','max:5120'],
             'modo'                    => ['required','in:BOBtoPEN,PENtoBOB'],
         ]);
+
+        // Obtener el tipo de cambio vigente desde la BD (nunca del cliente)
+        $tipoCambio = TipoCambio::latest()->first();
+        if (!$tipoCambio) {
+            return response()->json(['message' => 'No hay tipo de cambio configurado. Contacte al administrador.'], 422);
+        }
+
+        $modo = $request->modo;
+
+        if ($modo === 'BOBtoPEN') {
+            $exchangeRate    = (float) $tipoCambio->venta;
+            $convertedAmount = round($request->amount / $exchangeRate, 2);
+            $depositCurrency = 'BOB';
+            $receiveCurrency = 'PEN';
+        } else { // PENtoBOB
+            $exchangeRate    = (float) $tipoCambio->compra;
+            $convertedAmount = round($request->amount * $exchangeRate, 2);
+            $depositCurrency = 'PEN';
+            $receiveCurrency = 'BOB';
+        }
 
 
         $comprobanteUrl = null;
@@ -158,11 +177,11 @@ class OperacionController extends Controller
             'origin_account_id'      => $request->origin_account_id,
             'destination_account_id' => $request->destination_account_id,
             'amount'                 => $request->amount,
-            'exchange_rate'          => $request->exchange_rate,
-            'converted_amount'       => $request->converted_amount,
+            'exchange_rate'          => $exchangeRate,
+            'converted_amount'       => $convertedAmount,
             'modo'                   => $request->modo,
             'status'                 => 'pending',
-            'client_receipt'         => $comprobanteUrl, 
+            'client_receipt'         => $comprobanteUrl,
         ]);
 
         // Cargar relaciones
@@ -176,23 +195,6 @@ class OperacionController extends Controller
 
         // Número de operación
         $transferNumber = 'OP-' . str_pad($transfer->id, 5, '0', STR_PAD_LEFT);
-
-        // Determinar monedas y calcular monto convertido según modo
-        $modo = $request->modo;
-
-        if ($modo === 'BOBtoPEN') {
-            $depositCurrency = 'BOB';
-            $receiveCurrency = 'PEN';
-            $convertedAmount = $request->filled('converted_amount')
-                ? (float)$request->converted_amount
-                : round($transfer->amount * $transfer->exchange_rate, 2);
-        } else { // PENtoBOB
-            $depositCurrency = 'PEN';
-            $receiveCurrency = 'BOB';
-            $convertedAmount = $request->filled('converted_amount')
-                ? (float)$request->converted_amount
-                : round($transfer->amount / $transfer->exchange_rate, 2);
-        }
 
         // Payload común (para mails)
         $payload = [
