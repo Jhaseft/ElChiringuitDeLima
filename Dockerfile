@@ -55,4 +55,4 @@ EXPOSE 8080
 RUN echo "<?php\nif (file_exists(__DIR__ . parse_url(\$_SERVER['REQUEST_URI'], PHP_URL_PATH))) {\n    return false;\n}\nrequire __DIR__ . '/index.php';" > public/router.php
 
 # Iniciar queue worker en background + servidor PHP
-CMD ["sh", "-c", "php artisan schedule:work --queue=default --tries=3 --sleep=3 --timeout=60 & php -S 0.0.0.0:${PORT:-8080} -t public public/router.php"]
+CMD ["sh", "-c", "php artisan schedule:work & php artisan queue:work --queue=default --tries=3 --sleep=3 --timeout=60 & php -S 0.0.0.0:${PORT:-8080} -t public public/router.php"]
