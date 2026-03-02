@@ -10,4 +10,4 @@ Artisan::command('inspire', function () {
 
 // Actualiza el tipo de cambio cada 30 minutos.
 // Solo guarda en BD si los valores cambiaron respecto al último registro.
-Schedule::command('tipo-cambio:actualizar')->everyMinute();
+Schedule::command('tipo-cambio:actualizar')->everyFiveMinutes();
