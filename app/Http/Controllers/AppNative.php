@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 use App\Models\Account;
 use App\Mail\VerifyCodeEmail;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Http;
 
 class AppNative extends Controller
 {
@@ -149,4 +151,99 @@ class AppNative extends Controller
 
     return response()->json($accounts);
 }
+
+// Completar perfil (usuarios Google o incompletos)
+public function completeProfile(Request $request)
+{
+    $user = $request->user();
+
+    $request->validate([
+        'nationality'     => 'required|string|max:255',
+        'phone'           => 'required|string|max:255|unique:users,phone,' . $user->id,
+        'document_number' => 'required|string|max:255|unique:users,document_number,' . $user->id,
+        'terms'           => 'required|accepted',
+        'password'        => ['required', 'confirmed', 'min:8'],
+    ]);
+
+    $user->update([
+        'nationality'       => $request->nationality,
+        'phone'             => $request->phone,
+        'document_number'   => $request->document_number,
+        'accepted_terms_at' => now(),
+        'terms_version'     => '1.0',
+        'password'          => Hash::make($request->password),
+    ]);
+
+    //  Cargar relaciones como en login y Google
+    $user->load(['accounts', 'transfers', 'media']);
+
+    return response()->json([
+        'status'  => 'success',
+        'message' => 'Perfil completado correctamente.',
+        'user'    => $user,
+    ]);
+}
+
+public function loginGoogle(Request $request)
+{
+    $request->validate([
+        'idToken' => 'required|string',
+    ]);
+
+    // Verificar token con Google
+    $googleResponse = Http::get(
+        'https://oauth2.googleapis.com/tokeninfo',
+        ['id_token' => $request->idToken]
+    );
+
+    if (!$googleResponse->ok()) {
+        return response()->json([
+            'message' => 'Token inválido'
+        ], 401);
+    }
+
+    $googleUser = $googleResponse->json();
+
+    // Verificar que el token sea de TU app
+    if ($googleUser['aud'] !== env('GOOGLE_CLIENT_ID_APP')) {
+        return response()->json([
+            'message' => 'Token no válido para esta aplicación'
+        ], 401);
+    }
+
+    // Buscar usuario por email
+    $user = User::where('email', $googleUser['email'])->first();
+
+    // Si no existe, crear usuario
+    if (!$user) {
+        $user = User::create([
+            'first_name'  => $googleUser['given_name'] ?? '',
+            'last_name'   => $googleUser['family_name'] ?? '',
+            'email'       => $googleUser['email'],
+            'provider'    => 'google',
+            'provider_id' => $googleUser['sub'],
+            'password'    => null,
+        ]);
+    }
+
+    // Crear token Sanctum
+    $token = $user->createToken('mobile-app')->plainTextToken;
+
+    // Cargar relaciones si necesitas
+    $user->load(['accounts', 'transfers', 'media']);
+
+    // Revisar si el perfil está incompleto
+    $needsProfile = empty($user->nationality) ||
+                    empty($user->phone) ||
+                    empty($user->accepted_terms_at) ||
+                    empty($user->document_number);
+
+    return response()->json([
+        'user' => $user,
+        'token' => $token,
+        'needs_profile' => $needsProfile // <-- si es true, app debe redirigir
+    ]);
+}
+
+
 }

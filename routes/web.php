@@ -79,7 +79,7 @@ Route::middleware(['web'])->group(function () {
    //crear una tranferencia con automatizaciones de envio a Evolution y Email
     Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia'])->name('operacion.crearTransferencia');
 });
-
+ 
 // Perfil y KYC
 Route::middleware('auth')->group(function () {
     //completar perfil si viene de google

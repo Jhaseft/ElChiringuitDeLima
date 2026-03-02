@@ -16,6 +16,9 @@ Route::post('/verify-code', [AppNative::class, 'verifyCode']);
 // Login 
 Route::post('/loginapp', [AppNative::class, 'login']);
 
+//Para Google
+Route::post('/logingoogle', [AppNative::class, 'loginGoogle']);
+
 // Rutas protegidas con token Sanctum
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AppNative::class, 'logout']);
@@ -24,8 +27,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta']);
     Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia']);
     Route::get('/transfers/historymobile', [TransferController::class, 'historymobile']);
-    
-    
+    Route::post('/complete-profile', [AppNative::class, 'completeProfile']);
+
+
 });
 
+
+//para la web no para el movil xd
 Route::post('/kyc/webhook', [KycController::class, 'webhook'])->name('kyc.webhook');
