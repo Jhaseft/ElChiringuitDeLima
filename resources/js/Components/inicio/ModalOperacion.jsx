@@ -92,7 +92,7 @@ export default function ModalOperacion({
 
         const response = await axios.post("/kyc/session", {
           next_url: window.location.origin + "/kyc/resultado"
-        });
+        }); 
 
         const data = response.data;
 
@@ -119,7 +119,8 @@ export default function ModalOperacion({
   };
   
   return (
-    <>
+    <>phpa rtisan servenpm ruin dev
+
 
       <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 px-2">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative animate-fadeIn max-h-[90vh] overflow-y-auto mt-11">
