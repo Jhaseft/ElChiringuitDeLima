@@ -3,6 +3,7 @@ import { usePage, Link } from "@inertiajs/react";
 import { RefreshCw } from "lucide-react";
 import ModalOperacion from "./ModalOperacion";
 import ErrorBanner from "./ErrorBanner";
+import axios from "axios";
 
 export default function CambioDivisasCard({ tasas, bancos }) {
   const { auth } = usePage().props;
@@ -56,12 +57,12 @@ export default function CambioDivisasCard({ tasas, bancos }) {
     }
   };
  
-  const iniciarOperacion = () => {
+  const iniciarOperacion = async () => {
     if (!monto || !conversion) {
       setError("Debes ingresar un monto válido para iniciar la operación.");
       return;
     }
-
+ 
     if (!user) {
       window.location.href = "/login";
       return;
@@ -71,6 +72,37 @@ export default function CambioDivisasCard({ tasas, bancos }) {
       window.location.href = "/complete-profile";
       return;
     }
+
+     if (user.kyc_status === "pending" || user.kyc_status === "rejected") {
+          try {
+            alert("Debes completar tu KYC antes de continuar.");
+    
+            const response = await axios.post("/kyc/session", {
+              next_url: window.location.origin + "/kyc/resultado"
+            }); 
+    
+            const data = response.data;
+    
+            if (!data.redirect_url) {
+              throw new Error("No se recibió redirect_url");
+            }
+    
+            window.location.href = data.redirect_url;
+    
+          } catch (error) {
+            console.error(" Error KYC:", error);
+    
+            if (error.response) {
+              console.log(" response error:", error.response.data);
+            }
+    
+            alert("Error iniciando verificación KYC");
+          }
+    
+          return;
+        }
+
+
 
     setModalOpen(true);
     setError("");

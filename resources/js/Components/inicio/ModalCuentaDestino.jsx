@@ -60,7 +60,7 @@ export default function ModalCuentaDestino({
 
         bancosCache = data;
 
-        // 👉 Filtrar según modo
+        //  Filtrar según modo
         let filtrados = [];
         if (modo === "PENtoBOB") {
           filtrados = data.filter((b) => b.country.toLowerCase() === "bolivia");
@@ -134,7 +134,7 @@ export default function ModalCuentaDestino({
 
   if (!isOpen) return null;
 
-  // 👇 Placeholder dinámico y tipo de input según banco
+  // Placeholder dinámico y tipo de input según banco
   const esYapeOPlin =
     form.banco && ["yape", "plin"].includes(form.banco.name?.toLowerCase());
   const cuentaPlaceholder = esYapeOPlin
