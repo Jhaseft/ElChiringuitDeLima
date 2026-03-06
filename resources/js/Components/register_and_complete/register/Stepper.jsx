@@ -8,7 +8,7 @@ export default function Stepper({ step }) {
         <div key={s} className="flex-1">
           <div
             className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-white font-bold 
-              ${step === s ? "bg-indigo-600" : step > s ? "bg-green-500" : "bg-gray-300"}`}
+              ${step === s ? "bg-green-700" : step > s ? "bg-green-500" : "bg-gray-300"}`}
           >
             {s}
           </div>
