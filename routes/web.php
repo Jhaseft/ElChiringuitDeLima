@@ -23,6 +23,7 @@ use App\Http\Controllers\KycController;
 Route::get('/', function () {
     $bancos = Bank::all();
     $tc = \App\Models\TipoCambio::latest()->first();
+
     return Inertia::render('Welcome', [
         'canLogin'  => Route::has('login'),
         'canRegister' => Route::has('register'),

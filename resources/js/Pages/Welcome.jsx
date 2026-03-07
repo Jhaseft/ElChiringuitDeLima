@@ -6,7 +6,12 @@ import { useState } from "react";
 import Grafico from "@/Components/inicio/Grafico";
 import FooterLayout from "@/Layouts/footer";
 export default function Welcome({ bancos, tasas: tasasInicial }) {
+
+
+
   const [tasas, setTasas] = useState(tasasInicial ?? { compra: 0, venta: 0 });
+
+
 
   return (
     <>

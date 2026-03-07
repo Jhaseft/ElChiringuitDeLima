@@ -63,12 +63,14 @@ class AdminControllerDashboard extends Controller
 // Historial de tipo de cambio
 public function historial()
 {
-    // Obtener los últimos 50 registros, ordenados de más antiguo a más reciente
-    $historial = TipoCambio::orderBy('id', 'asc')->limit(50)->get();
+    $historial = TipoCambio::orderBy('id', 'desc')
+        ->limit(50)
+        ->get()
+        ->reverse()
+        ->values();
+
     return response()->json($historial);
 }
- 
-
 
    public function actualizarTipoCambioAutomatico()
 {
