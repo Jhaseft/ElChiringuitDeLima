@@ -185,7 +185,8 @@ export default function CambioDivisasCard({ tasas, bancos }) {
             Iniciar Operación
           </button>
         </div>
-
+      
+      
         
         {!user && (
           <div className="flex flex-col sm:flex-row gap-2 justify-center mt-2">
@@ -204,7 +205,7 @@ export default function CambioDivisasCard({ tasas, bancos }) {
           </div>
         )}
 
-        <p className="text-green-800 text-lg mt-4 text-center">
+        <p className="text-green-800 text-lg  text-center">
           Para personas que quieran enviar dinero a terceros, esta operación debe
           ser realizada mediante la atención de un asesor.
         </p>

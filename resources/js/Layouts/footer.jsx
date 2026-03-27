@@ -5,7 +5,7 @@ export default function FooterLayout() {
         <footer className="bg-green-800 text-white py-10 px-6">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center md:items-start gap-10">
 
-                {/* Sección Términos y privacidad */}
+
                 <div className="flex flex-col items-center md:items-start text-center md:text-left gap-3">
                     <img 
                         src="https://ragnarcapital.pe/png/libro_reclamaciones.png" 
@@ -20,7 +20,7 @@ export default function FooterLayout() {
                     </a>
                 </div>
 
-                {/* Sección autorizaciones */}
+
                 <div className="flex flex-col items-center md:items-start gap-4 text-center md:text-left">
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-4">
                         <img src="https://ragnarcapital.pe/png/sbs.png" alt="SBS" className="w-16 md:w-20 border-2 border-white p-1 rounded-lg bg-white" />
@@ -47,19 +47,21 @@ export default function FooterLayout() {
                     </div>
                 </div>
 
-                {/* Sección Redes sociales */}
+          
                 <div className="flex flex-col items-center md:items-end gap-3">
                     <p className="text-sm md:text-base font-medium">Síguenos en nuestras redes</p>
                     <div className="flex gap-4">
-                        <a href="#" className="border-2 border-white p-2 rounded-full hover:bg-white hover:text-green-800 transition-colors">
+
+                        <a href="https://www.tiktok.com/@transfercash.pe?_r=1&_t=ZS-94y1kvv5wzU" className="border-2 border-white p-2 rounded-full hover:bg-white hover:text-green-800 transition-colors">
                             <FaTiktok size={20} />
                         </a>
-                        <a href="#" className="border-2 border-white p-2 rounded-full hover:bg-white hover:text-green-800 transition-colors">
+                        <a href="https://www.facebook.com/profile.php?id=61577711887086" className="border-2 border-white p-2 rounded-full hover:bg-white hover:text-green-800 transition-colors">
                             <FaFacebookF size={20} />
                         </a>
-                        <a href="#" className="border-2 border-white p-2 rounded-full hover:bg-white hover:text-green-800 transition-colors">
+                        <a href="https://www.instagram.com/transfercash.pe/" className="border-2 border-white p-2 rounded-full hover:bg-white hover:text-green-800 transition-colors">
                             <FaInstagram size={20} />
                         </a>
+
                     </div>
                 </div>
             </div>
