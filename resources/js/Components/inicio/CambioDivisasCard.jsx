@@ -57,12 +57,29 @@ export default function CambioDivisasCard({ tasas, bancos }) {
     }
   };
  
+  const LIMITE_KYC_PEN = 300;
+  const LIMITE_KYC_BOB = 1000;
+  const MINIMO_PEN = 20;
+  const MINIMO_BOB = 60;
+
   const iniciarOperacion = async () => {
     if (!monto || !conversion) {
       setError("Debes ingresar un monto válido para iniciar la operación.");
       return;
     }
- 
+
+    const montoNum = parseFloat(monto);
+
+    // Validar mínimos
+    if (modo === "PENtoBOB" && montoNum < MINIMO_PEN) {
+      setError(`El monto mínimo es S/ ${MINIMO_PEN}.`);
+      return;
+    }
+    if (modo === "BOBtoPEN" && montoNum < MINIMO_BOB) {
+      setError(`El monto mínimo es Bs ${MINIMO_BOB}.`);
+      return;
+    }
+
     if (!user) {
       window.location.href = "/login";
       return;
@@ -73,36 +90,37 @@ export default function CambioDivisasCard({ tasas, bancos }) {
       return;
     }
 
-     if (user.kyc_status === "pending" || user.kyc_status === "rejected") {
-          try {
-            alert("Debes completar tu KYC antes de continuar.");
-    
-            const response = await axios.post("/kyc/session", {
-              next_url: window.location.origin + "/kyc/resultado"
-            }); 
-    
-            const data = response.data;
-    
-            if (!data.redirect_url) {
-              throw new Error("No se recibió redirect_url");
-            }
-    
-            window.location.href = data.redirect_url;
-    
-          } catch (error) {
-            console.error(" Error KYC:", error);
-    
-            if (error.response) {
-              console.log(" response error:", error.response.data);
-            }
-    
-            alert("Error iniciando verificación KYC");
-          }
-    
-          return;
+    // KYC solo si supera el límite exento
+    const requiereKyc =
+      (modo === "PENtoBOB" && montoNum > LIMITE_KYC_PEN) ||
+      (modo === "BOBtoPEN" && montoNum > LIMITE_KYC_BOB);
+
+    if (requiereKyc && (user.kyc_status === "pending" || user.kyc_status === "rejected")) {
+      try {
+        alert("Debes completar tu KYC antes de continuar.");
+
+        const response = await axios.post("/kyc/session", {
+          next_url: window.location.origin + "/kyc/resultado"
+        });
+
+        const data = response.data;
+
+        if (!data.redirect_url) {
+          throw new Error("No se recibió redirect_url");
         }
 
+        window.location.href = data.redirect_url;
 
+      } catch (error) {
+        console.error("Error KYC:", error);
+        if (error.response) {
+          console.log("response error:", error.response.data);
+        }
+        alert("Error iniciando verificación KYC");
+      }
+
+      return;
+    }
 
     setModalOpen(true);
     setError("");

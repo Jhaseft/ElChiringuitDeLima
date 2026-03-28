@@ -19,13 +19,13 @@ class ActualizarTipoCambio extends Command
             // CONSULTAR BINANCE P2P
             // ===============================
 
-            $fetchPrice = function (string $fiat): float {
+            $fetchPrice = function (string $fiat, string $tradeType): float {
                 $response = Http::post(
                     'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search',
                     [
                         'asset'         => 'USDT',
                         'fiat'          => $fiat,
-                        'tradeType'     => 'BUY',
+                        'tradeType'     => $tradeType,
                         'page'          => 1,
                         'rows'          => 20,
                         'payTypes'      => [],
@@ -53,23 +53,39 @@ class ActualizarTipoCambio extends Command
                     ->first();
 
                 if (!$top) {
-                    throw new \Exception("No se encontró precio para $fiat");
+                    throw new \Exception("No se encontró precio para $fiat ($tradeType)");
                 }
 
                 return floatval($top['adv']['price']);
             };
 
-            $precioPen = $fetchPrice('PEN');
-            $precioBob = $fetchPrice('BOB');
+            // COMPRA: cliente da PEN → TC compra USDT con PEN (BUY PEN) → TC vende USDT por BOB (SELL BOB)
+            $penBuy  = $fetchPrice('PEN', 'BUY');
+            $bobSell = $fetchPrice('BOB', 'SELL');
+
+            // VENTA: cliente da BOB → TC compra USDT con BOB (BUY BOB) → TC vende USDT por PEN (SELL PEN)
+            $bobBuy  = $fetchPrice('BOB', 'BUY');
+            $penSell = $fetchPrice('PEN', 'SELL');
 
             // ===============================
             // CALCULAR CONVERSIÓN Y MÁRGENES
             // ===============================
 
-            $penBob = round($precioBob / $precioPen, 2);
-            $margen = 0.02;
-            $compra = round($penBob * (1 - $margen), 2);
-            $venta  = round($penBob * (1 + $margen), 2);
+            // COMPRA: cuántos BOB da TC por 1 PEN del cliente (spread de mercado ya favorece a TC)
+            $compraBase = round($bobSell / $penBuy, 4);
+
+            // VENTA: cuántos BOB pide TC por 1 PEN que entrega al cliente
+            $ventaBase  = round($bobBuy / $penSell, 4);
+
+            // Margen adicional del 1% sobre el spread real de Binance
+            $margen = 0.01;
+            $compra = round($compraBase * (1 - $margen), 2);
+            $venta  = round($ventaBase  * (1 + $margen), 2);
+
+            // Promoción: +3 pips de bonificación al cliente
+            $pipsPromocion = 0.04;
+            $compra = round($compra + $pipsPromocion, 2);
+            $venta  = round($venta  + $pipsPromocion, 2);
 
             // ===============================
             // GUARDAR SOLO SI CAMBIÓ
