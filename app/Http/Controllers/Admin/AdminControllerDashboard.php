@@ -146,7 +146,7 @@ public function historial()
         $venta  = round($ventaBase  * (1 + $margen), 2);
 
         // Promoción: +3 pips de bonificación al cliente
-        $pipsPromocion = 0.03;
+        $pipsPromocion = 0.04;
         $compra = round($compra + $pipsPromocion, 2);
         $venta  = round($venta  + $pipsPromocion, 2);
 
