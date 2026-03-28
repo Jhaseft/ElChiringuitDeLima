@@ -82,113 +82,95 @@ public function historial()
 
         // Función anónima que obtiene el mejor precio de USDT
         // para la moneda fiat que se le pase (PEN o BOB)
-        $fetchPrice = function ($fiat) {
-
-            // Hace una petición POST al endpoint P2P de Binance
-            // buscando anuncios donde se VENDE USDT (tradeType BUY = tú compras USDT)
+        $fetchPrice = function (string $fiat, string $tradeType): float {
             $response = Http::post(
                 'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search',
                 [
-                    "asset" => "USDT",        // Cripto que se está negociando
-                    "fiat" => $fiat,          // Moneda local (PEN o BOB)
-                    "tradeType" => "BUY",     // Tipo de operación
-                    "page" => 1,              // Página 1 de resultados
-                    "rows" => 20,             // Trae 20 anuncios
-                    "payTypes" => [],         // Sin filtro por método de pago
-                    "publisherType" => "merchant" // Solo comerciantes verificados
+                    "asset"         => "USDT",
+                    "fiat"          => $fiat,
+                    "tradeType"     => $tradeType,
+                    "page"          => 1,
+                    "rows"          => 20,
+                    "payTypes"      => [],
+                    "publisherType" => "merchant"
                 ]
             );
 
-            // Convierte la respuesta JSON en array
             $data = $response->json();
 
-            // Procesa los anuncios recibidos
-            $ranked = collect($data['data'] ?? [])
-                // Filtra solo anuncios válidos y con saldo disponible
+            $top = collect($data['data'] ?? [])
                 ->filter(function ($item) {
                     return isset($item['adv'], $item['advertiser']) &&
                         floatval($item['adv']['tradableQuantity']) > 0;
                 })
-                // Ordena los anuncios según prioridad
                 ->sort(function ($a, $b) {
-
-                    //  Mayor tasa de finalización mensual primero
                     if ($b['advertiser']['monthFinishRate'] != $a['advertiser']['monthFinishRate']) {
                         return $b['advertiser']['monthFinishRate'] <=> $a['advertiser']['monthFinishRate'];
                     }
-
-                    //  Mayor cantidad de órdenes mensuales
                     if ($b['advertiser']['monthOrderCount'] != $a['advertiser']['monthOrderCount']) {
                         return $b['advertiser']['monthOrderCount'] <=> $a['advertiser']['monthOrderCount'];
                     }
-
-                    // Mejor precio (más barato primero)
                     return floatval($a['adv']['price']) <=> floatval($b['adv']['price']);
                 })
-                ->values(); // Reindexa el array
+                ->values()
+                ->first();
 
-            // Obtiene el mejor anuncio después del ranking
-            $top = $ranked->first();
-
-            // Si no se encontró ningún anuncio válido, lanza excepción
             if (!$top) {
-                throw new \Exception("No se encontró precio para $fiat");
+                throw new \Exception("No se encontró precio para $fiat ($tradeType)");
             }
 
-            // Devuelve el precio del mejor anuncio encontrado
             return floatval($top['adv']['price']);
         };
 
-        // Obtiene precio de 1 USDT en PEN
-        $precioPen = $fetchPrice('PEN');
+        // COMPRA: cliente da PEN → TC compra USDT con PEN (BUY PEN) → TC vende USDT por BOB (SELL BOB)
+        $penBuy  = $fetchPrice('PEN', 'BUY');
+        $bobSell = $fetchPrice('BOB', 'SELL');
 
-        // Obtiene precio de 1 USDT en BOB
-        $precioBob = $fetchPrice('BOB');
+        // VENTA: cliente da BOB → TC compra USDT con BOB (BUY BOB) → TC vende USDT por PEN (SELL PEN)
+        $bobBuy  = $fetchPrice('BOB', 'BUY');
+        $penSell = $fetchPrice('PEN', 'SELL');
 
         // ===============================
         //  CALCULAR CONVERSIÓN
         // ===============================
 
-        // Calcula cuánto vale 1 BOB en PEN usando USDT como puente:
-        // (BOB por USDT) / (PEN por USDT)
-        $penBob = round($precioBob / $precioPen, 2);
+        // COMPRA base: cuántos BOB da TC por cada PEN recibido
+        $compraBase = round($bobSell / $penBuy, 4);
 
-        // ===============================
-        //  DEFINIR COMPRA Y VENTA
-        // ===============================
+        // VENTA base: cuántos BOB cobra TC por cada PEN que entrega
+        $ventaBase  = round($bobBuy  / $penSell, 4);
 
-        /*
-        COMPRA: Precio al que tú compras PEN (más bajo)
-        VENTA: Precio al que tú vendes PEN (más alto)
-        */
+        // Margen adicional del 1% sobre el spread real de Binance
+        $margen = 0.01;
+        $compra = round($compraBase * (1 - $margen), 2);
+        $venta  = round($ventaBase  * (1 + $margen), 2);
 
-        // Margen de ganancia del 2%
-        $margen = 0.02;
-
-        // Precio de compra con margen aplicado hacia abajo
-        $compra = round($penBob * (1 - $margen), 2);
-
-        // Precio de venta con margen aplicado hacia arriba
-        $venta  = round($penBob * (1 + $margen), 2);
+        // Promoción: +3 pips de bonificación al cliente
+        $pipsPromocion = 0.03;
+        $compra = round($compra + $pipsPromocion, 2);
+        $venta  = round($venta  + $pipsPromocion, 2);
 
         // ===============================
         //  GUARDAR EN BD
         // ===============================
 
-        // Guarda el nuevo tipo de cambio en la base de datos
         $tipoCambio = TipoCambio::create([
             'compra' => $compra,
-            'venta' => $venta,
+            'venta'  => $venta,
             'fecha_actualizacion' => now()
         ]);
 
-        // Devuelve respuesta exitosa con todos los datos calculados
         return response()->json([
-            'success' => true,
-            'tipoCambio' => $tipoCambio,
-            'precio_usdt_pen' => $precioPen,
-            'precio_usdt_bob' => $precioBob,
-            'conversion_pen_bob' => $penBob
+            'success'         => true,
+            'tipoCambio'      => $tipoCambio,
+            'pen_buy'         => $penBuy,
+            'pen_sell'        => $penSell,
+            'bob_buy'         => $bobBuy,
+            'bob_sell'        => $bobSell,
+            'compra_base'     => $compraBase,
+            'venta_base'      => $ventaBase,
+            'compra_final'    => $compra,
+            'venta_final'     => $venta,
         ]);
 
     } catch (\Exception $e) {

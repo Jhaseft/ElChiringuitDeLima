@@ -14,7 +14,7 @@ export default function InfoAdicionalCard() {
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col gap-3 border border-gray-100 transition hover:shadow-2xl hover:scale-[1.01] duration-300">
-      {/* Intro */}
+      
       <div className="text-center ">
         <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
           ¿Necesitas pagar a tus proveedores del extranjero?
@@ -25,7 +25,7 @@ export default function InfoAdicionalCard() {
       <a href="https://wa.me/59177958109?text=Hola,%20necesito%20información" className="bg-gradient-to-r from-green-700 to-green-500 text-white py-3 rounded-lg text-sm font-semibold text-center hover:scale-105 transition shadow-md">
         🌍 Envía dinero al extranjero
       </a>
-      {/* Beneficios */}
+      
       <div>
         <h3 className="font-semibold text-lg justify-center text-gray-800 mb-2 flex items-center gap-2">
            ¿Por qué elegirnos?
@@ -43,11 +43,13 @@ export default function InfoAdicionalCard() {
         </ul>
       </div>
 
-      {/* Atención */}
+    
+
+    
       <div className="border-t pt-4">
         <p className="text-red-600 font-bold text-sm mb-1 text-center">Asesores Designados</p>
 
-        {/* Bolivia */}
+    
         <h4 className="font-semibold text-gray-800 mb-2 text-sm flex items-center gap-2">
           🇧🇴 Bolivia
         </h4>
@@ -61,7 +63,7 @@ export default function InfoAdicionalCard() {
           ))}
         </div>
 
-        {/* Perú */}
+       
         <h4 className="font-semibold text-gray-800 mb-2 text-sm flex items-center gap-2">
           🇵🇪 Perú
         </h4>
