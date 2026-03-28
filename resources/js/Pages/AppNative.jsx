@@ -7,15 +7,15 @@ export default function AppNative() {
     return (
         <>
             <Head title='Transfer-Cash APP' />
-            <RectanguloLayout background="">
+            <RectanguloLayout background="bg-gray-900 border-b border-yellow-400">
                 <LogoConVideo
                     logoSrc="https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png"
                     videoSrc="https://res.cloudinary.com/dqemzxnqj/video/upload/v1760799045/Video_de_WhatsApp_2025-10-18_a_las_10.50.10_24e89e79_dsnmkj.mp4"
                 >
 
-                    <p className="text-2xl text-black font-extrabold sm:text-xl md:text-5xl font-montserrat  leading-snug sm:leading-tight max-w-[600px] mx-auto">
+                    <p className="text-2xl text-white font-extrabold sm:text-xl md:text-5xl font-montserrat  leading-snug sm:leading-tight max-w-[600px] mx-auto">
                         Descarga Nuestra App <br />
-                        De manera Gratuita<br />
+                        <span className="text-yellow-400">De manera Gratuita</span><br />
                     </p>
 
                 </LogoConVideo>

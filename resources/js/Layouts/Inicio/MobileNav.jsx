@@ -7,7 +7,7 @@ export default function MobileNav({ links, user, menuOpen, setMenuOpen }) {
 
   return (
     <div
-      className={`absolute top-18 left-0 w-full bg-white border-t border-gray-200 shadow-xl overflow-hidden transition-all duration-300 md:hidden ${
+      className={`absolute top-18 left-0 w-full bg-gray-800 border-t border-yellow-400 shadow-xl overflow-hidden transition-all duration-300 md:hidden ${
         menuOpen ? "max-h-96 animate-fade-slide" : "max-h-0"
       }`}
     >
@@ -17,7 +17,7 @@ export default function MobileNav({ links, user, menuOpen, setMenuOpen }) {
           <a
             key={link.name}
             href={link.href}
-            className="block text-lg font-medium text-gray-800 hover:text-white hover:bg-blue-600 rounded-lg px-3 py-2 transition-all"
+            className="block text-lg font-medium text-gray-300 hover:text-gray-900 hover:bg-yellow-400 rounded-lg px-3 py-2 transition-all"
             onClick={() => setMenuOpen(false)}
           >
             {link.name}
@@ -28,7 +28,7 @@ export default function MobileNav({ links, user, menuOpen, setMenuOpen }) {
         {!user ? (
           <a
             href="/login"
-            className="block text-lg font-medium text-gray-800 hover:text-white hover:bg-blue-600 rounded-lg px-3 py-2 transition-all"
+            className="block text-lg font-medium text-gray-300 hover:text-gray-900 hover:bg-yellow-400 rounded-lg px-3 py-2 transition-all"
             onClick={() => setMenuOpen(false)}
           >
             Iniciar Sesión
@@ -38,7 +38,7 @@ export default function MobileNav({ links, user, menuOpen, setMenuOpen }) {
             {/* Botón usuario */}
             <button
               onClick={() => setUserMenu(!userMenu)}
-              className="flex items-center justify-between w-full px-3 py-2 text-gray-800 font-medium hover:text-white hover:bg-blue-600 rounded-lg border border-gray-200 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="flex items-center justify-between w-full px-3 py-2 text-gray-300 font-medium hover:text-gray-900 hover:bg-yellow-400 rounded-lg border border-yellow-400 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
             >
               {`${user.first_name} ${user.last_name}` || "Usuario"}
               {userMenu ? (
@@ -50,10 +50,10 @@ export default function MobileNav({ links, user, menuOpen, setMenuOpen }) {
 
             {/* Dropdown usuario */}
             {userMenu && (
-              <div className="mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 animate-fade-slide">
+              <div className="mt-2 w-full bg-gray-700 rounded-lg shadow-lg border border-yellow-400 animate-fade-slide">
                 <Link
                 href={route("transfers.history")} 
-                className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all rounded"
+                className="block w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-600 hover:text-yellow-400 transition-all rounded"
                 onClick={() => setUserMenu(false)}
               >
                 Ver Historial
@@ -64,7 +64,7 @@ export default function MobileNav({ links, user, menuOpen, setMenuOpen }) {
                   href={route("logout")}
                   method="post"
                   as="button"
-                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all rounded"
+                  className="block w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-600 hover:text-yellow-400 transition-all rounded"
                   onClick={() => {
                     setUserMenu(false);
                     setMenuOpen(false);

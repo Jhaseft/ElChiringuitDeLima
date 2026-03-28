@@ -24,7 +24,7 @@ export default function Welcome({ bancos, tasas: tasasInicial }) {
            {user && (
                     <div className="  justify-center items-center md:mb-10 mb-5">
 
-            <p className=" text-center md:text-2xl text-xl font-bold text-gray-900">
+            <p className=" text-center md:text-2xl text-xl font-bold text-white">
               Bienvenido, {user.first_name} {user.last_name}
             </p>
 
@@ -38,7 +38,7 @@ export default function Welcome({ bancos, tasas: tasasInicial }) {
 
 
 
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full">
+          <div className="bg-gray-800 rounded-2xl shadow-xl p-6 w-full border border-yellow-400">
             <div className="w-full sm:w-11/12 lg:w-4/5 mx-auto">
               <Grafico setTasas={setTasas} />
             </div>

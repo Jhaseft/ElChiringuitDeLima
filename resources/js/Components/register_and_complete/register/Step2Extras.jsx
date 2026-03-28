@@ -47,7 +47,7 @@ export default function Step2Extras({ data, setData, errors }) {
     <div className="space-y-5">
       {/* Teléfono */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Número de teléfono</label>
+        <label className="block text-sm font-medium text-gray-300">Número de teléfono</label>
         <div className="flex space-x-2">
           <Select
             options={countries}
@@ -59,13 +59,13 @@ export default function Step2Extras({ data, setData, errors }) {
             components={{ Option: customOption, SingleValue: customSingleValue }}
             isSearchable={false}
             styles={{
-              control: (base) => ({ ...base, minHeight: "34px", height: "34px", borderRadius: "6px", borderColor: "#d1d5db", display: "flex", alignItems: "center", boxShadow: "none", "&:hover": { borderColor: "#9ca3af" } }),
+              control: (base) => ({ ...base, minHeight: "34px", height: "34px", borderRadius: "6px", borderColor: "#4b5563", backgroundColor: "#374151", color: "white", display: "flex", alignItems: "center", boxShadow: "none", "&:hover": { borderColor: "#fbbf24" } }),
               valueContainer: (base) => ({ ...base, display: "flex", alignItems: "center", padding: "0 6px" }),
-              singleValue: (base) => ({ ...base, display: "flex", alignItems: "center" }),
-              dropdownIndicator: (base) => ({ ...base, padding: "2px" }),
-              clearIndicator: (base) => ({ ...base, padding: "2px" }),
-              menu: (base) => ({ ...base, borderRadius: "6px", marginTop: 2 }),
-              option: (base) => ({ ...base, padding: "4px 8px", fontSize: "13px" }),
+              singleValue: (base) => ({ ...base, display: "flex", alignItems: "center", color: "white" }),
+              dropdownIndicator: (base) => ({ ...base, padding: "2px", color: "#d1d5db" }),
+              clearIndicator: (base) => ({ ...base, padding: "2px", color: "#d1d5db" }),
+              menu: (base) => ({ ...base, borderRadius: "6px", marginTop: 2, backgroundColor: "#374151" }),
+              option: (base, state) => ({ ...base, padding: "4px 8px", fontSize: "13px", backgroundColor: state.isFocused ? "#4b5563" : "#374151", color: "white" }),
             }}
             className="w-full sm:w-32 md:w-36"
           />
@@ -81,34 +81,34 @@ export default function Step2Extras({ data, setData, errors }) {
             }}
             required
             placeholder="Ej: 76543210"
-            className="flex-1 rounded-xl border border-gray-300 px-4 py-1.5 text-sm shadow-sm
-              focus:border-indigo-500 focus:ring focus:ring-indigo-200"
+            className="flex-1 rounded-xl border border-gray-600 bg-gray-700 text-white px-4 py-1.5 text-sm shadow-sm
+              focus:border-yellow-400 focus:ring focus:ring-yellow-400/20 placeholder-gray-500"
           />
         </div>
-        {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
+        {errors.phone && <p className="text-red-400 text-sm">{errors.phone}</p>}
       </div>
 
       {/* Nacionalidad */}
       <div>
-        <label htmlFor="nationality" className="block text-sm font-medium text-gray-700">Nacionalidad</label>
+        <label htmlFor="nationality" className="block text-sm font-medium text-gray-300">Nacionalidad</label>
         <select
           id="nationality"
           value={data.nationality || ""}
           onChange={(e) => setData("nationality", e.target.value)}
           required
-          className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm shadow-sm
-            focus:border-indigo-500 focus:ring focus:ring-indigo-200"
+          className="mt-1 w-full rounded-xl border border-gray-600 bg-gray-700 text-white px-4 py-2.5 text-sm shadow-sm
+            focus:border-yellow-400 focus:ring focus:ring-yellow-400/20"
         >
           <option value="">Seleccione...</option>
           <option value="boliviano">Boliviano</option>
           <option value="peruano">Peruano</option>
         </select>
-        {errors.nationality && <p className="text-red-500 text-sm">{errors.nacionalidad}</p>}
+        {errors.nationality && <p className="text-red-400 text-sm">{errors.nationality}</p>}
       </div>
 
       {/* Documento */}
       <div>
-        <label htmlFor="document_number" className="block text-sm font-medium text-gray-700">Documento</label>
+        <label htmlFor="document_number" className="block text-sm font-medium text-gray-300">Documento</label>
         <input
           id="document_number"
           type="text"
@@ -121,10 +121,10 @@ export default function Step2Extras({ data, setData, errors }) {
           }}
           required
           placeholder="Ej: 1234567"
-          className="mt-1 w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm shadow-sm
-            focus:border-indigo-500 focus:ring focus:ring-indigo-200"
+          className="mt-1 w-full rounded-xl border border-gray-600 bg-gray-700 text-white px-4 py-2.5 text-sm shadow-sm
+            focus:border-yellow-400 focus:ring focus:ring-yellow-400/20 placeholder-gray-500"
         />
-        {errors.document_number && <p className="text-red-500 text-sm">{errors.document_number}</p>}
+        {errors.document_number && <p className="text-red-400 text-sm">{errors.document_number}</p>}
       </div>
     </div>
   );

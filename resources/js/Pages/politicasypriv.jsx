@@ -6,7 +6,7 @@ export default function Politicas() {
     <>
       <Head title="Transfer Cash" />
       <InicioLayout>
-        <div className="min-h-screen bg-gray-50 px-4 lg:px-52 py-10 flex justify-center">
+        <div className="min-h-screen bg-gray-900 px-4 lg:px-52 py-10 flex justify-center">
           <div className="max-w-4xl w-full bg-white p-10 rounded-2xl shadow-lg">
             
          

@@ -18,8 +18,8 @@ export default function LogoConVideo({
         viewport={{ once: true }}
         className="w-full md:w-1/2 flex flex-col items-center text-center space-y-6 md:space-y-8 max-w-[600px] md:max-w-none flex-shrink-0 md:justify-center md:h-full overflow-auto"
       >
-        <p className="text-2xl  text-black font-extrabold sm:text-xl md:text-6xl font-montserrat leading-snug sm:leading-tight max-w-[600px] mx-auto">
-          ¡La App que Transfiere tu Dinero al Instante!
+        <p className="text-2xl  text-white font-extrabold sm:text-xl md:text-6xl font-montserrat leading-snug sm:leading-tight max-w-[600px] mx-auto">
+          ¡La App que <span className="text-yellow-400">Transfiere tu Dinero</span> al Instante!
         </p>
 
         <img
