@@ -13,13 +13,8 @@ export default function InfoAdicionalCard() {
   ];
 
   return (
-<<<<<<< HEAD
     <div className="bg-gray-800 rounded-2xl shadow-xl p-6 flex flex-col gap-3 border border-yellow-400 transition hover:shadow-2xl hover:scale-[1.01] duration-300">
       {/* Intro */}
-=======
-    <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col gap-3 border border-gray-100 transition hover:shadow-2xl hover:scale-[1.01] duration-300">
-      
->>>>>>> 1a51d9e8272d1704cb161e1aea8144b96adb4597
       <div className="text-center ">
         <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
           ¿Necesitas pagar a tus proveedores del extranjero?
@@ -48,23 +43,12 @@ export default function InfoAdicionalCard() {
         </ul>
       </div>
 
-<<<<<<< HEAD
       {/* Atención */}
       <div className="border-t border-yellow-400 pt-4">
         <p className="text-yellow-400 font-bold text-sm mb-1 text-center">Asesores Designados</p>
 
         {/* Bolivia */}
         <h4 className="font-semibold text-gray-300 mb-2 text-sm flex items-center gap-2">
-=======
-    
-
-    
-      <div className="border-t pt-4">
-        <p className="text-red-600 font-bold text-sm mb-1 text-center">Asesores Designados</p>
-
-    
-        <h4 className="font-semibold text-gray-800 mb-2 text-sm flex items-center gap-2">
->>>>>>> 1a51d9e8272d1704cb161e1aea8144b96adb4597
           🇧🇴 Bolivia
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
@@ -77,13 +61,8 @@ export default function InfoAdicionalCard() {
           ))}
         </div>
 
-<<<<<<< HEAD
         {/* Perú */}
         <h4 className="font-semibold text-gray-300 mb-2 text-sm flex items-center gap-2">
-=======
-       
-        <h4 className="font-semibold text-gray-800 mb-2 text-sm flex items-center gap-2">
->>>>>>> 1a51d9e8272d1704cb161e1aea8144b96adb4597
           🇵🇪 Perú
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
