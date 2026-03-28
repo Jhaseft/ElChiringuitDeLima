@@ -24,23 +24,23 @@ export default function Step1Personal({ data, setData, errors }) {
     <div className="space-y-4">
       {/* Nacionalidad */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Nacionalidad</label>
+        <label className="block text-sm font-medium text-gray-300">Nacionalidad</label>
         <select
           value={data.nationality || ""}
           onChange={(e) => setData("nationality", e.target.value)}
-          className="border rounded w-full px-2 py-1"
+          className="border border-gray-600 rounded w-full px-2 py-1 bg-gray-700 text-white focus:border-yellow-400 focus:ring focus:ring-yellow-400/20"
           required
         >
           <option value="">Seleccione...</option>
           <option value="boliviano">Boliviano</option>
           <option value="peruano">Peruano</option>
         </select>
-        {errors.nationality && <p className="text-red-500 text-sm">{errors.nationality}</p>}
+        {errors.nationality && <p className="text-red-400 text-sm">{errors.nationality}</p>}
       </div>
 
       {/* Teléfono con código */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Teléfono</label>
+        <label className="block text-sm font-medium text-gray-300">Teléfono</label>
         <div className="flex space-x-2">
           <select
             value={data.phone_code || ""}
@@ -48,7 +48,7 @@ export default function Step1Personal({ data, setData, errors }) {
               setData("phone_code", e.target.value);
               updatePhone(e.target.value, data.phone_number);
             }}
-            className="rounded border px-2 py-1"
+            className="rounded border border-gray-600 px-2 py-1 bg-gray-700 text-white focus:border-yellow-400"
           >
             {countries.map((c) => (
               <option key={c.value} value={c.value}>{c.label}</option>
@@ -64,15 +64,15 @@ export default function Step1Personal({ data, setData, errors }) {
             }}
             required
             placeholder="Ej: 76543210"
-            className="flex-1 rounded border px-2 py-1"
+            className="flex-1 rounded border border-gray-600 px-2 py-1 bg-gray-700 text-white focus:border-yellow-400 focus:ring focus:ring-yellow-400/20 placeholder-gray-500"
           />
         </div>
-        {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
+        {errors.phone && <p className="text-red-400 text-sm">{errors.phone}</p>}
       </div>
 
       {/* Documento */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">DNI o CI</label>
+        <label className="block text-sm font-medium text-gray-300">DNI o CI</label>
         <input
           type="number"
           value={data.document_number || ""}
@@ -82,9 +82,9 @@ export default function Step1Personal({ data, setData, errors }) {
           }}
           required
           placeholder="Ej: 1234567"
-          className="border rounded w-full px-2 py-1"
+          className="border border-gray-600 rounded w-full px-2 py-1 bg-gray-700 text-white focus:border-yellow-400 focus:ring focus:ring-yellow-400/20 placeholder-gray-500"
         />
-        {errors.document_number && <p className="text-red-500 text-sm">{errors.document_number}</p>}
+        {errors.document_number && <p className="text-red-400 text-sm">{errors.document_number}</p>}
       </div>
     </div>
   );
