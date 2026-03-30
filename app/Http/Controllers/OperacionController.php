@@ -105,11 +105,11 @@ class OperacionController extends Controller
         $user = $request->user();
 
         // Verificación KYC
-        if ($user->kyc_status !== 'verified') {
-            return response()->json([
-                'message' => 'Debes completar la verificación KYC antes de crear una transferencia.'
-            ], 403); 
-        }
+        // if ($user->kyc_status !== 'verified') {
+        //     return response()->json([
+        //         'message' => 'Debes completar la verificación KYC antes de crear una transferencia.'
+        //     ], 403); 
+        // }
 
 
         // Validación (exchange_rate y converted_amount se calculan en el backend)
