@@ -27,19 +27,13 @@ export default function CompleteProfile({ user }) {
 
   // Reglas de contraseña
   const passwordRules = {
-    length: data.password.length >= 8,
-    upper: /[A-Z]/.test(data.password),
-    lower: /[a-z]/.test(data.password),
-    number: /[0-9]/.test(data.password),
-    special: /[!@#$%^&*]/.test(data.password),
+    digits: /^\d{4}$/.test(data.password),
     match: data.password === data.password_confirmation && data.password.length > 0,
   };
 
   const isNextDisabled = () => {
     if (step === 1) return !data.nationality || !data.phone || !data.document_number;
-    if (step === 2)
-      return !passwordRules.length || !passwordRules.upper || !passwordRules.lower ||
-        !passwordRules.number || !passwordRules.special || !passwordRules.match;
+    if (step === 2) return !passwordRules.digits || !passwordRules.match;
     if (step === 3) return !data.terms;
     return false;
   };

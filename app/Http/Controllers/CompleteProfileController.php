@@ -23,7 +23,7 @@ class CompleteProfileController extends Controller
             'phone'            => 'required|string|max:255|unique:users,phone,' . Auth::id(),
             'document_number'  => 'required|string|max:255|unique:users,document_number,' . Auth::id(),
             'terms'            => 'accepted',
-            'password'         => ['required', 'confirmed', 'min:8'], // Valida confirmación de password
+            'password'         => ['required', 'confirmed', 'digits:4'],
         ]);
 
         $user = Auth::user();

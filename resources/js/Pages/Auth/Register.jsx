@@ -30,11 +30,7 @@ export default function Register() {
   });
 
   const passwordRules = {
-    length: data.password.length >= 8,
-    upper: /[A-Z]/.test(data.password),
-    lower: /[a-z]/.test(data.password),
-    number: /[0-9]/.test(data.password),
-    special: /[!@#$%^&*]/.test(data.password),
+    digits: /^\d{4}$/.test(data.password),
     match: data.password === data.password_confirmation && data.password.length > 0,
   };
 

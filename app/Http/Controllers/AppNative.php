@@ -25,7 +25,7 @@ class AppNative extends Controller
             'phone'            => 'nullable|string|max:20|unique:users,phone',
             'nationality'      => 'nullable|string|max:100',
             'document_number'  => 'nullable|string|max:50|unique:users,document_number',
-            'password'         => ['required', 'confirmed'],
+            'password'         => ['required', 'confirmed', 'digits:4'],
         ]);
 
         $code = rand(100000, 999999);
@@ -161,7 +161,7 @@ public function completeProfile(Request $request)
         'phone'           => 'required|string|max:255|unique:users,phone,' . $user->id,
         'document_number' => 'required|string|max:255|unique:users,document_number,' . $user->id,
         'terms'           => 'required|accepted',
-        'password'        => ['required', 'confirmed', 'min:8'],
+        'password'        => ['required', 'confirmed', 'digits:4'],
     ]);
 
     $user->update([

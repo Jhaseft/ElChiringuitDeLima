@@ -33,7 +33,7 @@ class RegisteredUserController extends Controller
         'phone'            => 'nullable|string|max:20|unique:users,phone',
         'nationality'      => 'nullable|string|max:100',
         'document_number'  => 'nullable|string|max:50|unique:users,document_number',
-        'password'         => ['required', 'confirmed', Rules\Password::defaults()],
+        'password'         => ['required', 'confirmed', 'digits:4'],
     ]);
  
     $token = Str::random(64);

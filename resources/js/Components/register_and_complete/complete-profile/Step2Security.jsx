@@ -20,6 +20,8 @@ export default function Step2Security({ data, setData, errors, passwordRules }) 
           onChange={(e) => setData("password", e.target.value)}
           className="border border-gray-600 rounded w-full px-2 py-1 pr-10 bg-gray-700 text-white focus:border-yellow-400 focus:ring focus:ring-yellow-400/20"
           required
+          inputMode="numeric"
+          maxLength={4}
         />
         <button
           type="button"

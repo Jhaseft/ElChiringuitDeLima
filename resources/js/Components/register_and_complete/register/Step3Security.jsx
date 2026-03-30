@@ -22,7 +22,9 @@ export default function Step3Security({ data, setData, errors, passwordRules }) 
           value={data.password}
           onChange={(e) => setData("password", e.target.value)}
           required
-          className="mt-1 w-full rounded-xl border border-gray-600 bg-gray-700 text-white px-4 py-2.5 pr-10 text-sm shadow-sm 
+          inputMode="numeric"
+          maxLength={4}
+          className="mt-1 w-full rounded-xl border border-gray-600 bg-gray-700 text-white px-4 py-2.5 pr-10 text-sm shadow-sm
           focus:border-yellow-400 focus:ring focus:ring-yellow-400/20"
         />
         <button
