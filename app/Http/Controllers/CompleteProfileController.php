@@ -32,8 +32,6 @@ class CompleteProfileController extends Controller
             'nationality'      => $request->nationality,
             'phone'            => $request->phone,
             'document_number'  => $request->document_number,
-            'accepted_terms_at'=> now(),
-            'terms_version'    => '1.0',
             'password'         => Hash::make($request->password),
         ]);
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -10,7 +11,10 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasUuids;
+
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     /**
      * Los atributos que se pueden asignar masivamente.
@@ -23,10 +27,6 @@ class User extends Authenticatable
         'nationality',
         'document_number',
         'password',
-        'provider',
-        'provider_id',
-        'accepted_terms_at',
-        'terms_version',
         'kyc_session_id',
         'kyc_status',
     ];
@@ -44,7 +44,6 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'accepted_terms_at' => 'datetime',
     ];
 
     public function accounts()

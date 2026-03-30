@@ -37,8 +37,6 @@ class AppNative extends Controller
             'phone'            => $request->phone,
             'nationality'      => $request->nationality,
             'document_number'  => $request->document_number,
-            'accepted_terms_at'=> now(),
-            'terms_version'    => '1.0',
             'password'         => Hash::make($request->password),
         ], now()->addMinutes(30));
  
@@ -169,8 +167,6 @@ public function completeProfile(Request $request)
         'nationality'       => $request->nationality,
         'phone'             => $request->phone,
         'document_number'   => $request->document_number,
-        'accepted_terms_at' => now(),
-        'terms_version'     => '1.0',
         'password'          => Hash::make($request->password),
     ]);
 
@@ -220,8 +216,6 @@ public function loginGoogle(Request $request)
             'first_name'  => $googleUser['given_name'] ?? '',
             'last_name'   => $googleUser['family_name'] ?? '',
             'email'       => $googleUser['email'],
-            'provider'    => 'google',
-            'provider_id' => $googleUser['sub'],
             'password'    => null,
         ]);
     }
@@ -235,7 +229,6 @@ public function loginGoogle(Request $request)
     // Revisar si el perfil está incompleto
     $needsProfile = empty($user->nationality) ||
                     empty($user->phone) ||
-                    empty($user->accepted_terms_at) ||
                     empty($user->document_number);
 
     return response()->json([

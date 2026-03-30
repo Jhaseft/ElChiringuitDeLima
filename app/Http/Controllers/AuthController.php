@@ -25,8 +25,6 @@ class AuthController extends Controller
                 'first_name'   => $googleUser->user['given_name'] ?? $googleUser->getName(),
                 'last_name'    => $googleUser->user['family_name'] ?? '',
                 'email'        => $googleUser->getEmail(),
-                'provider'     => 'google',
-                'provider_id'  => $googleUser->getId(),
                 'password'     => null,
             ]);
 
@@ -35,7 +33,7 @@ class AuthController extends Controller
         }
 
         // Si  tiene perfil incompleto, redirigir
-        if (empty($user->nationality) || empty($user->phone) || empty($user->accepted_terms_at) || empty($user->document_number)) {
+        if (empty($user->nationality) || empty($user->phone) || empty($user->document_number)) {
             Auth::login($user);
             return redirect()->route('complete-profile');
         }
