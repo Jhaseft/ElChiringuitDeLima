@@ -90,6 +90,7 @@ class AppNative extends Controller
         }
 
         $user = Auth::user();
+        $user->tokens()->delete();
         $token = $user->createToken('mobile-app')->plainTextToken;
 
         // Cargar relaciones necesarias
