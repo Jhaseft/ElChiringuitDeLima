@@ -86,34 +86,34 @@ export default function ModalOperacion({
     if (loading) return;
     if (!(juramento && terminos && cuentaOrigen && cuentaDestino)) return;
 
-    if (user.kyc_status === "pending" || user.kyc_status === "rejected") {
-      try {
-        alert("Debes completar tu KYC antes de continuar.");
+    // if (user.kyc_status === "pending" || user.kyc_status === "rejected") {
+    //   try {
+    //     alert("Debes completar tu KYC antes de continuar.");
 
-        const response = await axios.post("/kyc/session", {
-          next_url: window.location.origin + "/kyc/resultado"
-        }); 
+    //     const response = await axios.post("/kyc/session", {
+    //       next_url: window.location.origin + "/kyc/resultado"
+    //     }); 
 
-        const data = response.data;
+    //     const data = response.data;
 
-        if (!data.redirect_url) {
-          throw new Error("No se recibió redirect_url");
-        }
+    //     if (!data.redirect_url) {
+    //       throw new Error("No se recibió redirect_url");
+    //     }
 
-        window.location.href = data.redirect_url;
+    //     window.location.href = data.redirect_url;
 
-      } catch (error) {
-        console.error(" Error KYC:", error);
+    //   } catch (error) {
+    //     console.error(" Error KYC:", error);
 
-        if (error.response) {
-          console.log(" response error:", error.response.data);
-        }
+    //     if (error.response) {
+    //       console.log(" response error:", error.response.data);
+    //     }
 
-        alert("Error iniciando verificación KYC");
-      }
+    //     alert("Error iniciando verificación KYC");
+    //   }
 
-      return;
-    }
+    //   return;
+    // }
 
     setOpenTransferencia(true);
   };
