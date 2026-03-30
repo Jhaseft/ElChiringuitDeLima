@@ -6,11 +6,11 @@ export default function Nosotros() {
     <>
       <Head title="Transfer Cash - Nosotros" />
       <InicioLayout>
-        <div className="min-h-screen bg-gray-50 px-4 lg:px-52 py-1 ">
+        <div className="min-h-screen bg-gray-900 px-4 lg:px-52 py-1 ">
           
           <div className="relative w-full h-64 rounded-lg overflow-hidden mb-10">
             <img
-              src="https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png"
+              src="https://res.cloudinary.com/dxa8nat3p/image/upload/v1774711190/Portada_Web_dojpcy.png"
               alt="Transfer Cash"
               className="w-full h-full object-contain"
             />
@@ -23,8 +23,8 @@ export default function Nosotros() {
 
     
           <section className="max-w-4xl mx-auto mb-10">
-            <h2 className="text-2xl font-bold mb-4">Nuestra Historia</h2>
-            <p className="text-gray-700 text-sm md:text-base leading-relaxed">
+            <h2 className="text-2xl font-bold mb-4 text-white">Nuestra Historia</h2>
+            <p className="text-gray-300 text-sm md:text-base leading-relaxed">
               Transfer Cash nació en 2022 con el objetivo de simplificar las
               transferencias de dinero entre Perú y Bolivia, ofreciendo un
               servicio seguro, rápido y confiable para todos nuestros usuarios.
@@ -35,17 +35,17 @@ export default function Nosotros() {
 
          
           <section className="max-w-4xl mx-auto mb-10 grid md:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-xl font-semibold mb-2">Misión</h3>
-              <p className="text-gray-700 text-sm md:text-base">
+            <div className="bg-gray-800 p-6 rounded-lg shadow-md border border-yellow-400">
+              <h3 className="text-xl font-semibold mb-2 text-yellow-400">Misión</h3>
+              <p className="text-gray-300 text-sm md:text-base">
                 Facilitar transferencias de dinero seguras y rápidas, conectando
                 personas y negocios a través de soluciones financieras
                 innovadoras, con total transparencia y confianza.
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-xl font-semibold mb-2">Visión</h3>
-              <p className="text-gray-700 text-sm md:text-base">
+            <div className="bg-gray-800 p-6 rounded-lg shadow-md border border-yellow-400">
+              <h3 className="text-xl font-semibold mb-2 text-yellow-400">Visión</h3>
+              <p className="text-gray-300 text-sm md:text-base">
                 Ser la plataforma líder en Latinoamérica para transferencias
                 electrónicas, reconocida por su seguridad, eficiencia y
                 atención al cliente de excelencia.
