@@ -25,10 +25,16 @@ Route::get('/', function () {
     $tc = \App\Models\TipoCambio::latest()->first();
 
     return Inertia::render('Welcome', [
-        'canLogin'  => Route::has('login'),
+        'canLogin'    => Route::has('login'),
         'canRegister' => Route::has('register'),
-        'bancos'    => $bancos,
-        'tasas'     => $tc ? ['compra' => (float)$tc->compra, 'venta' => (float)$tc->venta] : null,
+        'bancos'      => $bancos,
+        'tasas'       => $tc ? ['compra' => (float)$tc->compra, 'venta' => (float)$tc->venta] : null,
+        'transferConfig' => [
+            'min_pen'       => config('transfercash.min_pen'),
+            'min_bob'       => config('transfercash.min_bob'),
+            'kyc_limit_pen' => config('transfercash.kyc_limit_pen'),
+            'kyc_limit_bob' => config('transfercash.kyc_limit_bob'),
+        ],
     ]);
 })->name('welcome');
 //contacto

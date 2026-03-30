@@ -77,15 +77,14 @@ class ActualizarTipoCambio extends Command
             // VENTA: cuántos BOB pide TC por 1 PEN que entrega al cliente
             $ventaBase  = round($bobBuy / $penSell, 4);
 
-            // Margen adicional del 1% sobre el spread real de Binance
-            $margen = 0.01;
+            // Margen (editable desde .env → TRANSFER_MARGEN)
+            $margen = config('transfercash.margen');
             $compra = round($compraBase * (1 - $margen), 2);
             $venta  = round($ventaBase  * (1 + $margen), 2);
 
-            // Promoción: +3 pips de bonificación al cliente
-            $pipsPromocion = 0.04;
-            $compra = round($compra + $pipsPromocion, 2);
-            $venta  = round($venta  + $pipsPromocion, 2);
+            // Promoción por separado (editables desde .env → TRANSFER_PIPS_COMPRA / TRANSFER_PIPS_VENTA)
+            $compra = round($compra + config('transfercash.pips_compra'), 2);
+            $venta  = round($venta  + config('transfercash.pips_venta'),  2);
 
             // ===============================
             // GUARDAR SOLO SI CAMBIÓ

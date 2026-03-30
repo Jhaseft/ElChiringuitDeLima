@@ -7,7 +7,7 @@ import { useState } from "react";
 import Grafico from "@/Components/inicio/Grafico";
 import FooterLayout from "@/Layouts/footer";
 
-export default function Welcome({ bancos, tasas: tasasInicial }) {
+export default function Welcome({ bancos, tasas: tasasInicial, transferConfig }) {
 
 
   const { auth } = usePage().props;
@@ -32,7 +32,7 @@ export default function Welcome({ bancos, tasas: tasasInicial }) {
                   )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <CambioDivisasCard tasas={tasas} bancos={bancos} />
+            <CambioDivisasCard tasas={tasas} bancos={bancos} transferConfig={transferConfig} />
             <InfoAdicionalCard />
           </div>
 

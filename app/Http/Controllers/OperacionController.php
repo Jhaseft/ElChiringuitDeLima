@@ -121,13 +121,42 @@ class OperacionController extends Controller
             'modo'                    => ['required','in:BOBtoPEN,PENtoBOB'],
         ]);
 
+        // Validar mínimos según modo (valores desde .env vía config/transfercash.php)
+        $amount = (float) $request->amount;
+        $modo   = $request->modo;
+
+        if ($modo === 'PENtoBOB' && $amount < config('transfercash.min_pen')) {
+            return response()->json([
+                'message' => 'El monto mínimo para transferencias PEN→BOB es S/ ' . config('transfercash.min_pen') . '.'
+            ], 422);
+        }
+
+        if ($modo === 'BOBtoPEN' && $amount < config('transfercash.min_bob')) {
+            return response()->json([
+                'message' => 'El monto mínimo para transferencias BOB→PEN es Bs ' . config('transfercash.min_bob') . '.'
+            ], 422);
+        }
+
+        // Validar límite KYC según modo (valores desde .env vía config/transfercash.php)
+        $superaLimiteKyc =
+            ($modo === 'PENtoBOB' && $amount > config('transfercash.kyc_limit_pen')) ||
+            ($modo === 'BOBtoPEN' && $amount > config('transfercash.kyc_limit_bob'));
+
+        if ($superaLimiteKyc && $user->kyc_status !== 'verified') {
+            $limite   = $modo === 'PENtoBOB'
+                ? 'S/ ' . config('transfercash.kyc_limit_pen')
+                : 'Bs ' . config('transfercash.kyc_limit_bob');
+            return response()->json([
+                'message' => "Para transferencias superiores a {$limite} debes completar la verificación KYC.",
+                'kyc_required' => true,
+            ], 403);
+        }
+
         // Obtener el tipo de cambio vigente desde la BD (nunca del cliente)
         $tipoCambio = TipoCambio::latest()->first();
         if (!$tipoCambio) {
             return response()->json(['message' => 'No hay tipo de cambio configurado. Contacte al administrador.'], 422);
         }
-
-        $modo = $request->modo;
 
         if ($modo === 'BOBtoPEN') {
             $exchangeRate    = (float) $tipoCambio->venta;

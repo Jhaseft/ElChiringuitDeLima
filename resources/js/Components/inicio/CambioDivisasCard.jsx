@@ -5,7 +5,7 @@ import ModalOperacion from "./ModalOperacion";
 import ErrorBanner from "./ErrorBanner";
 import axios from "axios";
 
-export default function CambioDivisasCard({ tasas, bancos }) {
+export default function CambioDivisasCard({ tasas, bancos, transferConfig }) {
   const { auth } = usePage().props;
   const user = auth?.user ?? null;
  
@@ -57,10 +57,10 @@ export default function CambioDivisasCard({ tasas, bancos }) {
     }
   };
  
-  const LIMITE_KYC_PEN = 300;
-  const LIMITE_KYC_BOB = 1000;
-  const MINIMO_PEN = 20;
-  const MINIMO_BOB = 60;
+  const LIMITE_KYC_PEN = transferConfig?.kyc_limit_pen ?? 300;
+  const LIMITE_KYC_BOB = transferConfig?.kyc_limit_bob ?? 1000;
+  const MINIMO_PEN = transferConfig?.min_pen ?? 20;
+  const MINIMO_BOB = transferConfig?.min_bob ?? 60;
 
   const iniciarOperacion = async () => {
     if (!monto || !conversion) {
