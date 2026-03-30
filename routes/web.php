@@ -183,4 +183,14 @@ Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'hist
 // Tipo de cambio - API pública
 Route::get('/api/tipo-cambio/compra', [AdminControllerDashboard::class, 'actualizarTipoCambioAutomatico']);
 
+// Configuración de límites y mínimos - API pública para app móvil
+Route::get('/api/config/transfer', function () {
+    return response()->json([
+        'min_pen'       => config('transfercash.min_pen'),
+        'min_bob'       => config('transfercash.min_bob'),
+        'kyc_limit_pen' => config('transfercash.kyc_limit_pen'),
+        'kyc_limit_bob' => config('transfercash.kyc_limit_bob'),
+    ]);
+});
+
 require __DIR__.'/auth.php';
