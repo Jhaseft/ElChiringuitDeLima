@@ -306,14 +306,14 @@ class OperacionController extends Controller
             ])->post("$server/message/sendText/$instance", $whatsPayload);
 
             if ($response->failed()) {
-                \Log::error("❌ Error enviando a {$numero}: ".$response->body());
+                    Log::error("❌ Error enviando a {$numero}: ".$response->body());
             } else {
-                \Log::info("✅ Mensaje enviado a {$numero}");
+                Log::info("✅ Mensaje enviado a {$numero}");
             }
         }
 
     } catch (\Exception $e) {
-        \Log::error("❌ Excepción enviando mensaje a Evolution API: ".$e->getMessage());
+        Log::error("❌ Excepción enviando mensaje a Evolution API: ".$e->getMessage());
     }
 
 
