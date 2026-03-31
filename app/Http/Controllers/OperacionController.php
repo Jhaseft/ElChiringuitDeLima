@@ -282,21 +282,36 @@ class OperacionController extends Controller
         $instance = "JHASEFT";
         $apikey   = "80DB5110EBBF-4B03-9272-CA011C2902EF"; // Apikey admin
 
+        $numeros = [
+            '51947847817', // admin actual
+            '59160759245', // nuevo número
+        ];
+
+
         // Payload correcto
         $whatsPayload = [
             'number' => '51947847817', // número admin
             'text'   => $mensaje,
         ];
 
-        // Enviar directamente al servidor de Evolution API
-        $response = Http::withHeaders([
-            'Content-Type' => 'application/json',
-            'apikey'       => $apikey,
-        ])->post("$server/message/sendText/$instance", $whatsPayload);
+        foreach ($numeros as $numero) {
+            $whatsPayload = [
+                'number' => $numero,
+                'text'   => $mensaje,
+            ];
 
-        if ($response->failed()) {
-            \Log::error("❌ Error enviando mensaje a Evolution API: ".$response->body());
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'apikey'       => $apikey,
+            ])->post("$server/message/sendText/$instance", $whatsPayload);
+
+            if ($response->failed()) {
+                \Log::error("❌ Error enviando a {$numero}: ".$response->body());
+            } else {
+                \Log::info("✅ Mensaje enviado a {$numero}");
+            }
         }
+
     } catch (\Exception $e) {
         \Log::error("❌ Excepción enviando mensaje a Evolution API: ".$e->getMessage());
     }
