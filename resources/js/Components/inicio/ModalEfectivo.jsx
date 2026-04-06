@@ -1,19 +1,15 @@
 import { useState } from "react";
-import { X, Copy, MapPin } from "lucide-react";
+import { X, Copy, MapPin, ExternalLink } from "lucide-react";
 import StatusMessage from "@/Components/ui/StatusMessage";
 
 const OFICINAS = [
     {
-        nombre: "Oficina La Paz",
-        direccion: "Av. 16 de Julio #1234, El Prado",
+        nombre: "Oficina Cochabamba",
+        direccion: "Av. Villazón, calle Los Paraisos – frente a UDABOL",
         horario: "Lun–Vie 9:00–18:00 | Sáb 9:00–13:00",
-        imagen: "https://res.cloudinary.com/dxa8nat3p/image/upload/v1774708728/Logo_y_Texto_wvkwil.png",
-    },
-    {
-        nombre: "Oficina Lima",
-        direccion: "Jr. de la Unión 456, Centro de Lima",
-        horario: "Lun–Vie 9:00–18:00 | Sáb 9:00–13:00",
-        imagen: "https://res.cloudinary.com/dxa8nat3p/image/upload/v1774708728/Logo_y_Texto_wvkwil.png",
+        imagenLugar: "https://res.cloudinary.com/dnbklbswg/image/upload/v1775453600/Screenshot_2026-04-06_013159_s9h9w6.png",
+        imagenMapa: "https://res.cloudinary.com/dnbklbswg/image/upload/v1775453669/Screenshot_2026-04-06_013416_z3hvxo.png",
+        linkMapa: "https://maps.app.goo.gl/EnjPUumyYn7hSRxH7",
     },
 ];
 
@@ -125,12 +121,14 @@ export default function ModalEfectivo({ isOpen, onClose, user, monto, conversion
 
                             {OFICINAS.map((of, i) => (
                                 <div key={i} className="flex flex-col gap-2">
-                                    <div className="rounded-xl overflow-hidden border border-yellow-400/30 h-32 bg-gray-800 flex items-center justify-center">
-                                        <img
-                                            src={of.imagen}
-                                            alt={of.nombre}
-                                            className="w-full h-full object-cover"
-                                        />
+                                    {/* Dos fotos apiladas */}
+                                    <div className="flex flex-col gap-1.5">
+                                        <div className="rounded-xl overflow-hidden border border-yellow-400/30 h-36 bg-gray-800">
+                                            <img src={of.imagenLugar} alt="Lugar" className="w-full h-full object-cover" />
+                                        </div>
+                                        <div className="rounded-xl overflow-hidden border border-yellow-400/30 h-36 bg-gray-800">
+                                            <img src={of.imagenMapa} alt="Mapa" className="w-full h-full object-cover" />
+                                        </div>
                                     </div>
                                     <div className="text-sm text-gray-200">
                                         <p className="font-semibold text-yellow-400 flex items-center gap-1">
@@ -138,6 +136,14 @@ export default function ModalEfectivo({ isOpen, onClose, user, monto, conversion
                                         </p>
                                         <p className="text-gray-300 text-xs mt-0.5">{of.direccion}</p>
                                         <p className="text-gray-400 text-xs">{of.horario}</p>
+                                        <a
+                                            href={of.linkMapa}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center justify-center gap-2 mt-2 bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold text-sm py-2 px-4 rounded-xl transition"
+                                        >
+                                            <ExternalLink size={15} /> Ver en Google Maps
+                                        </a>
                                     </div>
                                 </div>
                             ))}
