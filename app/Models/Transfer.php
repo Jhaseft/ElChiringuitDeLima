@@ -10,21 +10,27 @@ class Transfer extends Model
     use HasFactory;
 
     protected $fillable = [
-    'user_id',
-    'origin_account_id',
-    'destination_account_id',
-    'amount',
-    'exchange_rate',
-    'converted_amount',
-    'modo',
-    'status',
-    'client_receipt',
-    'admin_receipt',
-];
+        'user_id',
+        'payment_method_id',
+        'origin_account_id',
+        'destination_account_id',
+        'amount',
+        'exchange_rate',
+        'converted_amount',
+        'modo',
+        'status',
+        'client_receipt',
+        'admin_receipt',
+    ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function paymentMethod()
+    {
+        return $this->belongsTo(PaymentMethod::class);
     }
 
     public function originAccount()

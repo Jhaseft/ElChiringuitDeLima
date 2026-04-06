@@ -2,6 +2,7 @@ import { useState } from "react";
 import { usePage, Link } from "@inertiajs/react";
 import { RefreshCw } from "lucide-react";
 import ModalOperacion from "./ModalOperacion";
+import ModalEfectivo from "./ModalEfectivo";
 import ErrorBanner from "./ErrorBanner";
 import axios from "axios";
 
@@ -13,7 +14,9 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig }) {
   const [conversion, setConversion] = useState("");
   const [modo, setModo] = useState("PENtoBOB"); // "BOBtoPEN" o "PENtoBOB"
   const [error, setError] = useState("");
+  const [metodoModalOpen, setMetodoModalOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [efectivoModalOpen, setEfectivoModalOpen] = useState(false);
 
   const { compra = 0.54, venta = 0.54 } = tasas || {};
   const tasaBOBtoPEN = venta || 1.96;
@@ -122,7 +125,7 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig }) {
       return;
     }
 
-    setModalOpen(true);
+    setMetodoModalOpen(true);
     setError("");
   };
 
@@ -243,6 +246,45 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig }) {
       </div>
 
    
+      {metodoModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-yellow-400 relative">
+            <button
+              onClick={() => setMetodoModalOpen(false)}
+              className="absolute top-3 right-4 text-gray-400 hover:text-white text-xl font-bold"
+            >
+              ✕
+            </button>
+            <h2 className="text-xl font-bold text-yellow-400 mb-2 text-center">
+              ¿Cómo deseas operar?
+            </h2>
+            <p className="text-gray-400 text-sm text-center mb-6">
+              Selecciona el método de pago para tu operación
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setMetodoModalOpen(false);
+                  setModalOpen(true);
+                }}
+                className="w-full py-3 rounded-xl bg-yellow-400 text-gray-900 font-semibold hover:bg-yellow-500 transition"
+              >
+                🏦 Transferencia Bancaria
+              </button>
+              <button
+                onClick={() => {
+                  setMetodoModalOpen(false);
+                  setEfectivoModalOpen(true);
+                }}
+                className="w-full py-3 rounded-xl border border-yellow-400 text-yellow-400 font-semibold hover:bg-yellow-400 hover:text-gray-900 transition"
+              >
+                💵 Efectivo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {modalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
           <ModalOperacion
@@ -252,9 +294,24 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig }) {
             monto={monto}
             conversion={conversion}
             tasa={modo === "BOBtoPEN" ? tasaBOBtoPEN : tasaPENtoBOB}
-            modo={modo} // 🔹 se manda el código
-            modoDescripcion={modoDescripcion} // 🔹 se manda texto legible
+            modo={modo}
+            modoDescripcion={modoDescripcion}
             bancos={bancos}
+          />
+        </div>
+      )}
+
+      {efectivoModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
+          <ModalEfectivo
+            isOpen={efectivoModalOpen}
+            onClose={() => setEfectivoModalOpen(false)}
+            user={user}
+            monto={monto}
+            conversion={conversion}
+            tasa={modo === "BOBtoPEN" ? tasaBOBtoPEN : tasaPENtoBOB}
+            modo={modo}
+            modoDescripcion={modoDescripcion}
           />
         </div>
       )}

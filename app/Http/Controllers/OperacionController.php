@@ -112,13 +112,16 @@ class OperacionController extends Controller
         // }
 
 
+        $isEfectivo = $request->payment_method_slug === 'cash';
+
         // Validación (exchange_rate y converted_amount se calculan en el backend)
         $validated = $request->validate([
-            'origin_account_id'       => ['required','exists:accounts,id'],
-            'destination_account_id'  => ['required','exists:accounts,id','different:origin_account_id'],
+            'origin_account_id'       => $isEfectivo ? ['nullable'] : ['required','exists:accounts,id'],
+            'destination_account_id'  => $isEfectivo ? ['nullable'] : ['required','exists:accounts,id','different:origin_account_id'],
             'amount'                  => ['required','numeric','min:0.01'],
             'comprobante'             => ['nullable','file','mimes:jpg,jpeg,png,pdf','max:5120'],
             'modo'                    => ['required','in:BOBtoPEN,PENtoBOB'],
+            'payment_method_slug'     => ['nullable','string','exists:payment_methods,slug'],
         ]);
 
         // Validar mínimos según modo (valores desde .env vía config/transfercash.php)
@@ -201,10 +204,15 @@ class OperacionController extends Controller
             }
         }
     
+        $paymentMethod = \App\Models\PaymentMethod::where(
+            'slug', $request->payment_method_slug ?? 'bank_transfer'
+        )->first();
+
         $transfer = Transfer::create([
             'user_id'                => $user->id,
-            'origin_account_id'      => $request->origin_account_id,
-            'destination_account_id' => $request->destination_account_id,
+            'payment_method_id'      => $paymentMethod?->id,
+            'origin_account_id'      => $request->origin_account_id ?? null,
+            'destination_account_id' => $request->destination_account_id ?? null,
             'amount'                 => $request->amount,
             'exchange_rate'          => $exchangeRate,
             'converted_amount'       => $convertedAmount,
