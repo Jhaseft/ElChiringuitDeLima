@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import AccountCard from "../Users/AccountCard";
-import { X, Upload, ArrowRight } from "lucide-react";
+import { X, ArrowRight } from "lucide-react";
 
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pendiente", ring: "ring-yellow-300", active: "border-yellow-400 bg-yellow-50 text-yellow-700", idle: "border-gray-200 bg-white text-gray-500 hover:border-yellow-200" },
@@ -17,32 +17,24 @@ const STATUS_BADGE = {
 
 export default function TransferModal({ selected, isOpen, onClose, onUpdated }) {
   const [editStatus, setEditStatus] = useState(selected.status);
-  const [comprobante, setComprobante] = useState(null);
-  const [comprobantePreview, setComprobantePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
       setEditStatus(selected.status);
-      setComprobante(null);
-      setComprobantePreview(null);
       setError(null);
     }
   }, [isOpen, selected.status]);
 
   const handleUpdate = async () => {
     setError(null);
-    if (editStatus === "completed" && !comprobante) {
-      setError("Debes subir un comprobante para marcar como Completado.");
-      return;
-    }
     setLoading(true);
     try {
       const formData = new FormData();
       formData.append("_method", "PUT");
       formData.append("status", editStatus);
-      if (editStatus === "completed") formData.append("comprobante", comprobante);
+      formData.append("is_cash", "1");
 
       await axios.post(`/admin/transfers/${selected.id}`, formData, {
         withCredentials: true,
@@ -61,11 +53,6 @@ export default function TransferModal({ selected, isOpen, onClose, onUpdated }) 
     } finally {
       setLoading(false);
     }
-  };
-
-  const clearComprobante = () => {
-    setComprobante(null);
-    setComprobantePreview(null);
   };
 
   const formatDate = (d) =>

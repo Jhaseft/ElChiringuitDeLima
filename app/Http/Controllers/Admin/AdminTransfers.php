@@ -98,9 +98,13 @@ public function update(Request $request, $id)
 {
     $transfer = Transfer::findOrFail($id);
 
+    $isCash = $request->boolean('is_cash');
+
     $request->validate([
         'status' => 'required|in:pending,completed,rejected',
-        'comprobante' => 'nullable|file|mimes:jpg,jpeg,png,pdf|required_if:status,completed',
+        'comprobante' => $isCash
+            ? 'nullable|file|mimes:jpg,jpeg,png,pdf'
+            : 'nullable|file|mimes:jpg,jpeg,png,pdf|required_if:status,completed',
     ]);
 
     // Si se completa y hay comprobante → subir a Cloudinary
