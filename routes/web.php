@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Admin\AdminTransfers;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminControllerDashboard;
+use App\Http\Controllers\Admin\AdminTransfersEfectivo;
 use App\Http\Controllers\Admin\AdminUserMediaController;
 use App\Http\Controllers\TransferController;
 use App\Models\Bank;
@@ -155,6 +156,9 @@ Route::prefix('admin')->group(function () {
         Route::get('/dashboard/usuarios', [AdminUserMediaController::class, 'index']);
         //cuarta pantalla
         Route::get('/dashboard/transferencias', [AdminTransfers::class, 'index']);
+
+        //quinta pantalla
+        Route::get('/dashboard/efectivo', [AdminTransfersEfectivo::class, 'index']);
 
         //tipo de cambio
         Route::post('/tipo-cambio', [AdminControllerDashboard::class, 'update']);

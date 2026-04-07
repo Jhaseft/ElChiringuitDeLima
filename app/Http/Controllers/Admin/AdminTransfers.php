@@ -21,9 +21,12 @@ class AdminTransfers extends Controller
 
         $query = Transfer::with([
             'user',
+            'paymentMethod',
             'originAccount.bank',
             'destinationAccount.bank',
-        ])->orderBy('created_at', 'desc');
+        ])
+        ->whereHas('paymentMethod', fn($q) => $q->where('slug', 'bank_transfer'))
+        ->orderBy('created_at', 'desc');
 
         if ($search !== '') {
             $query->whereHas('user', function ($q) use ($search) {
