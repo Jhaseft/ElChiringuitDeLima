@@ -21,48 +21,92 @@ class OperacionController extends Controller
         return response()->json(Bank::all());
     }
 
+    
     public function guardarCuenta(Request $request)
-    {
+{
+    // VALIDACIÓN BASE
+    $request->validate([
+        'user_id' => 'required|exists:users,id',
+        'method_type' => 'required|in:bank,qr',
+    ]);
+
+    // =========================
+    // CASO QR
+    // =========================
+    if ($request->method_type === 'qr') {
+
         $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'bank_id' => 'required|exists:banks,id',
-            'account_number' => 'required|string',
-            'account_type' => 'required|in:origin,destination',
+            'qr_value' => 'required|string',
+            'qr_country' => 'required|in:PE,BO',
         ]);
-
-        $ownerId = null;
-
-        // SOLO crear owner si es destination
-        if ($request->account_type === 'destination') {
-            $request->validate([
-                'owner_full_name' => 'required|string',
-                'owner_document' => 'required|string',
-                'owner_phone' => 'required|string',
-            ]);
-
-            $owner = AccountOwner::create([
-                'full_name' => $request->owner_full_name,
-                'document_number' => $request->owner_document,
-                'phone' => $request->owner_phone,
-            ]);
-
-            $ownerId = $owner->id;
-        }
 
         $account = Account::updateOrCreate(
             [
                 'user_id' => $request->user_id,
-                'account_number' => $request->account_number,
-                'account_type' => $request->account_type,
+                'method_type' => 'qr',
+                'qr_country' => $request->qr_country,
             ],
             [
-                'bank_id' => $request->bank_id,
-                'owner_id' => $ownerId,
+                'qr_value' => $request->qr_value,
+
+                // limpiar campos bancarios
+                'bank_id' => null,
+                'account_number' => null,
+                'owner_id' => null,
             ]
         );
 
         return response()->json($account);
     }
+
+    // =========================
+    //  CASO BANK
+    // =========================
+    $request->validate([
+        'bank_id' => 'required|exists:banks,id',
+        'account_number' => 'required|string',
+        'account_type' => 'required|in:origin,destination',
+    ]);
+
+    $ownerId = null;
+
+    // SOLO destination crea owner
+    if ($request->account_type === 'destination') {
+
+        $request->validate([
+            'owner_full_name' => 'required|string',
+            'owner_document' => 'required|string',
+            'owner_phone' => 'required|string',
+        ]);
+
+        $owner = AccountOwner::create([
+            'full_name' => $request->owner_full_name,
+            'document_number' => $request->owner_document,
+            'phone' => $request->owner_phone,
+        ]);
+
+        $ownerId = $owner->id;
+    }
+
+    $account = Account::updateOrCreate(
+        [
+            'user_id' => $request->user_id,
+            'method_type' => 'bank',
+            'account_number' => $request->account_number,
+        ],
+        [
+            'bank_id' => $request->bank_id,
+            'account_type' => $request->account_type,
+            'owner_id' => $ownerId,
+
+            // limpiar QR
+            'qr_value' => null,
+            'qr_country' => null,
+        ]
+    );
+
+    return response()->json($account);
+}
 
     public function listarCuentas($user_id)
     {
@@ -291,16 +335,9 @@ class OperacionController extends Controller
         $apikey   = "80DB5110EBBF-4B03-9272-CA011C2902EF"; // Apikey admin
 
         $numeros = [
-            '51947847817', // admin actual
             '59160759245', // nuevo número
         ];
 
-
-        // Payload correcto
-        $whatsPayload = [
-            'number' => '51947847817', // número admin
-            'text'   => $mensaje,
-        ];
 
         foreach ($numeros as $numero) {
             $whatsPayload = [
@@ -315,9 +352,7 @@ class OperacionController extends Controller
 
             if ($response->failed()) {
                     Log::error("❌ Error enviando a {$numero}: ".$response->body());
-            } else {
-                Log::info("✅ Mensaje enviado a {$numero}");
-            }
+            } 
         }
 
     } catch (\Exception $e) {

@@ -28,19 +28,19 @@ class AdminTransfers extends Controller
         ->whereHas('paymentMethod', fn($q) => $q->where('slug', 'bank_transfer'))
         ->orderBy('created_at', 'desc');
 
-        if ($search !== '') {
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('first_name', 'LIKE', "$search%")
-                  ->orWhere('last_name', 'LIKE', "$search%")
-                  ->orWhere('email', 'LIKE', "$search%");
-            })
-            ->orWhereHas('originAccount', function ($q) use ($search) {
-                $q->where('account_number', 'LIKE', "$search%");
-            })
-            ->orWhereHas('destinationAccount', function ($q) use ($search) {
-                $q->where('account_number', 'LIKE', "$search%");
-            })
-            ->orWhere('status', 'LIKE', "$search%");
+       if ($search !== '') {
+        $query->where(function ($q) use ($search) {
+
+            // Buscar por ID de la transferencia
+            $q->where('id', 'LIKE', "%$search%")
+
+            // O por nombre del usuario
+            ->orWhereHas('user', function ($q) use ($search) {
+                $q->where('first_name', 'LIKE', "%$search%")
+                ->orWhere('last_name', 'LIKE', "%$search%");
+            });
+
+          });
         }
 
         $transfers = $query->paginate($perPage)->withQueryString();
@@ -56,17 +56,10 @@ class AdminTransfers extends Controller
   // Mostrar usuario desde transferencia
 public function showUser($id)
 {
-    Log::info('Entró a showUser', ['transfer_id' => $id]);
+   
 
     $transfer = Transfer::with(['user'])
         ->findOrFail($id);
-
-    Log::info('Transfer encontrada', $transfer->toArray());
-
-    Log::info('Usuario enviado al frontend', [
-        'transfer_id' => $transfer->id,
-        'user' => $transfer->user ? $transfer->user->toArray() : null
-    ]);
 
     return response()->json([
         'transfer_id' => $transfer->id,
@@ -77,7 +70,7 @@ public function showUser($id)
  // Mostrar detalle de transferencia
 public function transferDetail($id)
 {
-    Log::info('Entró a transferDetail', ['transfer_id' => $id]);
+
 
     $transfer = Transfer::with([
         'originAccount.bank',
@@ -86,7 +79,7 @@ public function transferDetail($id)
         'destinationAccount.owner'
     ])->findOrFail($id);
 
-    Log::info('Transfer completa enviada al frontend', $transfer->toArray());
+   
 
     return response()->json($transfer);
 }

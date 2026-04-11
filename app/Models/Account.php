@@ -14,9 +14,12 @@ class Account extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
+        'method_type',
         'user_id',
         'bank_id',
         'account_number',
+        'qr_value',
+        'qr_country',
         'account_type',
         'owner_id',
     ];

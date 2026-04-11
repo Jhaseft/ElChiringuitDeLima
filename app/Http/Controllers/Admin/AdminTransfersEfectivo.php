@@ -2,14 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\TransferVerifiedMail; 
+use App\Http\Controllers\Controller; 
 use Illuminate\Http\Request;
 use App\Models\Transfer;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-use Cloudinary\Api\Upload\UploadApi;
+
 
 class AdminTransfersEfectivo extends Controller
 {
@@ -29,19 +26,19 @@ class AdminTransfersEfectivo extends Controller
         ->whereHas('paymentMethod', fn($q) => $q->where('slug', 'cash'))
         ->orderBy('created_at', 'desc');
 
-        if ($search !== '') {
-            $query->whereHas('user', function ($q) use ($search) {
-                $q->where('first_name', 'LIKE', "$search%")
-                  ->orWhere('last_name', 'LIKE', "$search%")
-                  ->orWhere('email', 'LIKE', "$search%");
-            })
-            ->orWhereHas('originAccount', function ($q) use ($search) {
-                $q->where('account_number', 'LIKE', "$search%");
-            })
-            ->orWhereHas('destinationAccount', function ($q) use ($search) {
-                $q->where('account_number', 'LIKE', "$search%");
-            })
-            ->orWhere('status', 'LIKE', "$search%");
+         if ($search !== '') {
+        $query->where(function ($q) use ($search) {
+
+            // Buscar por ID de la transferencia
+            $q->where('id', 'LIKE', "%$search%")
+
+            // O por nombre del usuario
+            ->orWhereHas('user', function ($q) use ($search) {
+                $q->where('first_name', 'LIKE', "%$search%")
+                ->orWhere('last_name', 'LIKE', "%$search%");
+            });
+
+          });
         }
 
         $transfers = $query->paginate($perPage)->withQueryString();

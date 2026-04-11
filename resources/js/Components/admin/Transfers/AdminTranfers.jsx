@@ -34,7 +34,7 @@ export default function AdminTransfersTable({ transfers, filters = {} }) {
   const [detailOpenTransfer, setDetailOpenTransfer] = useState(false);
   const [detailTransfer, setDetailTranfer] = useState(null);
   const [overlay, setOverlay] = useState(null);
-
+ 
   const navigate = (params) => {
     router.get("/admin/dashboard/transferencias", params, {
       preserveState: true,
@@ -113,6 +113,7 @@ export default function AdminTransfersTable({ transfers, filters = {} }) {
         <table className="min-w-full text-sm divide-y divide-gray-100">
           <thead className="bg-gray-50">
             <tr>
+              <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">ID</th>
               <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Usuario</th>
               <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Cuenta Origen</th>
               <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Cuenta Destino</th>
@@ -133,6 +134,9 @@ export default function AdminTransfersTable({ transfers, filters = {} }) {
             ) : (
               rows.map((r) => (
                 <tr key={r.id} className="hover:bg-blue-50/30 transition">
+                  <td className="py-3 px-4 font-medium text-gray-800">
+                    {r.id}
+                  </td>
                   <td className="py-3 px-4 font-medium text-gray-800">
                     {r.user?.first_name} {r.user?.last_name}
                   </td>

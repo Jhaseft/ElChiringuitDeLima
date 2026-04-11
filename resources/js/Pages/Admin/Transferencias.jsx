@@ -2,6 +2,8 @@ import AdminLayout from "@/Layouts/admin/AdminLayout";
 import AdminTransfers from "@/Components/admin/Transfers/AdminTranfers";
 
 export default function Transferencias({ transfers, filters }) {
+    console.log("trasnferencias:", transfers);
+    console.log("filtros:", filters);
     return (
         <AdminLayout>
             <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8">
