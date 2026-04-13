@@ -10,7 +10,7 @@
 const METODOS = [
   { key: "transferencia", label: "🏦 Transferencia Bancaria", variante: "primary" },
   { key: "efectivo",      label: "💵 Efectivo",               variante: "outline" },
-  { key: "qr",            label: "📷 Pago por QR",            variante: "outline" },
+  //{ key: "qr",            label: "📷 Pago por QR",            variante: "outline" },
 ];
 
 const estiloBoton = {

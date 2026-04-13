@@ -7,9 +7,7 @@ import { useState } from "react";
 import Grafico from "@/Components/inicio/Grafico";
 import FooterLayout from "@/Layouts/footer";
 
-export default function Welcome({ bancos, tasas: tasasInicial, transferConfig }) {
-
-
+export default function Welcome({ bancos, tasas: tasasInicial, transferConfig , TrMethods }) {
   const { auth } = usePage().props;
   const user = auth?.user ?? null;
   const [tasas, setTasas] = useState(tasasInicial ?? { compra: 0, venta: 0 });
@@ -32,7 +30,7 @@ export default function Welcome({ bancos, tasas: tasasInicial, transferConfig })
                   )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <CambioDivisasCard tasas={tasas} bancos={bancos} transferConfig={transferConfig} />
+            <CambioDivisasCard tasas={tasas} bancos={bancos} transferConfig={transferConfig} metodosPago={TrMethods} />
             <InfoAdicionalCard />
           </div>
 

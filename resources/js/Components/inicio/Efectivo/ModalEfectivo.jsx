@@ -13,43 +13,8 @@ const OFICINAS = [
     },
 ];
 
-const CUENTAS_DESTINO = {
-    PENtoBOB: [
-        {
-            type: "Yape",
-            title: "Yape Perú",
-            number: "947847817",
-            image: "https://res.cloudinary.com/dnbklbswg/image/upload/v1756359619/yape-logo-png_seeklogo-504685_tns3su.png",
-        },
-        {
-            type: "Plin",
-            title: "Plin Perú",
-            number: "947847817",
-            image: "https://res.cloudinary.com/dnbklbswg/image/upload/v1756359595/plin_fi3i8u.png",
-        },
-        {
-            type: "InterBank",
-            title: "InterBank Perú",
-            number: "4403006144735",
-            image: "https://res.cloudinary.com/dnbklbswg/image/upload/v1756305466/download_zxsiny.png",
-        },
-        {
-            type: "BCP",
-            title: "BCP Perú",
-            number: "2207063622037",
-            image: "https://res.cloudinary.com/dnbklbswg/image/upload/v1756304903/bcp_mtkdyl.png",
-        },
-    ],
-    BOBtoPEN: [
-        {
-            type: "qr",
-            title: "QR Bolivia",
-            image: "https://res.cloudinary.com/dnbklbswg/image/upload/v1756359417/qr_hgokvi.jpg",
-        },
-    ],
-};
 
-export default function ModalEfectivo({ isOpen, onClose, user, monto, conversion, tasa, modo, modoDescripcion }) {
+export default function ModalEfectivo({ isOpen, onClose, user, monto, conversion, tasa, modo, modoDescripcion,metodosPago }) {
     const [comprobante, setComprobante] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -61,7 +26,7 @@ export default function ModalEfectivo({ isOpen, onClose, user, monto, conversion
     const isBOBtoPEN = modo === "BOBtoPEN";
     const montoTexto = isBOBtoPEN ? `${monto} BOB` : `${monto} PEN`;
     const conversionTexto = isBOBtoPEN ? `${conversion} PEN` : `${conversion} BOB`;
-    const opciones = CUENTAS_DESTINO[modo] || [];
+    const opciones = metodosPago.filter(m => m.currency_pair === modo)
 
     const copyToClipboard = (text) => navigator.clipboard.writeText(text);
 

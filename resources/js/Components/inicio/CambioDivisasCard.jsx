@@ -7,7 +7,7 @@ import ModalEfectivo from "./Efectivo/ModalEfectivo";
 import ModalQR from "./QR/ModalQR";
 import ErrorBanner from "./shared/ErrorBanner";
 
-export default function CambioDivisasCard({ tasas, bancos, transferConfig }) {
+export default function CambioDivisasCard({ tasas, bancos, transferConfig,metodosPago }) {
   const { auth } = usePage().props;
   const user = auth?.user ?? null;
 
@@ -118,16 +118,19 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig }) {
         isOpen={modalActivo === "transferencia"}
         {...propsModalPago}
         bancos={bancos}
+        metodosPago={metodosPago}
       />
 
       <ModalEfectivo
         isOpen={modalActivo === "efectivo"}
         {...propsModalPago}
+        metodosPago={metodosPago}
       />
 
       <ModalQR
         isOpen={modalActivo === "qr"}
         {...propsModalPago}
+        metodosPago={metodosPago}
       />
     </>
   );
