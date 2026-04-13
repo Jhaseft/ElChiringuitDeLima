@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import BankSelect from "./BankSelect";
+import BankSelect from "../shared/BankSelect";
 
 let bancosCache = null;
 
@@ -83,6 +83,7 @@ export default function ModalCuentaBancaria({
         },
         body: JSON.stringify({
           user_id: user.id,
+          method_type: "bank",
           bank_id: bankId,
           account_number: numeroCuenta,
           account_type: accountType,

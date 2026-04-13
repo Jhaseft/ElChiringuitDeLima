@@ -1,143 +1,37 @@
-import { useState } from "react";
 import { usePage, Link } from "@inertiajs/react";
-import { RefreshCw } from "lucide-react";
-import ModalOperacion from "./ModalOperacion";
-import ModalEfectivo from "./ModalEfectivo";
-import ErrorBanner from "./ErrorBanner";
-import axios from "axios";
+import { useCambioDivisas } from "./hooks/useCambioDivisas";
+import ConversorDivisas from "./ConversorDivisas";
+import SeleccionMetodoPago from "./SeleccionMetodoPago";
+import ModalOperacion from "./Transferencia/ModalOperacion";
+import ModalEfectivo from "./Efectivo/ModalEfectivo";
+import ModalQR from "./QR/ModalQR";
+import ErrorBanner from "./shared/ErrorBanner";
 
 export default function CambioDivisasCard({ tasas, bancos, transferConfig }) {
   const { auth } = usePage().props;
   const user = auth?.user ?? null;
- 
-  const [monto, setMonto] = useState("");
-  const [conversion, setConversion] = useState("");
-  const [modo, setModo] = useState("PENtoBOB"); // "BOBtoPEN" o "PENtoBOB"
-  const [error, setError] = useState("");
-  const [metodoModalOpen, setMetodoModalOpen] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [efectivoModalOpen, setEfectivoModalOpen] = useState(false);
 
-  const { compra = 0.54, venta = 0.54 } = tasas || {};
-  const tasaBOBtoPEN = venta || 1.96;
-  const tasaPENtoBOB = compra || 1.94;
+  const {
+    monto, conversion, modo, error, setError,
+    tasa, tasaBOBtoPEN, tasaPENtoBOB, modoDescripcion,
+    handleCambio, toggleModo, iniciarOperacion,
+    modalActivo, setModalActivo,
+  } = useCambioDivisas({ tasas, transferConfig, user });
 
-  const handleCambio = (valorStr) => {
-    const valor = parseFloat(valorStr);
-    if (isNaN(valor)) {
-      setMonto("");
-      setConversion("");
-      return;
-    }
-
-    if (valor < 0) {
-      setMonto("");
-      setConversion("");
-      setError("⚠️ El monto no puede ser negativo.");
-      return;
-    }
-
-    setMonto(valor);
-    setError("");
-    if (modo === "BOBtoPEN") {
-      setConversion((valor / tasaBOBtoPEN).toFixed(2));
-    } else {
-      setConversion((valor * tasaPENtoBOB).toFixed(2));
-    }
+  // Propiedades comunes que reciben todos los modales de pago
+  const propsModalPago = {
+    user, monto, conversion, tasa, modo, modoDescripcion,
+    onClose: () => setModalActivo(null),
   };
-
-  const toggleModo = () => {
-    const nuevoModo = modo === "BOBtoPEN" ? "PENtoBOB" : "BOBtoPEN";
-    setModo(nuevoModo);
-
-    // recalcular
-    if (monto && !isNaN(monto)) {
-      if (nuevoModo === "BOBtoPEN") {
-        setConversion((monto / tasaBOBtoPEN).toFixed(2));
-      } else {
-        setConversion((monto * tasaPENtoBOB).toFixed(2));
-      }
-    }
-  };
- 
-  const LIMITE_KYC_PEN = transferConfig?.kyc_limit_pen ?? 300;
-  const LIMITE_KYC_BOB = transferConfig?.kyc_limit_bob ?? 1000;
-  const MINIMO_PEN = transferConfig?.min_pen ?? 20;
-  const MINIMO_BOB = transferConfig?.min_bob ?? 60;
-
-  const iniciarOperacion = async () => {
-    if (!monto || !conversion) {
-      setError("Debes ingresar un monto válido para iniciar la operación.");
-      return;
-    }
-
-    const montoNum = parseFloat(monto);
-
-    // Validar mínimos
-    if (modo === "PENtoBOB" && montoNum < MINIMO_PEN) {
-      setError(`El monto mínimo es S/ ${MINIMO_PEN}.`);
-      return;
-    }
-    if (modo === "BOBtoPEN" && montoNum < MINIMO_BOB) {
-      setError(`El monto mínimo es Bs ${MINIMO_BOB}.`);
-      return;
-    }
-
-    if (!user) {
-      window.location.href = "/login";
-      return;
-    }
-
-    if (!user.document_number || !user.nationality) {
-      window.location.href = "/complete-profile";
-      return;
-    }
-
-    // KYC solo si supera el límite exento
-    const requiereKyc =
-      (modo === "PENtoBOB" && montoNum > LIMITE_KYC_PEN) ||
-      (modo === "BOBtoPEN" && montoNum > LIMITE_KYC_BOB);
-
-    if (requiereKyc && (user.kyc_status === "pending" || user.kyc_status === "rejected")) {
-      try {
-        alert("Debes completar tu KYC antes de continuar.");
-
-        const response = await axios.post("/kyc/session", {
-          next_url: window.location.origin + "/kyc/resultado"
-        });
-
-        const data = response.data;
-
-        if (!data.redirect_url) {
-          throw new Error("No se recibió redirect_url");
-        }
-
-        window.location.href = data.redirect_url;
-
-      } catch (error) {
-        console.error("Error KYC:", error);
-        if (error.response) {
-          console.log("response error:", error.response.data);
-        }
-        alert("Error iniciando verificación KYC");
-      }
-
-      return;
-    }
-
-    setMetodoModalOpen(true);
-    setError("");
-  };
-
-  // Texto descriptivo del modo
-  const modoDescripcion =
-    modo === "BOBtoPEN" ? "Bolivianos → Soles" : "Soles → Bolivianos";
 
   return (
     <>
       {error && <ErrorBanner message={error} onClose={() => setError("")} />}
 
+    
       <div className="bg-gray-800 rounded-2xl shadow-xl p-6 flex flex-col gap-5 border border-yellow-400 transition hover:shadow-2xl hover:scale-[1.01] duration-300 relative">
+
+  
         <div className="flex flex-col items-center mb-2">
           <h1 className="text-2xl font-bold text-white">TransferCash</h1>
           <p className="text-sm text-gray-300 text-center">
@@ -150,7 +44,7 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig }) {
           />
         </div>
 
-      
+   
         <div className="flex justify-between text-base font-semibold px-2">
           <span className="text-blue-400">
             COMPRA: <span className="font-bold">{tasaPENtoBOB.toFixed(2)}</span>
@@ -160,55 +54,24 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig }) {
           </span>
         </div>
 
-       
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="flex flex-col w-full">
-            <label className="text-sm font-medium text-gray-300 mb-1 text-center">
-              {modo === "BOBtoPEN" ? "TIENES BOLIVIANOS" : "TIENES SOLES"}
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={monto}
-              onChange={(e) => handleCambio(e.target.value)}
-              className="border border-yellow-400 rounded-lg px-1 py-2 text-center font-semibold bg-gray-700 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none shadow-sm"
-            />
-          </div>
+     
+        <ConversorDivisas
+          modo={modo}
+          monto={monto}
+          conversion={conversion}
+          onChange={handleCambio}
+          onToggle={toggleModo}
+        />
 
-          <div className="flex justify-center">
-            <button
-              onClick={toggleModo}
-              className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 transition shadow-md"
-            >
-              <RefreshCw className="w-6 h-6 text-yellow-400" />
-            </button>
-          </div>
-
-          <div className="flex flex-col w-full">
-            <label className="text-sm font-medium text-gray-300 mb-1 text-center">
-              {modo === "BOBtoPEN" ? "RECIBES SOLES" : "RECIBES BOLIVIANOS"}
-            </label>
-            <input
-              type="text"
-              value={conversion}
-              readOnly
-              className="border border-yellow-400 rounded-lg px-1 py-2 text-center font-semibold bg-gray-700 text-white shadow-sm"
-            />
-          </div>
-        </div>
+     
+        <button
+          onClick={iniciarOperacion}
+          className="bg-yellow-400 text-gray-900 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-500 shadow-md transition-all mt-3"
+        >
+          Iniciar Operación
+        </button>
 
        
-        <div className="grid grid-cols-1 sm:grid-cols-1 gap-3 mt-3">
-          <button
-            onClick={iniciarOperacion}
-            className="bg-yellow-400 text-gray-900 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-500 shadow-md transition-all"
-          >
-            Iniciar Operación
-          </button>
-        </div>
-      
-      
-        
         {!user && (
           <div className="flex flex-col sm:flex-row gap-2 justify-center mt-2">
             <Link
@@ -226,95 +89,46 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig }) {
           </div>
         )}
 
-        <p className="text-yellow-400 text-lg  text-center">
+      
+        <p className="text-yellow-400 text-lg text-center">
           Para personas que quieran enviar dinero a terceros, esta operación debe
           ser realizada mediante la atención de un asesor.
         </p>
 
         <div className="flex justify-center mt-2">
           <svg
-            className="w-6 h-6 text-yellow-400  animate-pulse rotate-0  lg:-rotate-90"
+            className="w-6 h-6 text-yellow-400 animate-pulse rotate-0 lg:-rotate-90"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
             viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"></path>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </div>
       </div>
 
-   
-      {metodoModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm border border-yellow-400 relative">
-            <button
-              onClick={() => setMetodoModalOpen(false)}
-              className="absolute top-3 right-4 text-gray-400 hover:text-white text-xl font-bold"
-            >
-              ✕
-            </button>
-            <h2 className="text-xl font-bold text-yellow-400 mb-2 text-center">
-              ¿Cómo deseas operar?
-            </h2>
-            <p className="text-gray-400 text-sm text-center mb-6">
-              Selecciona el método de pago para tu operación
-            </p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => {
-                  setMetodoModalOpen(false);
-                  setModalOpen(true);
-                }}
-                className="w-full py-3 rounded-xl bg-yellow-400 text-gray-900 font-semibold hover:bg-yellow-500 transition"
-              >
-                🏦 Transferencia Bancaria
-              </button>
-              <button
-                onClick={() => {
-                  setMetodoModalOpen(false);
-                  setEfectivoModalOpen(true);
-                }}
-                className="w-full py-3 rounded-xl border border-yellow-400 text-yellow-400 font-semibold hover:bg-yellow-400 hover:text-gray-900 transition"
-              >
-                💵 Efectivo
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SeleccionMetodoPago
+        isOpen={modalActivo === "selector"}
+        onClose={() => setModalActivo(null)}
+        onSelect={(metodo) => setModalActivo(metodo)}
+      />
 
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
-          <ModalOperacion
-            isOpen={modalOpen}
-            onClose={() => setModalOpen(false)}
-            user={user}
-            monto={monto}
-            conversion={conversion}
-            tasa={modo === "BOBtoPEN" ? tasaBOBtoPEN : tasaPENtoBOB}
-            modo={modo}
-            modoDescripcion={modoDescripcion}
-            bancos={bancos}
-          />
-        </div>
-      )}
+      <ModalOperacion
+        isOpen={modalActivo === "transferencia"}
+        {...propsModalPago}
+        bancos={bancos}
+      />
 
-      {efectivoModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
-          <ModalEfectivo
-            isOpen={efectivoModalOpen}
-            onClose={() => setEfectivoModalOpen(false)}
-            user={user}
-            monto={monto}
-            conversion={conversion}
-            tasa={modo === "BOBtoPEN" ? tasaBOBtoPEN : tasaPENtoBOB}
-            modo={modo}
-            modoDescripcion={modoDescripcion}
-          />
-        </div>
-      )}
+      <ModalEfectivo
+        isOpen={modalActivo === "efectivo"}
+        {...propsModalPago}
+      />
+
+      <ModalQR
+        isOpen={modalActivo === "qr"}
+        {...propsModalPago}
+      />
     </>
   );
 }

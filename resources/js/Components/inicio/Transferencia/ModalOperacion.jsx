@@ -4,8 +4,7 @@ import { X, Trash2, Plus } from "lucide-react";
 import ModalCuentaBancaria from "./ModalCuentaBancaria";
 import ModalCuentaDestino from "./ModalCuentaDestino";
 import ModalTransferencia from "./ModalTransferencia";
-import CuentaSelect from "./CuentaSelect";
-import axios from "axios";
+import CuentaSelect from "../shared/CuentaSelect";
 
 export default function ModalOperacion({
   isOpen,
@@ -38,17 +37,21 @@ export default function ModalOperacion({
   };
 
   useEffect(() => {
-    if (!user?.id) return;
+  if (!user?.id) return;
 
-    setLoadingCuentas(true);
-    fetch(`/operacion/listar-cuentas/${user.id}`)
-      .then(res => res.json())
-      .then(data => {
-        setCuentasUsuario(data);
-      })
-      .catch(err => console.error(err))
-      .finally(() => setLoadingCuentas(false));
-  }, [user?.id]);
+  const methodType = "bank"; // o dinámico si lo necesitas
+
+  setLoadingCuentas(true);
+
+  fetch(`/operacion/listar-cuentas/${user.id}/${methodType}`)
+    .then(res => res.json())
+    .then(data => {
+      setCuentasUsuario(data);
+    })
+    .catch(err => console.error(err))
+    .finally(() => setLoadingCuentas(false));
+
+}, [user?.id]);
 
   if (!isOpen) return null;
 
@@ -85,36 +88,6 @@ export default function ModalOperacion({
   const handleSiguiente = async () => {
     if (loading) return;
     if (!(juramento && terminos && cuentaOrigen && cuentaDestino)) return;
-
-    // if (user.kyc_status === "pending" || user.kyc_status === "rejected") {
-    //   try {
-    //     alert("Debes completar tu KYC antes de continuar.");
-
-    //     const response = await axios.post("/kyc/session", {
-    //       next_url: window.location.origin + "/kyc/resultado"
-    //     }); 
-
-    //     const data = response.data;
-
-    //     if (!data.redirect_url) {
-    //       throw new Error("No se recibió redirect_url");
-    //     }
-
-    //     window.location.href = data.redirect_url;
-
-    //   } catch (error) {
-    //     console.error(" Error KYC:", error);
-
-    //     if (error.response) {
-    //       console.log(" response error:", error.response.data);
-    //     }
-
-    //     alert("Error iniciando verificación KYC");
-    //   }
-
-    //   return;
-    // }
-
     setOpenTransferencia(true);
   };
   

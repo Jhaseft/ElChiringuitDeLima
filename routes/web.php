@@ -1,6 +1,4 @@
 <?php
-use App\Http\Controllers\AppNative;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompleteProfileController;
 use App\Http\Controllers\OperacionController;
@@ -12,10 +10,7 @@ use App\Http\Controllers\Admin\AdminTransfersEfectivo;
 use App\Http\Controllers\Admin\AdminUserMediaController;
 use App\Http\Controllers\TransferController;
 use App\Models\Bank;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\KycController;
@@ -73,17 +68,17 @@ Route::get('/nosotros', function () {
 Route::get('/App', function () {
 
     return Inertia::render('AppNative');
-
+ 
 });
 
 // Operaciones
 Route::middleware(['web'])->group(function () {
     //listar bancos existentes en la abase de datos
     Route::get('/operacion/listar-bancos', [OperacionController::class, 'listarBancos'])->name('operacion.listarBancos');
-    //guardar una cuenta
+    //crear cuentas de QR  y Tranferencia bancaria 
+    Route::get('/operacion/listar-cuentas/{user_id}/{method_type}',[OperacionController::class, 'listarCuentas'])->name('operacion.listarCuentas');
+      //guardar una cuenta
     Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta'])->name('operacion.guardarCuenta');
-    //listar cuentas por usuario
-    Route::get('/operacion/listar-cuentas/{user_id}', [OperacionController::class, 'listarCuentas'])->name('operacion.listarCuentas');
    //crear una tranferencia con automatizaciones de envio a Evolution y Email
     Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia'])->name('operacion.crearTransferencia');
 });
@@ -182,7 +177,6 @@ Route::prefix('admin')->group(function () {
 
 // Tipo de cambio - API pública
 Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'historial']);
-
 
 // Tipo de cambio - API pública
 Route::get('/api/tipo-cambio/compra', [AdminControllerDashboard::class, 'actualizarTipoCambioAutomatico']);

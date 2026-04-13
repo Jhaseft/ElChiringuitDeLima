@@ -27,32 +27,48 @@ class OperacionController extends Controller
     // VALIDACIÓN BASE
     $request->validate([
         'user_id' => 'required|exists:users,id',
-        'method_type' => 'required|in:bank,qr',
+        'method_type' => 'nullable|in:bank,qr',
     ]);
+
+    // Si no se envía method_type, se asume 'bank'
+    $methodType = $request->method_type ?? 'bank';
 
     // =========================
     // CASO QR
     // =========================
-    if ($request->method_type === 'qr') {
+    if ($methodType === 'qr') {
 
         $request->validate([
-            'qr_value' => 'required|string',
+            'qr_image'   => 'required|file|mimes:jpg,jpeg,png|max:5120',
             'qr_country' => 'required|in:PE,BO',
         ]);
 
+        try {
+            $uploadApi  = new UploadApi();
+            $uploaded   = $uploadApi->upload(
+                $request->file('qr_image')->getRealPath(),
+                [
+                    'folder'        => 'cuentas/qr/' . $request->user_id,
+                    'resource_type' => 'image',
+                ]
+            );
+            $qrUrl = $uploaded['secure_url'];
+        } catch (\Exception $e) {
+            Log::error('❌ Error subiendo QR a Cloudinary', ['message' => $e->getMessage()]);
+            return response()->json(['message' => 'Error subiendo la imagen QR. Intenta nuevamente.'], 500);
+        }
+
         $account = Account::updateOrCreate(
             [
-                'user_id' => $request->user_id,
+                'user_id'     => $request->user_id,
                 'method_type' => 'qr',
-                'qr_country' => $request->qr_country,
+                'qr_country'  => $request->qr_country,
             ],
             [
-                'qr_value' => $request->qr_value,
-
-                // limpiar campos bancarios
-                'bank_id' => null,
+                'qr_value'       => $qrUrl,
+                'bank_id'        => null,
                 'account_number' => null,
-                'owner_id' => null,
+                'owner_id'       => null,
             ]
         );
 
@@ -104,43 +120,54 @@ class OperacionController extends Controller
             'qr_country' => null,
         ]
     );
-
+ 
     return response()->json($account);
 }
 
-    public function listarCuentas($user_id)
-    {
-        $accounts = Account::with('bank')->where('user_id', $user_id)->get();
+    public function listarCuentas($user_id, $method_type)
+{
+    $accounts = Account::with(['bank', 'owner'])
+        ->where('user_id', $user_id)
+        ->where('method_type', $method_type)
+        ->get();
 
+    if ($method_type === 'bank') {
         $accounts = $accounts->map(function ($a) {
             return [
                 'id' => $a->id,
                 'account_number' => $a->account_number,
                 'account_type' => $a->account_type,
-                'bank_id' => $a->bank->id,
-                'bank_name' => $a->bank->name,
-                'bank_logo' => $a->bank->logo_url,
-                'owner_full_name' => $a->owner ? $a->owner->full_name : null,
-                'owner_document' => $a->owner ? $a->owner->document_number : null,
-                'owner_phone' => $a->owner ? $a->owner->phone : null,
+                'bank_id' => $a->bank?->id,
+                'bank_name' => $a->bank?->name,
+                'bank_logo' => $a->bank?->logo_url,
+                'owner_full_name' => $a->owner?->full_name,
+                'owner_document' => $a->owner?->document_number,
+                'owner_phone' => $a->owner?->phone,
             ];
         });
 
-        return response()->json($accounts);
+    } elseif ($method_type === 'qr') {
+        $accounts = $accounts->map(function ($a) {
+            return [
+                'id' => $a->id,
+                'qr_value' => $a->qr_value,
+                'qr_country' => $a->qr_country,
+            ];
+        });
+    } else {
+        return response()->json([
+            'error' => 'Método no válido'
+        ], 400);
     }
 
-    public function eliminarCuenta($id)
-    {
-        $account = Account::findOrFail($id);
+    Log::info('Cuentas listadas', [
+        'user_id' => $user_id,
+        'method_type' => $method_type,
+        'count' =>  ['accounts' => $accounts],
+    ]);
 
-        if ($account->account_type === 'destination' && $account->owner_id) {
-            AccountOwner::where('id', $account->owner_id)->delete();
-        }
-
-        $account->delete();
-
-        return response()->json(['message' => 'Cuenta eliminada correctamente']);
-    }
+    return response()->json($accounts);
+}
 
     public function crearTransferencia(Request $request)
     {
@@ -157,11 +184,12 @@ class OperacionController extends Controller
 
 
         $isEfectivo = $request->payment_method_slug === 'cash';
+        $isQR       = $request->payment_method_slug === 'qr';
 
         // Validación (exchange_rate y converted_amount se calculan en el backend)
         $validated = $request->validate([
-            'origin_account_id'       => $isEfectivo ? ['nullable'] : ['required','exists:accounts,id'],
-            'destination_account_id'  => $isEfectivo ? ['nullable'] : ['required','exists:accounts,id','different:origin_account_id'],
+            'origin_account_id'       => ($isEfectivo || $isQR) ? ['nullable'] : ['required','exists:accounts,id'],
+            'destination_account_id'  => ($isEfectivo || $isQR) ? ['nullable'] : ['required','exists:accounts,id','different:origin_account_id'],
             'amount'                  => ['required','numeric','min:0.01'],
             'comprobante'             => ['nullable','file','mimes:jpg,jpeg,png,pdf','max:5120'],
             'modo'                    => ['required','in:BOBtoPEN,PENtoBOB'],
@@ -293,18 +321,26 @@ class OperacionController extends Controller
 
     //  Enviar mensaje ya armado a n8n (para Evolution API)
     try {
+        $paymentSlug = $request->payment_method_slug ?? 'bank_transfer';
+
         $mensaje = "📌 *Nueva transferencia registrada*\n\n".
                 "📝 *Detalles de la operación*\n".
                 "• Número de operación: {$transferNumber}\n".
                 "• Fecha: {$transfer->created_at->format('d/m/Y H:i')}\n".
+                "• Método de pago: {$paymentSlug}\n".
                 "• Tipo de cambio aplicado: {$transfer->exchange_rate}\n\n".
 
                 "💰 *Depósito recibido*\n".
-                "• Monto recibido: ".number_format($transfer->amount, 2)." {$depositCurrency}\n".
-                "• Banco origen: {$transfer->originAccount->bank->name}\n".
-                "• Número de cuenta origen: {$transfer->originAccount->account_number}\n\n".
+                "• Monto recibido: ".number_format($transfer->amount, 2)." {$depositCurrency}\n";
 
-                "👤 *Propietario de la cuenta origen*\n".
+        if ($transfer->originAccount?->bank) {
+            $mensaje .= "• Banco origen: {$transfer->originAccount->bank->name}\n".
+                        "• Número de cuenta origen: {$transfer->originAccount->account_number}\n";
+        } elseif ($transfer->originAccount?->qr_value) {
+            $mensaje .= "• Cuenta origen (QR): país {$transfer->originAccount->qr_country}\n";
+        }
+
+        $mensaje .= "\n👤 *Cliente*\n".
                 "• Nombre: {$user->first_name} {$user->last_name}\n".
                 "• Email: {$user->email}\n".
                 "• Teléfono: ".($user->phone ?? 'N/D')."\n".
@@ -312,17 +348,23 @@ class OperacionController extends Controller
                 "• Documento: ".($user->document_number ?? 'N/D')."\n\n".
 
                 "📤 *Monto a enviar*\n".
-                "• Monto convertido: ".number_format($convertedAmount, 2)." {$receiveCurrency}\n".
-                "• Banco destino: {$transfer->destinationAccount->bank->name}\n".
-                "• Número de cuenta destino: {$transfer->destinationAccount->account_number}\n\n";
+                "• Monto convertido: ".number_format($convertedAmount, 2)." {$receiveCurrency}\n";
 
-        if ($transfer->destinationAccount->owner) {
-            $destOwner = $transfer->destinationAccount->owner;
-            $mensaje .= "👤 *Titular de la cuenta destino*\n".
-                        "• Nombre: ".($destOwner->full_name ?? 'N/D')."\n".
-                        "• Documento: ".($destOwner->document_number ?? 'N/D')."\n".
-                        "• Teléfono: ".($destOwner->phone ?? 'N/D')."\n".
-                        "• Email: ".($destOwner->email ?? 'N/D')."\n\n";
+        if ($transfer->destinationAccount?->bank) {
+            $mensaje .= "• Banco destino: {$transfer->destinationAccount->bank->name}\n".
+                        "• Número de cuenta destino: {$transfer->destinationAccount->account_number}\n\n";
+
+            if ($transfer->destinationAccount->owner) {
+                $destOwner = $transfer->destinationAccount->owner;
+                $mensaje .= "👤 *Titular de la cuenta destino*\n".
+                            "• Nombre: ".($destOwner->full_name ?? 'N/D')."\n".
+                            "• Documento: ".($destOwner->document_number ?? 'N/D')."\n".
+                            "• Teléfono: ".($destOwner->phone ?? 'N/D')."\n".
+                            "• Email: ".($destOwner->email ?? 'N/D')."\n\n";
+            }
+        } elseif ($transfer->destinationAccount?->qr_value) {
+            $mensaje .= "• Cuenta destino (QR): país {$transfer->destinationAccount->qr_country}\n".
+                        "• URL QR: {$transfer->destinationAccount->qr_value}\n\n";
         }
 
         $mensaje .= "📎 *Comprobante*: verificar en los Mails.\n\n".

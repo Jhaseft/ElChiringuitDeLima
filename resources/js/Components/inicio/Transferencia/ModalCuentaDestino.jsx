@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import BankSelect from "./BankSelect";
+import BankSelect from "../shared/BankSelect";
 
 let bancosCache = null;
 
@@ -108,6 +108,7 @@ export default function ModalCuentaDestino({
         },
         body: JSON.stringify({
           user_id: user.id,
+          method_type: "bank",
           account_type: accountType,
           bank_id: bankId,
           account_number: form.numeroCuenta,
@@ -144,7 +145,7 @@ export default function ModalCuentaDestino({
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 px-2">
-      
+
       {loading && (
         <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-black/60 text-white">
           <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mb-4"></div>

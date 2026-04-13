@@ -1,4 +1,4 @@
-import NumeroAutorizadoButton from "./NumeroAutorizadoButton";
+import NumeroAutorizadoButton from "./shared/NumeroAutorizadoButton";
 
 export default function InfoAdicionalCard() {
   const asesoresBolivia = [
