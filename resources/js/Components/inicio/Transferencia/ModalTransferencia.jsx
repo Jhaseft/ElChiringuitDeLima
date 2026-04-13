@@ -12,6 +12,7 @@ export default function ModalTransferencia({
   modoDescripcion,
   conversion,
   monto,
+  metodosPago,
 }) {
   const [comprobante, setComprobante] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -70,50 +71,10 @@ export default function ModalTransferencia({
       setLoading(false);
     }
   };
+  
+  
 
-  //  Configuración escalable
-  const transferOptions = {
-    BOBtoPEN: [
-      {
-        type: "qr",
-        title: "QR Bolivia",
-        image:
-          "https://res.cloudinary.com/dnbklbswg/image/upload/v1756359417/qr_hgokvi.jpg",
-      },
-    ],
-    PENtoBOB: [
-      {
-        type: "Yape",
-        title: "Yape Perú",
-        number: "947847817",
-        image:
-          "https://res.cloudinary.com/dnbklbswg/image/upload/v1756359619/yape-logo-png_seeklogo-504685_tns3su.png",
-      },
-      {
-        type: "Plin",
-        title: "Plin Perú",
-        number: "947847817",
-        image:
-          "https://res.cloudinary.com/dnbklbswg/image/upload/v1756359595/plin_fi3i8u.png",
-      },
-      {
-        type: "InterBank",
-        title: "InterBank Perú",
-        number: "4403006144735",
-        image:
-          "https://res.cloudinary.com/dnbklbswg/image/upload/v1756305466/download_zxsiny.png",
-      },
-       {
-        type: "InterBank",
-        title: "BCP Perú",
-        number: "2207063622037  ",
-        image:
-          "https://res.cloudinary.com/dnbklbswg/image/upload/v1756304903/bcp_mtkdyl.png",
-      },
-    ],
-  };
-
-  const opciones = transferOptions[modo] || [];
+  const opciones = metodosPago.filter(m => m.currency_pair === modo)
   const isBOBtoPEN = modo === "BOBtoPEN";
 
   const montoTexto = isBOBtoPEN ? `${monto} BOB` : `${monto} PEN`;
@@ -189,7 +150,7 @@ export default function ModalTransferencia({
                           <img
                             src={op.image}
                             alt={op.title}
-                            className="w-40 h-40 object-contain"
+                            className="md:w-40 md:h-40 w-60 h-60 object-contain "
                           />
                         </div>
                       </div>

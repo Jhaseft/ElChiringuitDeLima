@@ -15,7 +15,8 @@ export default function ModalOperacion({
   tasa,
   modo,              // "BOBtoPEN" | "PENtoBOB"
   modoDescripcion,   // "Bolivianos → Soles"
-  bancos
+  bancos,
+  metodosPago
 }) {
   const [juramento, setJuramento] = useState(false);
   const [terminos, setTerminos] = useState(false);
@@ -319,6 +320,7 @@ export default function ModalOperacion({
         modoDescripcion={modoDescripcion}
         cuentaOrigen={cuentaOrigen}
         cuentaDestino={cuentaDestino}
+        metodosPago={metodosPago}
       />
     </>
   );

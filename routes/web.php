@@ -8,8 +8,10 @@ use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminControllerDashboard;
 use App\Http\Controllers\Admin\AdminTransfersEfectivo;
 use App\Http\Controllers\Admin\AdminUserMediaController;
+use App\Http\Controllers\Admin\TransferMethodController;
 use App\Http\Controllers\TransferController;
 use App\Models\Bank;
+use App\Models\TransferMethod;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -19,11 +21,13 @@ use App\Http\Controllers\KycController;
 Route::get('/', function () {
     $bancos = Bank::all();
     $tc = \App\Models\TipoCambio::latest()->first();
+    $transferMethods= TransferMethod::all();
 
     return Inertia::render('Welcome', [
         'canLogin'    => Route::has('login'),
         'canRegister' => Route::has('register'),
         'bancos'      => $bancos,
+        'TrMethods'   => $transferMethods,
         'tasas'       => $tc ? ['compra' => (float)$tc->compra, 'venta' => (float)$tc->venta] : null,
         'transferConfig' => [
             'min_pen'       => config('transfercash.min_pen'),
@@ -155,9 +159,18 @@ Route::prefix('admin')->group(function () {
         //quinta pantalla
         Route::get('/dashboard/efectivo', [AdminTransfersEfectivo::class, 'index']);
 
+         //sexta pantalla
+        Route::get('/dashboard/metodos', [TransferMethodController::class, 'index']);
+        Route::post('/dashboard/metodos/store', [TransferMethodController::class, 'store']);
+        Route::post('/dashboard/metodos/{id}/update', [TransferMethodController::class, 'update']);
+        Route::delete('/dashboard/metodos/{id}', [TransferMethodController::class, 'destroy']);
+
         //tipo de cambio
         Route::post('/tipo-cambio', [AdminControllerDashboard::class, 'update']);
          
+        //metodos de pago
+
+
         //usuarios
         Route::get('/users/{user}/detail/info', [AdminUserMediaController::class, 'showUsers']);
         Route::get('/users/{user}/detail/accounts', [AdminUserMediaController::class, 'showAccounts']);
@@ -173,6 +186,14 @@ Route::prefix('admin')->group(function () {
 
     
     });
+});
+
+// Métodos de transferencia - API pública (web + app móvil)
+Route::get('/api/transfer-methods', function () {
+    $methods = \App\Models\TransferMethod::all()
+        ->groupBy('currency_pair')
+        ->map(fn($group) => $group->values());
+    return response()->json($methods);
 });
 
 // Tipo de cambio - API pública

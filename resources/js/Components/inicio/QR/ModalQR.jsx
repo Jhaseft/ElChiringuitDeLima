@@ -2,43 +2,6 @@ import { useState, useEffect } from "react";
 import { X, QrCode, Upload, RefreshCw, ChevronLeft, Copy } from "lucide-react";
 import StatusMessage from "@/Components/ui/StatusMessage";
 
-// Opciones de pago de la empresa según modo (igual que ModalTransferencia)
-const OPCIONES_PAGO = {
-    BOBtoPEN: [
-        {
-            type: "qr",
-            title: "QR Bolivia",
-            image: "https://res.cloudinary.com/dnbklbswg/image/upload/v1756359417/qr_hgokvi.jpg",
-        },
-    ],
-    PENtoBOB: [
-        {
-            type: "Yape",
-            title: "Yape Perú",
-            number: "947847817",
-            image: "https://res.cloudinary.com/dnbklbswg/image/upload/v1756359619/yape-logo-png_seeklogo-504685_tns3su.png",
-        },
-        {
-            type: "Plin",
-            title: "Plin Perú",
-            number: "947847817",
-            image: "https://res.cloudinary.com/dnbklbswg/image/upload/v1756359595/plin_fi3i8u.png",
-        },
-        {
-            type: "InterBank",
-            title: "InterBank Perú",
-            number: "4403006144735",
-            image: "https://res.cloudinary.com/dnbklbswg/image/upload/v1756305466/download_zxsiny.png",
-        },
-        {
-            type: "BCP",
-            title: "BCP Perú",
-            number: "2207063622037",
-            image: "https://res.cloudinary.com/dnbklbswg/image/upload/v1756304903/bcp_mtkdyl.png",
-        },
-    ],
-};
-
 const paisPorModo = { PENtoBOB: "PE", BOBtoPEN: "BO" };
 
 export default function ModalQR({
@@ -50,6 +13,7 @@ export default function ModalQR({
     tasa,
     modo,
     modoDescripcion,
+    metodosPago,
 }) {
     const [paso, setPaso] = useState(1); // 1 = QR usuario, 2 = pago + comprobante
 
@@ -71,7 +35,7 @@ export default function ModalQR({
 
     const csrfToken  = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
     const qrCountry  = paisPorModo[modo] ?? "PE";
-    const opciones   = OPCIONES_PAGO[modo] ?? [];
+    const opciones   = metodosPago.filter(m => m.currency_pair === modo);
     const isBOBtoPEN = modo === "BOBtoPEN";
     const montoTexto      = isBOBtoPEN ? `${monto} BOB` : `${monto} PEN`;
     const conversionTexto = isBOBtoPEN ? `${conversion} PEN` : `${conversion} BOB`;
