@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Account;
 use App\Mail\VerifyCodeEmail;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 
 class AppNative extends Controller
@@ -119,7 +120,7 @@ class AppNative extends Controller
     public function listarCuentas(Request $request)
 {
     $userId = $request->query('user_id'); // obtener user_id desde la query
-
+    $method_type = $request->query('type');
     // Si no viene user_id, usamos el usuario autenticado (opcional)
     if (!$userId) {
         $user = $request->user();
@@ -130,26 +131,50 @@ class AppNative extends Controller
         return response()->json(['error' => 'Usuario no encontrado'], 404);
     }
 
-    $accounts = Account::with('bank', 'owner')
+    $accounts = Account::with(['bank', 'owner'])
         ->where('user_id', $userId)
-        ->get()
-        ->map(function ($a) {
+        ->where('method_type', $method_type)
+        ->get();
+
+    if ($method_type === 'bank') {
+        $accounts = $accounts->map(function ($a) {
             return [
                 'id' => $a->id,
                 'account_number' => $a->account_number,
                 'account_type' => $a->account_type,
-                'bank_id' => $a->bank->id,
-                'bank_name' => $a->bank->name,
-                'bank_logo' => $a->bank->logo_url,
-                'bank_country' => $a->bank->country,
+                'bank_id' => $a->bank?->id,
+                'bank_name' => $a->bank?->name,
+                'bank_logo' => $a->bank?->logo_url,
                 'owner_full_name' => $a->owner?->full_name,
                 'owner_document' => $a->owner?->document_number,
                 'owner_phone' => $a->owner?->phone,
             ];
         });
 
+    } elseif ($method_type === 'qr') {
+        $accounts = $accounts->map(function ($a) {
+            return [
+                'id' => $a->id,
+                'qr_value' => $a->qr_value,
+                'qr_country' => $a->qr_country,
+            ]; 
+        });
+    } else {
+        return response()->json([
+            'error' => 'Método no válido'
+        ], 400);
+    }
+
+     Log::info('Cuentas listadas', [
+        'user_id' => $userId,
+        'method_type' => $method_type,
+        'count' =>  ['accounts' => $accounts],
+    ]);
+
     return response()->json($accounts);
 }
+
+
 
 // Completar perfil (usuarios Google o incompletos)
 public function completeProfile(Request $request)

@@ -160,11 +160,7 @@ class OperacionController extends Controller
         ], 400);
     }
 
-    Log::info('Cuentas listadas', [
-        'user_id' => $user_id,
-        'method_type' => $method_type,
-        'count' =>  ['accounts' => $accounts],
-    ]);
+
 
     return response()->json($accounts);
 }

@@ -8,7 +8,7 @@ use App\Http\Controllers\MobileFaceController;
 use Illuminate\Support\Facades\Cache;
 use App\Http\Controllers\KycController;
 use App\Http\Controllers\VersionGuardController;
-
+ 
 // Registro y verificación
 Route::post('/register', [AppNative::class, 'register']);
 Route::post('/verify-code', [AppNative::class, 'verifyCode']);
@@ -23,7 +23,10 @@ Route::post('/logingoogle', [AppNative::class, 'loginGoogle']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AppNative::class, 'logout']);
     Route::get('/userapp', [AppNative::class, 'user']);
+    
     Route::get('/listar-cuentas', [AppNative::class, 'listarCuentas']);
+
+
     Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta']);
     Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia']);
     Route::get('/transfers/historymobile', [TransferController::class, 'historymobile']);
