@@ -4,6 +4,7 @@ import axios from "axios";
 import TransferModal from "./TransferModal";
 import UserModal from "./UserModal";
 import AdminOverlay from "../AdminOverlay";
+import ImagesModal from "../ImagesModal";
 import { Search, Trash2, UserRoundCog, BanknoteArrowUp, Receipt, ShieldCheck } from "lucide-react";
 
 const statusBadge = {
@@ -34,6 +35,16 @@ export default function AdminTransfersTable({ transfers, filters = {} }) {
   const [detailOpenTransfer, setDetailOpenTransfer] = useState(false);
   const [detailTransfer, setDetailTranfer] = useState(null);
   const [overlay, setOverlay] = useState(null);
+  const [imagesOpen, setImagesOpen] = useState(false);
+  const [imagesList, setImagesList] = useState([]);
+  const [imagesTitle, setImagesTitle] = useState("Comprobantes");
+
+  const openImages = (list, title) => {
+    if (!list.length) return;
+    setImagesList(list);
+    setImagesTitle(title);
+    setImagesOpen(true);
+  };
  
   const navigate = (params) => {
     router.get("/admin/dashboard/efectivo", params, {
@@ -165,9 +176,16 @@ export default function AdminTransfersTable({ transfers, filters = {} }) {
                       </button>
 
                       <button
-                        onClick={() => window.open(`${r.client_receipt}`, "_blank")}
-                        title="Ver comprobante del cliente"
-                        disabled={busy || !r.client_receipt}
+                        onClick={() => {
+                          const list = r.client_receipts?.length
+                            ? r.client_receipts.map((rc) => rc.receipt_url)
+                            : r.client_receipt
+                            ? [r.client_receipt]
+                            : [];
+                          openImages(list, "Comprobantes del cliente");
+                        }}
+                        title="Ver comprobantes del cliente"
+                        disabled={busy || (!r.client_receipt && !r.client_receipts?.length)}
                         className="p-1.5 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         <Receipt size={20} />
@@ -221,6 +239,13 @@ export default function AdminTransfersTable({ transfers, filters = {} }) {
           onUpdated={() => router.reload({ preserveScroll: true })}
         />
       )}
+
+      <ImagesModal
+        isOpen={imagesOpen}
+        onClose={() => setImagesOpen(false)}
+        images={imagesList}
+        title={imagesTitle}
+      />
     </div>
   );
 }

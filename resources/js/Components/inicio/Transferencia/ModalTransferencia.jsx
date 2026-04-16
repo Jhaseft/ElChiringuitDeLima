@@ -1,5 +1,5 @@
-import { X, Copy } from "lucide-react";
-import { useState } from "react";
+import { X, Copy, ImagePlus } from "lucide-react";
+import { useState, useRef } from "react";
 import StatusMessage from "@/Components/ui/StatusMessage";
 
 export default function ModalTransferencia({
@@ -14,10 +14,12 @@ export default function ModalTransferencia({
   monto,
   metodosPago,
 }) {
-  const [comprobante, setComprobante] = useState(null);
+  const [comprobantes, setComprobantes] = useState([]);
+  const [previews, setPreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const fileInputRef = useRef(null);
 
   if (!isOpen) return null;
 
@@ -25,13 +27,34 @@ export default function ModalTransferencia({
     .querySelector('meta[name="csrf-token"]')
     ?.getAttribute("content");
 
-  const handleUpload = (e) => setComprobante(e.target.files[0]);
+  const handleUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const total = comprobantes.length + files.length;
+    if (total > 5) {
+      setError("Máximo 5 comprobantes.");
+      return;
+    }
+    setError("");
+    const newFiles = [...comprobantes, ...files];
+    setComprobantes(newFiles);
+    const newPreviews = files.map((f) =>
+      f.type.startsWith("image/") ? URL.createObjectURL(f) : null
+    );
+    setPreviews((prev) => [...prev, ...newPreviews]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeFile = (index) => {
+    if (previews[index]) URL.revokeObjectURL(previews[index]);
+    setComprobantes((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const copyToClipboard = (text) => navigator.clipboard.writeText(text);
 
   const handleEnviar = async () => {
-    if (!comprobante) {
-      setError("Por favor, sube un comprobante.");
+    if (comprobantes.length === 0) {
+      setError("Por favor, sube al menos un comprobante.");
       return;
     }
 
@@ -40,7 +63,7 @@ export default function ModalTransferencia({
       return;
     }
 
-    setLoading(true);
+    setLoading(true); 
     setError("");
 
     try {
@@ -48,7 +71,7 @@ export default function ModalTransferencia({
       formData.append("origin_account_id", cuentaOrigen.id);
       formData.append("destination_account_id", cuentaDestino.id);
       formData.append("amount", monto);
-      formData.append("comprobante", comprobante);
+      comprobantes.forEach((file) => formData.append("comprobantes[]", file));
       formData.append("modo", modo);
 
       const res = await fetch("/operacion/crear-transferencia", {
@@ -189,18 +212,49 @@ export default function ModalTransferencia({
 
             <div className="mb-4">
               <label className="block text-sm font-semibold mb-2">
-                Subir comprobante
+                Subir comprobantes <span className="text-gray-400 font-normal">(máx. 5)</span>
               </label>
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                onChange={handleUpload}
-                className="w-full text-sm"
-              />
-              {comprobante && (
-                <p className="text-xs text-green-600 mt-1">
-                  Archivo cargado: {comprobante.name}
-                </p>
+              
+              {comprobantes.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {comprobantes.map((file, idx) => (
+                    <div key={idx} className="relative group w-20 h-20">
+                      {previews[idx] ? (
+                        <img
+                          src={previews[idx]}
+                          alt={file.name}
+                          className="w-full h-full object-cover rounded-lg border border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-500 text-center p-1">
+                          PDF
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeFile(idx)}
+                        className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {comprobantes.length < 5 && (
+                <label className="flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition text-sm text-gray-500">
+                  <ImagePlus size={18} />
+                  {comprobantes.length === 0 ? "Seleccionar comprobantes" : "Agregar más"}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,application/pdf"
+                    multiple
+                    onChange={handleUpload}
+                    className="hidden"
+                  />
+                </label>
               )}
             </div>
 

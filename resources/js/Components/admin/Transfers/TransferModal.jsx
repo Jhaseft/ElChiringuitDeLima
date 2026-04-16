@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import AccountCard from "../Users/AccountCard";
-import { X, Upload, ArrowRight } from "lucide-react";
+import { X, Upload, ArrowRight, ImagePlus } from "lucide-react";
 
 const STATUS_OPTIONS = [
   { value: "pending",   label: "Pendiente",  ring: "ring-yellow-300",  active: "border-yellow-400 bg-yellow-50 text-yellow-700",  idle: "border-gray-200 bg-white text-gray-500 hover:border-yellow-200" },
@@ -16,25 +16,48 @@ const STATUS_BADGE = {
 };
 
 export default function TransferModal({ selected, isOpen, onClose, onUpdated }) {
-  const [editStatus, setEditStatus]           = useState(selected.status);
-  const [comprobante, setComprobante]         = useState(null);
-  const [comprobantePreview, setComprobantePreview] = useState(null);
-  const [loading, setLoading]                 = useState(false);
-  const [error, setError]                     = useState(null);
+  const [editStatus, setEditStatus]     = useState(selected.status);
+  const [comprobantes, setComprobantes] = useState([]);
+  const [previews, setPreviews]         = useState([]);
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
       setEditStatus(selected.status);
-      setComprobante(null);
-      setComprobantePreview(null);
+      setComprobantes([]);
+      setPreviews([]);
       setError(null);
     }
   }, [isOpen, selected.status]);
 
+  const handleAddFiles = (e) => {
+    const files = Array.from(e.target.files);
+    const total = comprobantes.length + files.length;
+    if (total > 5) {
+      setError("Máximo 5 comprobantes.");
+      return;
+    }
+    setError(null);
+    setComprobantes((prev) => [...prev, ...files]);
+    const newPreviews = files.map((f) =>
+      f.type.startsWith("image/") ? URL.createObjectURL(f) : null
+    );
+    setPreviews((prev) => [...prev, ...newPreviews]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeFile = (index) => {
+    if (previews[index]) URL.revokeObjectURL(previews[index]);
+    setComprobantes((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleUpdate = async () => {
     setError(null);
-    if (editStatus === "completed" && !comprobante) {
-      setError("Debes subir un comprobante para marcar como Completado.");
+    if (editStatus === "completed" && comprobantes.length === 0) {
+      setError("Debes subir al menos un comprobante para marcar como Completado.");
       return;
     }
     setLoading(true);
@@ -42,7 +65,9 @@ export default function TransferModal({ selected, isOpen, onClose, onUpdated }) 
       const formData = new FormData();
       formData.append("_method", "PUT");
       formData.append("status", editStatus);
-      if (editStatus === "completed") formData.append("comprobante", comprobante);
+      if (editStatus === "completed") {
+        comprobantes.forEach((file) => formData.append("comprobantes[]", file));
+      }
 
       await axios.post(`/admin/transfers/${selected.id}`, formData, {
         withCredentials: true,
@@ -61,11 +86,6 @@ export default function TransferModal({ selected, isOpen, onClose, onUpdated }) 
     } finally {
       setLoading(false);
     }
-  };
-
-  const clearComprobante = () => {
-    setComprobante(null);
-    setComprobantePreview(null);
   };
 
   const formatDate = (d) =>
@@ -172,49 +192,57 @@ export default function TransferModal({ selected, isOpen, onClose, onUpdated }) 
             {editStatus === "completed" && (
               <div className="mt-4">
                 <label className="block text-xs font-semibold text-gray-600 mb-2">
-                  Comprobante de pago <span className="text-red-500">*</span>
+                  Comprobantes de pago <span className="text-red-500">*</span>
+                  <span className="text-gray-400 font-normal ml-1">(máx. 5)</span>
                 </label>
 
-                {!comprobante ? (
-                  <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-white hover:border-green-400 hover:bg-green-50/20 transition">
-                    <Upload size={22} className="text-gray-400 mb-1" />
-                    <span className="text-xs text-gray-400">Haz clic o arrastra una imagen JPG / PNG</span>
+                {comprobantes.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {comprobantes.map((file, idx) => (
+                      <div key={idx} className="relative group w-24 h-24">
+                        {previews[idx] ? (
+                          <img
+                            src={previews[idx]}
+                            alt={file.name}
+                            className="w-full h-full object-cover rounded-xl border border-gray-200 shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-xs text-gray-500">
+                            PDF
+                          </div>
+                        )}
+                        <button
+                          onClick={() => removeFile(idx)}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow"
+                        >
+                          <X size={14} />
+                        </button>
+                        <p className="text-[10px] text-gray-400 mt-0.5 truncate w-24">{file.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {comprobantes.length < 5 && (
+                  <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-white hover:border-green-400 hover:bg-green-50/20 transition">
+                    <ImagePlus size={22} className="text-gray-400 mb-1" />
+                    <span className="text-xs text-gray-400">
+                      {comprobantes.length === 0 ? "Seleccionar comprobantes (JPG, PNG, PDF)" : "Agregar más"}
+                    </span>
                     <input
+                      ref={fileInputRef}
                       type="file"
-                      accept=".jpg,.jpeg,.png"
+                      accept=".jpg,.jpeg,.png,.pdf"
+                      multiple
                       className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file && file.type.startsWith("image/")) {
-                          setComprobante(file);
-                          setComprobantePreview(URL.createObjectURL(file));
-                          setError(null);
-                        } else if (file) {
-                          setError("Solo se permiten imágenes JPG o PNG.");
-                        }
-                      }}
+                      onChange={handleAddFiles}
                     />
                   </label>
-                ) : (
-                  <div className="relative w-fit mt-1">
-                    <img
-                      src={comprobantePreview}
-                      alt="Comprobante"
-                      className="max-h-44 rounded-xl border border-gray-200 shadow-sm object-contain"
-                    />
-                    <button
-                      onClick={clearComprobante}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 transition shadow"
-                    >
-                      <X size={14} />
-                    </button>
-                    <p className="text-xs text-gray-400 mt-1 truncate max-w-xs">{comprobante.name}</p>
-                  </div>
                 )}
               </div>
             )}
           </div>
-
+ 
      
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">

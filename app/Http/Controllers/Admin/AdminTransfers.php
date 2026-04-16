@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\TransferVerifiedMail; 
 use Illuminate\Http\Request;
 use App\Models\Transfer;
+use App\Models\TransactionReceipt;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Cloudinary\Api\Upload\UploadApi;
@@ -24,6 +25,8 @@ class AdminTransfers extends Controller
             'paymentMethod',
             'originAccount.bank',
             'destinationAccount.bank',
+            'clientReceipts',
+            'adminReceipts',
         ])
         ->whereHas('paymentMethod', fn($q) => $q->where('slug', 'bank_transfer'))
         ->orderBy('created_at', 'desc');
@@ -95,38 +98,47 @@ public function update(Request $request, $id)
 
     $request->validate([
         'status' => 'required|in:pending,completed,rejected',
-        'comprobante' => $isCash
-            ? 'nullable|file|mimes:jpg,jpeg,png,pdf'
-            : 'nullable|file|mimes:jpg,jpeg,png,pdf|required_if:status,completed',
+        'comprobantes'   => $isCash
+            ? 'nullable|array|max:5'
+            : 'nullable|array|max:5|required_if:status,completed',
+        'comprobantes.*' => 'file|mimes:jpg,jpeg,png,pdf|max:5120',
     ]);
 
-    // Si se completa y hay comprobante → subir a Cloudinary
-    if ($request->status === 'completed' && $request->hasFile('comprobante')) {
+    // Si se completa y hay comprobantes → subir a Cloudinary
+    if ($request->status === 'completed' && $request->hasFile('comprobantes')) {
+        $uploadApi = new UploadApi();
+        $firstUrl = null;
 
-        try {
+        foreach ($request->file('comprobantes') as $file) {
+            try {
+                $uploaded = $uploadApi->upload(
+                    $file->getRealPath(),
+                    [
+                        'folder' => 'transferencias/admin/'.$transfer->id,
+                        'resource_type' => 'auto'
+                    ]
+                );
 
-            $uploadApi = new UploadApi();
+                $url = $uploaded['secure_url'];
+                if (!$firstUrl) $firstUrl = $url;
 
-            $uploaded = $uploadApi->upload(
-                $request->file('comprobante')->getRealPath(),
-                [
-                    'folder' => 'transferencias/admin/'.$transfer->id,
-                    'resource_type' => 'auto'
-                ]
-            );
+                TransactionReceipt::create([
+                    'transaction_id' => $transfer->id,
+                    'receipt_url'    => $url,
+                    'receipt_type'   => 'admin',
+                    'uploaded_by'    => $request->user()?->id,
+                ]);
 
-            //  Guardamos la URL en admin_receipt
-            $transfer->admin_receipt = $uploaded['secure_url'];
+            } catch (\Exception $e) {
+                Log::error('Error subiendo comprobante admin', [
+                    'message' => $e->getMessage()
+                ]);
+            }
+        }
 
-        } catch (\Exception $e) {
-
-            Log::error('Error subiendo comprobante admin', [
-                'message' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'message' => 'Error subiendo el comprobante.'
-            ], 500);
+        // Mantener compatibilidad con admin_receipt
+        if ($firstUrl) {
+            $transfer->admin_receipt = $firstUrl;
         }
     }
 

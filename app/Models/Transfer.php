@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Transfer extends Model
-{
+{ 
     use HasFactory;
 
     protected $fillable = [
@@ -19,8 +19,6 @@ class Transfer extends Model
         'converted_amount',
         'modo',
         'status',
-        'client_receipt',
-        'admin_receipt',
     ];
 
     public function user()
@@ -41,5 +39,24 @@ class Transfer extends Model
     public function destinationAccount()
     {
         return $this->belongsTo(Account::class, 'destination_account_id')->with('bank','owner');
+    }
+
+    // ─── Nuevas relaciones de comprobantes ────────────────
+
+    public function receipts()
+    {
+        return $this->hasMany(TransactionReceipt::class, 'transaction_id');
+    }
+
+    public function clientReceipts()
+    {
+        return $this->hasMany(TransactionReceipt::class, 'transaction_id')
+                    ->where('receipt_type', 'client');
+    }
+
+    public function adminReceipts()
+    {
+        return $this->hasMany(TransactionReceipt::class, 'transaction_id')
+                    ->where('receipt_type', 'admin');
     }
 }
