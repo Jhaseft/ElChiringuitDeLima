@@ -107,7 +107,6 @@ public function update(Request $request, $id)
     // Si se completa y hay comprobantes → subir a Cloudinary
     if ($request->status === 'completed' && $request->hasFile('comprobantes')) {
         $uploadApi = new UploadApi();
-        $firstUrl = null;
 
         foreach ($request->file('comprobantes') as $file) {
             try {
@@ -119,12 +118,9 @@ public function update(Request $request, $id)
                     ]
                 );
 
-                $url = $uploaded['secure_url'];
-                if (!$firstUrl) $firstUrl = $url;
-
                 TransactionReceipt::create([
                     'transaction_id' => $transfer->id,
-                    'receipt_url'    => $url,
+                    'receipt_url'    => $uploaded['secure_url'],
                     'receipt_type'   => 'admin',
                     'uploaded_by'    => $request->user()?->id,
                 ]);
@@ -135,11 +131,6 @@ public function update(Request $request, $id)
                 ]);
             }
         }
-
-        // Mantener compatibilidad con admin_receipt
-        if ($firstUrl) {
-            $transfer->admin_receipt = $firstUrl;
-        }
     }
 
     // Actualizar estado
@@ -148,9 +139,12 @@ public function update(Request $request, $id)
 
     // Enviar correo si se completó
     if ($transfer->status === 'completed') {
+        $adminReceiptUrl = $transfer->adminReceipts()
+            ->latest('id')
+            ->value('receipt_url');
 
         Mail::to($transfer->user->email)
-            ->send(new TransferVerifiedMail($transfer, $transfer->admin_receipt));
+            ->send(new TransferVerifiedMail($transfer, $adminReceiptUrl));
     }
 
     return response()->json($transfer);

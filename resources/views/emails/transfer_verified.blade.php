@@ -29,30 +29,57 @@
                     <!-- Detalles de la operación -->
                     <tr>
                         <td style="padding:0 30px 20px 30px; color:#555555; font-size:14px; line-height:1.6;">
+                            @php
+                                $slug       = $paymentMethodSlug ?? 'bank_transfer';
+                                $methodName = $paymentMethodName ?? 'Transferencia Bancaria';
+                                $depCur     = $depositCurrency ?? '';
+                                $recCur     = $receiveCurrency ?? '';
+                            @endphp
+
                             <h2 style="color:#333333;">📝 Detalles de la transferencia</h2>
                             <ul style="padding-left:20px; list-style-type:disc;">
-                                <li><strong>Monto enviado:</strong> {{ $amount }}</li>
-                                <li><strong>Monto convertido:</strong> {{ $converted_amount ?? '-' }}</li>
+                                <li><strong>Método de pago:</strong> {{ $methodName }}</li>
+                                <li><strong>Monto enviado:</strong> {{ number_format($amount, 2) }} {{ $depCur }}</li>
+                                <li><strong>Monto convertido:</strong> {{ number_format($converted_amount ?? 0, 2) }} {{ $recCur }}</li>
                                 <li><strong>Tipo de cambio:</strong> {{ $exchange_rate ?? '-' }}</li>
                                 <li><strong>Modo de transferencia:</strong> {{ $transfer->modo ?? '-' }}</li>
                             </ul>
 
-                            <h2 style="color:#333333;">🏦 Cuentas involucradas</h2>
-                            <ul style="padding-left:20px; list-style-type:disc;">
-                                @if($origin_account || $destination_account)
-                                    <li><strong>Cuenta origen:</strong> {{ $origin_account?->account_number ?? 'N/A' }}</li>
-                                    <li><strong>Cuenta destino:</strong> {{ $destination_account?->account_number ?? 'N/A' }}</li>
-                                @else
-                                    <li>Información de cuentas no disponible.</li>
-                                @endif
-                            </ul>
+                            {{-- Cuentas involucradas según método --}}
+                            @if($slug === 'cash')
+                                <h2 style="color:#333333;">💵 Entrega en efectivo</h2>
+                                <p>Su operación con pago en efectivo ha sido completada. Si aún no ha retirado el monto convertido, acérquese a la oficina / punto autorizado con su documento de identidad.</p>
+                            @elseif($slug === 'qr')
+                                <h2 style="color:#333333;">📱 Operación vía QR</h2>
+                                <ul style="padding-left:20px; list-style-type:disc;">
+                                    @if($origin_account?->qr_value)
+                                        <li><strong>QR origen:</strong> país {{ $origin_account->qr_country }}</li>
+                                    @endif
+                                    @if($destination_account?->qr_value)
+                                        <li><strong>QR destino:</strong> país {{ $destination_account->qr_country }}</li>
+                                    @endif
+                                </ul>
+                            @else
+                                <h2 style="color:#333333;">🏦 Cuentas involucradas</h2>
+                                <ul style="padding-left:20px; list-style-type:disc;">
+                                    @if($origin_account || $destination_account)
+                                        <li><strong>Cuenta origen:</strong>
+                                            {{ $origin_account?->bank?->name ? $origin_account->bank->name.' — ' : '' }}
+                                            {{ $origin_account?->account_number ?? 'N/A' }}
+                                        </li>
+                                        <li><strong>Cuenta destino:</strong>
+                                            {{ $destination_account?->bank?->name ? $destination_account->bank->name.' — ' : '' }}
+                                            {{ $destination_account?->account_number ?? 'N/A' }}
+                                        </li>
+                                    @else
+                                        <li>Información de cuentas no disponible.</li>
+                                    @endif
+                                </ul>
+                            @endif
 
                             @if(!empty($adminReceipt))
                                 <h2 style="color:#333333;">📎 Comprobante aprobado</h2>
-
-                                <p>
-                                    Puedes visualizar tu comprobante oficial haciendo clic en el siguiente botón:
-                                </p>
+                                <p>Puedes visualizar tu comprobante oficial haciendo clic en el siguiente botón:</p>
 
                                 <div style="margin:20px 0; text-align:center;">
                                     <a href="{{ $adminReceipt }}"
