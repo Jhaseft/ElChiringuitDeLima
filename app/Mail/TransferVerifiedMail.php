@@ -27,6 +27,7 @@ class TransferVerifiedMail extends Mailable
             'originAccount.owner',
             'destinationAccount.bank',
             'destinationAccount.owner',
+            'adminReceipts',
         ]);
 
         $slug       = $this->transfer->paymentMethod?->slug ?? 'bank_transfer';
@@ -35,6 +36,13 @@ class TransferVerifiedMail extends Mailable
         $modo            = $this->transfer->modo;
         $depositCurrency = $modo === 'BOBtoPEN' ? 'BOB' : 'PEN';
         $receiveCurrency = $modo === 'BOBtoPEN' ? 'PEN' : 'BOB';
+
+        // Todas las URLs de comprobantes subidos por el admin para esta operación
+        $adminReceiptUrls = $this->transfer->adminReceipts
+            ->pluck('receipt_url')
+            ->filter()
+            ->values()
+            ->all();
 
         return $this->subject('Tu transferencia ha sido verificada')
                     ->view('emails.transfer_verified')
@@ -45,7 +53,8 @@ class TransferVerifiedMail extends Mailable
                         'origin_account'      => $this->transfer->originAccount,
                         'destination_account' => $this->transfer->destinationAccount,
                         'exchange_rate'       => $this->transfer->exchange_rate,
-                        'adminReceipt'        => $this->adminReceipt,
+                        'adminReceipt'        => $this->adminReceipt ?? ($adminReceiptUrls[0] ?? null),
+                        'adminReceipts'       => $adminReceiptUrls,
                         'paymentMethodSlug'   => $slug,
                         'paymentMethodName'   => $methodName,
                         'depositCurrency'     => $depositCurrency,

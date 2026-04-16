@@ -137,14 +137,10 @@ public function update(Request $request, $id)
     $transfer->status = $request->status;
     $transfer->save();
 
-    // Enviar correo si se completó
+    // Enviar correo si se completó (el mailable carga todos los comprobantes admin)
     if ($transfer->status === 'completed') {
-        $adminReceiptUrl = $transfer->adminReceipts()
-            ->latest('id')
-            ->value('receipt_url');
-
         Mail::to($transfer->user->email)
-            ->send(new TransferVerifiedMail($transfer, $adminReceiptUrl));
+            ->send(new TransferVerifiedMail($transfer));
     }
 
     return response()->json($transfer);

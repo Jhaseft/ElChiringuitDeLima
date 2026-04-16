@@ -77,22 +77,39 @@
                                 </ul>
                             @endif
 
-                            @if(!empty($adminReceipt))
-                                <h2 style="color:#333333;">📎 Comprobante aprobado</h2>
-                                <p>Puedes visualizar tu comprobante oficial haciendo clic en el siguiente botón:</p>
+                            @php
+                                $receiptsList = !empty($adminReceipts)
+                                    ? $adminReceipts
+                                    : (!empty($adminReceipt) ? [$adminReceipt] : []);
+                            @endphp
+
+                            @if(count($receiptsList) > 0)
+                                <h2 style="color:#333333;">
+                                    📎 {{ count($receiptsList) > 1 ? 'Comprobantes aprobados' : 'Comprobante aprobado' }}
+                                </h2>
+                                <p>
+                                    @if(count($receiptsList) > 1)
+                                        Puedes visualizar tus comprobantes oficiales haciendo clic en los siguientes botones:
+                                    @else
+                                        Puedes visualizar tu comprobante oficial haciendo clic en el siguiente botón:
+                                    @endif
+                                </p>
 
                                 <div style="margin:20px 0; text-align:center;">
-                                    <a href="{{ $adminReceipt }}"
-                                    target="_blank"
-                                    style="background-color:#10b981;
-                                            color:#ffffff;
-                                            padding:12px 25px;
-                                            text-decoration:none;
-                                            border-radius:6px;
-                                            font-weight:bold;
-                                            display:inline-block;">
-                                        Ver comprobante
-                                    </a>
+                                    @foreach($receiptsList as $idx => $url)
+                                        <a href="{{ $url }}"
+                                            target="_blank"
+                                            style="background-color:#10b981;
+                                                    color:#ffffff;
+                                                    padding:12px 25px;
+                                                    text-decoration:none;
+                                                    border-radius:6px;
+                                                    font-weight:bold;
+                                                    display:inline-block;
+                                                    margin:5px;">
+                                            Ver comprobante {{ count($receiptsList) > 1 ? ($idx + 1) : '' }}
+                                        </a>
+                                    @endforeach
                                 </div>
                             @endif
 
