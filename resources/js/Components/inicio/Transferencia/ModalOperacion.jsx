@@ -31,10 +31,45 @@ export default function ModalOperacion({
 
   const [cuentasUsuario, setCuentasUsuario] = useState([]);
   const [loadingCuentas, setLoadingCuentas] = useState(false);
+  const [eliminandoCuenta, setEliminandoCuenta] = useState(false);
 
   //  Función para actualizar cache
   const updateCache = (userId, cuentas) => {
     localStorage.setItem(`cuentas_${userId}`, JSON.stringify(cuentas));
+  };
+
+  const handleEliminarCuenta = async (cuenta, tipo) => {
+    if (!cuenta?.id || eliminandoCuenta) return;
+    if (!confirm("¿Estás seguro de eliminar esta cuenta?")) return;
+
+    setEliminandoCuenta(true);
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+      const res = await fetch(`/eliminar/${cuenta.id}`, {
+        method: "DELETE",
+        headers: {
+          "X-CSRF-TOKEN": csrfToken,
+          Accept: "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Error al eliminar la cuenta");
+      }
+
+      const nuevas = cuentasUsuario.filter((c) => c.id !== cuenta.id);
+      setCuentasUsuario(nuevas);
+      updateCache(user.id, nuevas);
+
+      if (tipo === "origen") setCuentaOrigen(null);
+      if (tipo === "destino") setCuentaDestino(null);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "No se pudo eliminar la cuenta");
+    } finally {
+      setEliminandoCuenta(false);
+    }
   };
 
   useEffect(() => {
@@ -176,6 +211,14 @@ export default function ModalOperacion({
                 >
                   <Plus size={18} />
                 </button>
+                <button
+                  onClick={() => handleEliminarCuenta(cuentaOrigen, "origen")}
+                  disabled={!cuentaOrigen || eliminandoCuenta}
+                  className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Eliminar cuenta"
+                >
+                  <Trash2 size={18} />
+                </button>
 
               </div>
             )}
@@ -200,6 +243,14 @@ export default function ModalOperacion({
                   title="Agregar cuenta"
                 >
                   <Plus size={18} />
+                </button>
+                <button
+                  onClick={() => handleEliminarCuenta(cuentaDestino, "destino")}
+                  disabled={!cuentaDestino || eliminandoCuenta}
+                  className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Eliminar cuenta"
+                >
+                  <Trash2 size={18} />
                 </button>
 
               </div>

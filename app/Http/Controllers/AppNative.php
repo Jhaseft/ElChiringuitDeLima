@@ -132,6 +132,7 @@ class AppNative extends Controller
 
     $accounts = Account::with('bank', 'owner')
         ->where('user_id', $userId)
+        ->where('desactivate',false)
         ->get()
         ->map(function ($a) {
             return [

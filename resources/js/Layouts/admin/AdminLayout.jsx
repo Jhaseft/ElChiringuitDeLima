@@ -1,5 +1,5 @@
 import { Link, usePage } from "@inertiajs/react";
-import { LogOut, DollarSign, Users, ArrowLeftRight,BanknoteArrowUp , Home, Menu, X,WalletMinimal  } from "lucide-react";
+import { LogOut, DollarSign, Users, ArrowLeftRight,BanknoteArrowUp , Home, Menu, X,WalletMinimal,BookMarked   } from "lucide-react";
 import { useState } from "react";
 
 export default function AdminLayout({ children }) {
@@ -17,6 +17,7 @@ export default function AdminLayout({ children }) {
         { name: "Transferencias", href: "/admin/dashboard/transferencias", icon: <ArrowLeftRight size={18} /> },
         { name: "Efectivo", href: "/admin/dashboard/efectivo", icon: <BanknoteArrowUp  size={18} /> },
         { name: "Metodos de Pago", href: "/admin/dashboard/metodos", icon: <WalletMinimal   size={18} /> },
+        { name: "Reportes", href: "/admin/dashboard/reportes", icon: <BookMarked size={18} /> },
     ];
 
     return (

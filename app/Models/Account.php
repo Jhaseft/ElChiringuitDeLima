@@ -22,6 +22,7 @@ class Account extends Model
         'qr_country',
         'account_type',
         'owner_id',
+        'desactivate',
     ];
 
     public function user()

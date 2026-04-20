@@ -22,6 +22,27 @@ class OperacionController extends Controller
         return response()->json(Bank::all());
     }
 
+
+    public function eliminarcuenta($account_id){
+    $account = Account::find($account_id);
+
+    if (!$account) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Cuenta no encontrada'
+        ], 404);
+    }
+
+    $account->update([
+        'desactivate' => 1
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Cuenta desactivada correctamente',
+        'data' => $account
+    ]);
+}
     
     public function guardarCuenta(Request $request)
 {
@@ -130,6 +151,7 @@ class OperacionController extends Controller
     $accounts = Account::with(['bank', 'owner'])
         ->where('user_id', $user_id)
         ->where('method_type', $method_type)
+        ->where('desactivate',false)
         ->get();
 
     if ($method_type === 'bank') {
@@ -160,12 +182,6 @@ class OperacionController extends Controller
             'error' => 'Método no válido'
         ], 400);
     }
-
-    Log::info('Cuentas listadas', [
-        'user_id' => $user_id,
-        'method_type' => $method_type,
-        'count' =>  ['accounts' => $accounts],
-    ]);
 
     return response()->json($accounts);
 }
