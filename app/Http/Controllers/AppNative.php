@@ -134,6 +134,7 @@ class AppNative extends Controller
     $accounts = Account::with(['bank', 'owner'])
         ->where('user_id', $userId)
         ->where('method_type', $method_type)
+        ->where('desactivate',false)
         ->get();
 
     if ($method_type === 'bank') {

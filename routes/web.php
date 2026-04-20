@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Admin\AdminTransfers;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminControllerDashboard;
+use App\Http\Controllers\Admin\ReportesController;
 use App\Http\Controllers\Admin\AdminTransfersEfectivo;
 use App\Http\Controllers\Admin\AdminUserMediaController;
 use App\Http\Controllers\Admin\TransferMethodController;
@@ -94,8 +95,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/complete-profile', [CompleteProfileController::class, 'store'])->name('complete-profile.store');    
     //ver historial de tranferencias del usuario
     Route::get('/transfers/history', [TransferController::class, 'history'])->name('transfers.history');
-
-
+    //eliminar cuenta
+    Route::delete('/eliminar/{account_id}', [OperacionController::class, 'eliminarcuenta']);
+ 
     Route::post('/kyc/session', [KycController::class, 'createSession']);
 
     Route::get('/kyc/resultado', function () {
@@ -164,6 +166,12 @@ Route::prefix('admin')->group(function () {
         Route::post('/dashboard/metodos/store', [TransferMethodController::class, 'store']);
         Route::post('/dashboard/metodos/{id}/update', [TransferMethodController::class, 'update']);
         Route::delete('/dashboard/metodos/{id}', [TransferMethodController::class, 'destroy']);
+
+        
+        //septima pantalla
+        Route::get('/dashboard/reportes', [ReportesController::class, 'index']);
+
+
 
         //tipo de cambio
         Route::post('/tipo-cambio', [AdminControllerDashboard::class, 'update']);

@@ -22,6 +22,8 @@ class AdminTransfersEfectivo extends Controller
             'paymentMethod',
             'originAccount.bank',
             'destinationAccount.bank',
+            'clientReceipts',
+            'adminReceipts',
         ])
         ->whereHas('paymentMethod', fn($q) => $q->where('slug', 'cash'))
         ->orderBy('created_at', 'desc');

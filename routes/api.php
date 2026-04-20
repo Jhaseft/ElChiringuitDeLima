@@ -31,7 +31,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia']);
     Route::get('/transfers/historymobile', [TransferController::class, 'historymobile']);
     Route::post('/complete-profile', [AppNative::class, 'completeProfile']);
-
+     //eliminar cuenta
+    Route::delete('/eliminar/{account_id}', [OperacionController::class, 'eliminarcuenta']);
     Route::post('/kyc/session', [KycController::class, 'createSession']);
 });
 

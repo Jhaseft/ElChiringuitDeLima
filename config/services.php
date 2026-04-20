@@ -52,4 +52,11 @@ return [
         'url' => env('KYC_BASE_URL'),
     ],
 
+    'evolution' => [
+        'server'   => env('EVOLUTION_SERVER'),
+        'instance' => env('EVOLUTION_INSTANCE'),
+        'apikey'   => env('EVOLUTION_APIKEY'),
+        'numbers'  => env('EVOLUTION_NUMBERS', ''), // CSV de números
+    ],
+
 ];

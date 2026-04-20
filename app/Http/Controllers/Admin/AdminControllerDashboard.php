@@ -4,21 +4,99 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\TipoCambio;
+use App\Models\Transfer;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use App\Mail\TipoCambioActualizadoMail;
- 
+
 class AdminControllerDashboard extends Controller
 {
-    // Ver tipo de cambio
     public function Dashboard()
-{
-    return Inertia::render('Admin/Dashboard');
-}
+    {
+        $now        = Carbon::now();
+        $today      = $now->copy()->startOfDay();
+        $yesterday  = $now->copy()->subDay()->startOfDay();
+        $weekStart  = $now->copy()->startOfWeek();
+        $monthStart = $now->copy()->startOfMonth();
+
+        $resumen = function ($from, $to = null) {
+            $q = Transfer::where('status', 'completed')->where('created_at', '>=', $from);
+            if ($to) $q->where('created_at', '<', $to);
+
+            $row = $q->selectRaw("
+                    COUNT(*) as total_ops,
+                    SUM(CASE WHEN modo = 'BOBtoPEN' THEN amount ELSE 0 END) as bob_in,
+                    SUM(CASE WHEN modo = 'PENtoBOB' THEN converted_amount ELSE 0 END) as bob_out,
+                    SUM(CASE WHEN modo = 'PENtoBOB' THEN amount ELSE 0 END) as pen_in,
+                    SUM(CASE WHEN modo = 'BOBtoPEN' THEN converted_amount ELSE 0 END) as pen_out
+                ")->first();
+
+            return [
+                'ops'     => (int)   ($row->total_ops ?? 0),
+                'bob_in'  => (float) ($row->bob_in ?? 0),
+                'bob_out' => (float) ($row->bob_out ?? 0),
+                'pen_in'  => (float) ($row->pen_in ?? 0),
+                'pen_out' => (float) ($row->pen_out ?? 0),
+            ];
+        };
+
+        $hoy    = $resumen($today);
+        $ayer   = $resumen($yesterday, $today);
+        $semana = $resumen($weekStart);
+        $mes    = $resumen($monthStart);
+
+        // Pendientes y rechazadas últimos 30 días
+        $estados = Transfer::where('created_at', '>=', $now->copy()->subDays(30))
+            ->whereIn('status', ['pending', 'rejected'])
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        // Serie diaria últimos 14 días (para el gráfico de ingresos)
+        $desde = $now->copy()->subDays(13)->startOfDay();
+        $serieRaw = Transfer::where('status', 'completed')
+            ->where('created_at', '>=', $desde)
+            ->selectRaw("DATE(created_at) as fecha, modo, SUM(amount) as origen")
+            ->groupBy('fecha', 'modo')
+            ->orderBy('fecha')
+            ->get();
+
+        $serie = [];
+        for ($i = 0; $i < 14; $i++) {
+            $d = $desde->copy()->addDays($i)->toDateString();
+            $serie[$d] = ['fecha' => $d, 'bob_in' => 0, 'pen_in' => 0];
+        }
+        foreach ($serieRaw as $r) {
+            if (!isset($serie[$r->fecha])) continue;
+            if ($r->modo === 'BOBtoPEN') {
+                $serie[$r->fecha]['bob_in'] += (float) $r->origen;
+            } else {
+                $serie[$r->fecha]['pen_in'] += (float) $r->origen;
+            }
+        }
+
+        $tipoCambio = TipoCambio::orderByDesc('id')->first();
+
+        return Inertia::render('Admin/Dashboard', [
+            'metrics' => [
+                'hoy'    => $hoy,
+                'ayer'   => $ayer,
+                'semana' => $semana,
+                'mes'    => $mes,
+                'estados' => [
+                    'pending'  => (int) ($estados['pending']  ?? 0),
+                    'rejected' => (int) ($estados['rejected'] ?? 0),
+                ],
+                'serie'      => array_values($serie),
+                'tipoCambio' => $tipoCambio,
+            ],
+        ]);
+    }
 
     // Ver tipo de cambio
     public function tipoCambio()

@@ -31,8 +31,17 @@
                     <!-- Resumen de la operación -->
                     <tr>
                         <td style="padding:0 30px 20px 30px;">
+                            @php
+                                $slug       = $data['paymentMethodSlug'] ?? 'bank_transfer';
+                                $methodName = $data['paymentMethodName'] ?? 'Transferencia Bancaria';
+                            @endphp
+
                             <h2 style="color:#333333;">📊 Resumen de la operación</h2>
                             <table style="width:100%; border-collapse: collapse; margin-top:10px; margin-bottom:20px;">
+                                <tr>
+                                    <td style="border:1px solid #ddd; padding:8px; font-weight:bold;">Método de pago</td>
+                                    <td style="border:1px solid #ddd; padding:8px;">{{ $methodName }}</td>
+                                </tr>
                                 <tr>
                                     <td style="border:1px solid #ddd; padding:8px; font-weight:bold;">Monto registrado</td>
                                     <td style="border:1px solid #ddd; padding:8px;">{{ number_format($data['transfer']->amount, 2) }} {{ $data['depositCurrency'] }}</td>
@@ -50,6 +59,22 @@
                                     <td style="border:1px solid #ddd; padding:8px;">{{ $data['transfer']->created_at->format('d/m/Y H:i') }}</td>
                                 </tr>
                             </table>
+                        </td>
+                    </tr>
+
+                    {{-- Indicación según método --}}
+                    <tr>
+                        <td style="padding:0 30px 20px 30px; color:#555555; font-size:14px; line-height:1.5;">
+                            @if($slug === 'cash')
+                                <p>💵 <strong>Pago en efectivo:</strong><br>
+                                Acérquese a nuestra oficina o punto autorizado para completar el depósito en efectivo. Un asesor coordinará la entrega y validación del monto.</p>
+                            @elseif($slug === 'qr')
+                                <p>📱 <strong>Pago vía QR:</strong><br>
+                                Realice el pago escaneando el QR proporcionado. Una vez confirmado el depósito, procesaremos el envío correspondiente.</p>
+                            @else
+                                <p>🏦 <strong>Transferencia bancaria:</strong><br>
+                                Realice la transferencia a la cuenta bancaria indicada. Una vez acreditado el depósito, procesaremos el envío.</p>
+                            @endif
                         </td>
                     </tr>
 

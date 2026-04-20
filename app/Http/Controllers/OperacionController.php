@@ -9,6 +9,7 @@ use App\Models\AccountOwner;
 use App\Models\Bank;
 use App\Models\Transfer;
 use App\Models\TipoCambio;
+use App\Models\TransactionReceipt;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
 use Cloudinary\Api\Upload\UploadApi;
@@ -21,6 +22,27 @@ class OperacionController extends Controller
         return response()->json(Bank::all());
     }
 
+
+    public function eliminarcuenta($account_id){
+    $account = Account::find($account_id);
+
+    if (!$account) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Cuenta no encontrada'
+        ], 404);
+    }
+
+    $account->update([
+        'desactivate' => 1
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Cuenta desactivada correctamente',
+        'data' => $account
+    ]);
+}
     
     public function guardarCuenta(Request $request)
 {
@@ -71,7 +93,7 @@ class OperacionController extends Controller
                 'owner_id'       => null,
             ]
         );
-
+ 
         return response()->json($account);
     }
 
@@ -129,6 +151,7 @@ class OperacionController extends Controller
     $accounts = Account::with(['bank', 'owner'])
         ->where('user_id', $user_id)
         ->where('method_type', $method_type)
+        ->where('desactivate',false)
         ->get();
 
     if ($method_type === 'bank') {
@@ -160,8 +183,6 @@ class OperacionController extends Controller
         ], 400);
     }
 
-
-
     return response()->json($accounts);
 }
 
@@ -187,7 +208,8 @@ class OperacionController extends Controller
             'origin_account_id'       => ($isEfectivo || $isQR) ? ['nullable'] : ['required','exists:accounts,id'],
             'destination_account_id'  => ($isEfectivo || $isQR) ? ['nullable'] : ['required','exists:accounts,id','different:origin_account_id'],
             'amount'                  => ['required','numeric','min:0.01'],
-            'comprobante'             => ['nullable','file','mimes:jpg,jpeg,png,pdf','max:5120'],
+            'comprobantes'            => ['nullable','array','max:5'],
+            'comprobantes.*'          => ['file','mimes:jpg,jpeg,png,pdf','max:5120'],
             'modo'                    => ['required','in:BOBtoPEN,PENtoBOB'],
             'payment_method_slug'     => ['nullable','string','exists:payment_methods,slug'],
         ]);
@@ -242,39 +264,8 @@ class OperacionController extends Controller
         }
 
 
-        $comprobanteUrl = null;
-
-        if ($request->hasFile('comprobante')) {
-
-            try {
-
-                $uploadApi = new UploadApi();
-
-                $uploaded = $uploadApi->upload(
-                    $request->file('comprobante')->getRealPath(),
-                    [
-                        'folder' => 'transferencias/comprobantes/'.$user->id,
-                        'resource_type' => 'auto'
-                    ]
-                );
-
-                $comprobanteUrl = $uploaded['secure_url'];
-
-            } catch (\Exception $e) {
-
-                Log::error('❌ Error subiendo comprobante a Cloudinary', [
-                    'message' => $e->getMessage()
-                ]);
-
-                return response()->json([
-                    'message' => 'Error subiendo el comprobante. Intenta nuevamente.'
-                ], 500);
-            }
-        }
-    
-        $paymentMethod = \App\Models\PaymentMethod::where(
-            'slug', $request->payment_method_slug ?? 'bank_transfer'
-        )->first();
+        $paymentSlug   = $request->payment_method_slug ?? 'bank_transfer';
+        $paymentMethod = \App\Models\PaymentMethod::where('slug', $paymentSlug)->first();
 
         $transfer = Transfer::create([
             'user_id'                => $user->id,
@@ -286,8 +277,43 @@ class OperacionController extends Controller
             'converted_amount'       => $convertedAmount,
             'modo'                   => $request->modo,
             'status'                 => 'pending',
-            'client_receipt'         => $comprobanteUrl,
         ]);
+
+        // Subir múltiples comprobantes a Cloudinary y guardar en transaction_receipts
+        if ($request->hasFile('comprobantes')) {
+            $uploadApi = new UploadApi();
+            $firstUrl = null;
+
+            foreach ($request->file('comprobantes') as $file) {
+                try {
+                    $uploaded = $uploadApi->upload(
+                        $file->getRealPath(),
+                        [
+                            'folder' => 'transferencias/comprobantes/'.$user->id,
+                            'resource_type' => 'auto'
+                        ]
+                    );
+
+                    $url = $uploaded['secure_url'];
+                    if (!$firstUrl) $firstUrl = $url;
+
+                    TransactionReceipt::create([
+                        'transaction_id' => $transfer->id,
+                        'receipt_url'    => $url,
+                        'receipt_type'   => 'client',
+                        'uploaded_by'    => $user->id,
+                    ]);
+
+                } catch (\Exception $e) {
+                    Log::error('❌ Error subiendo comprobante a Cloudinary', [
+                        'message' => $e->getMessage()
+                    ]);
+                }
+            }
+
+        }
+
+
 
         // Cargar relaciones
         $transfer->load([
@@ -303,100 +329,127 @@ class OperacionController extends Controller
 
         // Payload común (para mails)
         $payload = [
-            'transfer'        => $transfer,
-            'transferNumber'  => $transferNumber,
-            'depositCurrency' => $depositCurrency,
-            'receiveCurrency' => $receiveCurrency,
-            'convertedAmount' => $convertedAmount,
-            'comprobantePath' => $comprobanteUrl,
+            'transfer'           => $transfer,
+            'transferNumber'     => $transferNumber,
+            'depositCurrency'    => $depositCurrency,
+            'receiveCurrency'    => $receiveCurrency,
+            'convertedAmount'    => $convertedAmount,
+            'paymentMethodSlug'  => $paymentSlug,
+            'paymentMethodName'  => $paymentMethod?->name ?? ucfirst($paymentSlug),
         ];
 
-        // Enviar mails
+
         Mail::to("operaciones@transfercash.click")->send(new \App\Mail\NuevaTransferenciaAdmin($payload));
         Mail::to($user->email)->send(new \App\Mail\NuevaTransferenciaUsuario($payload));
 
-    //  Enviar mensaje ya armado a n8n (para Evolution API)
-    try {
-        $paymentSlug = $request->payment_method_slug ?? 'bank_transfer';
+        //  Enviar mensaje a WhatsApp vía Evolution API (diferenciado por método de pago)
+        try {
+            $fecha = $transfer->created_at->format('d/m/Y H:i');
 
-        $mensaje = "📌 *Nueva transferencia registrada*\n\n".
-                "📝 *Detalles de la operación*\n".
-                "• Número de operación: {$transferNumber}\n".
-                "• Fecha: {$transfer->created_at->format('d/m/Y H:i')}\n".
-                "• Método de pago: {$paymentSlug}\n".
-                "• Tipo de cambio aplicado: {$transfer->exchange_rate}\n\n".
+            $mensaje  = "📌 *Nueva transferencia registrada*\n\n";
+            $mensaje .= "📝 *Detalles de la operación*\n";
+            $mensaje .= "• Número de operación: {$transferNumber}\n";
+            $mensaje .= "• Fecha: {$fecha}\n";
+            $mensaje .= "• Método de pago: ".($paymentMethod?->name ?? ucfirst($paymentSlug))."\n";
+            $mensaje .= "• Tipo de cambio aplicado: {$transfer->exchange_rate}\n\n";
 
-                "💰 *Depósito recibido*\n".
-                "• Monto recibido: ".number_format($transfer->amount, 2)." {$depositCurrency}\n";
-
-        if ($transfer->originAccount?->bank) {
-            $mensaje .= "• Banco origen: {$transfer->originAccount->bank->name}\n".
-                        "• Número de cuenta origen: {$transfer->originAccount->account_number}\n";
-        } elseif ($transfer->originAccount?->qr_value) {
-            $mensaje .= "• Cuenta origen (QR): país {$transfer->originAccount->qr_country}\n";
-        }
-
-        $mensaje .= "\n👤 *Cliente*\n".
-                "• Nombre: {$user->first_name} {$user->last_name}\n".
-                "• Email: {$user->email}\n".
-                "• Teléfono: ".($user->phone ?? 'N/D')."\n".
-                "• Nacionalidad: ".ucfirst($user->nationality ?? 'N/D')."\n".
-                "• Documento: ".($user->document_number ?? 'N/D')."\n\n".
-
-                "📤 *Monto a enviar*\n".
-                "• Monto convertido: ".number_format($convertedAmount, 2)." {$receiveCurrency}\n";
-
-        if ($transfer->destinationAccount?->bank) {
-            $mensaje .= "• Banco destino: {$transfer->destinationAccount->bank->name}\n".
-                        "• Número de cuenta destino: {$transfer->destinationAccount->account_number}\n\n";
-
-            if ($transfer->destinationAccount->owner) {
-                $destOwner = $transfer->destinationAccount->owner;
-                $mensaje .= "👤 *Titular de la cuenta destino*\n".
-                            "• Nombre: ".($destOwner->full_name ?? 'N/D')."\n".
-                            "• Documento: ".($destOwner->document_number ?? 'N/D')."\n".
-                            "• Teléfono: ".($destOwner->phone ?? 'N/D')."\n".
-                            "• Email: ".($destOwner->email ?? 'N/D')."\n\n";
+            // === Bloque de DEPÓSITO según método ===
+            if ($paymentSlug === 'cash') {
+                $mensaje .= "💵 *Depósito en efectivo*\n";
+                $mensaje .= "• Monto a depositar: ".number_format($transfer->amount, 2)." {$depositCurrency}\n";
+                $mensaje .= "• El cliente entregará el efectivo en oficina / punto autorizado.\n\n";
+            } elseif ($paymentSlug === 'qr') {
+                $mensaje .= "📱 *Depósito vía QR*\n";
+                $mensaje .= "• Monto recibido: ".number_format($transfer->amount, 2)." {$depositCurrency}\n";
+                if ($transfer->originAccount?->qr_value) {
+                    $mensaje .= "• País QR origen: {$transfer->originAccount->qr_country}\n";
+                    $mensaje .= "• URL QR origen: {$transfer->originAccount->qr_value}\n";
+                }
+                $mensaje .= "\n";
+            } else { // bank_transfer
+                $mensaje .= "🏦 *Depósito por transferencia bancaria*\n";
+                $mensaje .= "• Monto recibido: ".number_format($transfer->amount, 2)." {$depositCurrency}\n";
+                if ($transfer->originAccount?->bank) {
+                    $mensaje .= "• Banco origen: {$transfer->originAccount->bank->name}\n";
+                    $mensaje .= "• Número de cuenta origen: {$transfer->originAccount->account_number}\n";
+                }
+                $mensaje .= "\n";
             }
-        } elseif ($transfer->destinationAccount?->qr_value) {
-            $mensaje .= "• Cuenta destino (QR): país {$transfer->destinationAccount->qr_country}\n".
-                        "• URL QR: {$transfer->destinationAccount->qr_value}\n\n";
+
+            // === Cliente ===
+            $mensaje .= "👤 *Cliente*\n";
+            $mensaje .= "• Nombre: {$user->first_name} {$user->last_name}\n";
+            $mensaje .= "• Email: {$user->email}\n";
+            $mensaje .= "• Teléfono: ".($user->phone ?? 'N/D')."\n";
+            $mensaje .= "• Nacionalidad: ".ucfirst($user->nationality ?? 'N/D')."\n";
+            $mensaje .= "• Documento: ".($user->document_number ?? 'N/D')."\n\n";
+
+            // === Bloque de DESTINO según método ===
+            $mensaje .= "📤 *Monto a enviar*\n";
+            $mensaje .= "• Monto convertido: ".number_format($convertedAmount, 2)." {$receiveCurrency}\n";
+
+            if ($paymentSlug === 'cash') {
+                $mensaje .= "• El cliente retirará el efectivo en oficina / punto autorizado.\n\n";
+            } elseif ($paymentSlug === 'qr') {
+                if ($transfer->destinationAccount?->qr_value) {
+                    $mensaje .= "• País QR destino: {$transfer->destinationAccount->qr_country}\n";
+                    $mensaje .= "• URL QR destino: {$transfer->destinationAccount->qr_value}\n\n";
+                } else {
+                    $mensaje .= "\n";
+                }
+            } else { // bank_transfer
+                if ($transfer->destinationAccount?->bank) {
+                    $mensaje .= "• Banco destino: {$transfer->destinationAccount->bank->name}\n";
+                    $mensaje .= "• Número de cuenta destino: {$transfer->destinationAccount->account_number}\n\n";
+
+                    if ($transfer->destinationAccount->owner) {
+                        $destOwner = $transfer->destinationAccount->owner;
+                        $mensaje .= "👤 *Titular de la cuenta destino*\n";
+                        $mensaje .= "• Nombre: ".($destOwner->full_name ?? 'N/D')."\n";
+                        $mensaje .= "• Documento: ".($destOwner->document_number ?? 'N/D')."\n";
+                        $mensaje .= "• Teléfono: ".($destOwner->phone ?? 'N/D')."\n\n";
+                    }
+                } else {
+                    $mensaje .= "\n";
+                }
+            }
+
+            $mensaje .= "📎 *Comprobante*: verificar en los Mails.\n\n";
+            $mensaje .= "🔗 Ir al panel de administración:\n".url('/admin/login');
+
+            // Configuración Evolution API
+            $server   = config('services.evolution.server',   env('EVOLUTION_SERVER'));
+            $instance = config('services.evolution.instance', env('EVOLUTION_INSTANCE'));
+            $apikey   = config('services.evolution.apikey',   env('EVOLUTION_APIKEY'));
+            $numerosRaw = config('services.evolution.numbers', env('EVOLUTION_NUMBERS', ''));
+
+            if ($server && $instance && $apikey && $numerosRaw) {
+                $numeros = array_filter(array_map('trim', explode(',', $numerosRaw)));
+
+                foreach ($numeros as $numero) {
+                    $whatsPayload = [
+                        'number' => $numero,
+                        'text'   => $mensaje,
+                    ];
+
+                    $response = Http::withHeaders([
+                        'Content-Type' => 'application/json',
+                        'apikey'       => $apikey,
+                    ])->post("$server/message/sendText/$instance", $whatsPayload);
+
+                    if ($response->failed()) {
+                        Log::error("❌ Error enviando WhatsApp a {$numero}", [
+                            'status' => $response->status(),
+                            'body'   => $response->body(),
+                        ]);
+                    }
+                }
+            } else {
+                Log::warning('⚠️ Evolution API no configurada (server/instance/apikey/numbers faltantes). WhatsApp omitido.');
+            }
+        } catch (\Exception $e) {
+            Log::error("❌ Excepción enviando mensaje a Evolution API: ".$e->getMessage());
         }
-
-        $mensaje .= "📎 *Comprobante*: verificar en los Mails.\n\n".
-                    "🔗 Ir al panel de administración para mas detalles:\n".
-                    url('/admin/login');
-    
-        // Configuración Evolution API
-        $server   = "https://servicios-evolution-api.b5lsqc.easypanel.host";
-        $instance = "JHASEFT";
-        $apikey   = "80DB5110EBBF-4B03-9272-CA011C2902EF"; // Apikey admin
-
-        $numeros = [
-            '59160759245', // nuevo número
-        ];
-
-
-        foreach ($numeros as $numero) {
-            $whatsPayload = [
-                'number' => $numero,
-                'text'   => $mensaje,
-            ];
-
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'apikey'       => $apikey,
-            ])->post("$server/message/sendText/$instance", $whatsPayload);
-
-            if ($response->failed()) {
-                    Log::error("❌ Error enviando a {$numero}: ".$response->body());
-            } 
-        }
-
-    } catch (\Exception $e) {
-        Log::error("❌ Excepción enviando mensaje a Evolution API: ".$e->getMessage());
-    }
-
 
         return response()->json([
             'transfer'        => $transfer,

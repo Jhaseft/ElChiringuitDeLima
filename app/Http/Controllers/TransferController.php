@@ -37,6 +37,7 @@ public function historymobile(Request $request)
     }
 
     $transfers = Transfer::with([
+        'paymentMethod',
         'originAccount.bank',
         'originAccount.owner',
         'destinationAccount.bank',
@@ -46,6 +47,22 @@ public function historymobile(Request $request)
     ->latest()
     ->get()
     ->map(function ($t) {
+        $mapAccount = function ($acc) {
+            if (!$acc) return null;
+            return [
+                'id' => $acc->id,
+                'numero' => $acc->account_number,
+                'banco' => $acc->bank?->name,
+                'owner' => $acc->owner ? [
+                    'full_name' => $acc->owner->full_name,
+                    'document_number' => $acc->owner->document_number,
+                    'phone' => $acc->owner->phone,
+                ] : null,
+            ];
+        };
+
+        $slug = $t->paymentMethod?->slug ?? 'bank_transfer';
+
         return [
             'id' => $t->id,
             'monto' => $t->amount,
@@ -53,26 +70,12 @@ public function historymobile(Request $request)
             'modo' => $t->modo,
             'fecha' => $t->created_at->format('Y-m-d H:i:s'),
             'estado' => $t->status,
-            'origen' => [
-                'id' => $t->originAccount->id,
-                'numero' => $t->originAccount->account_number,
-                'banco' => $t->originAccount->bank->name,
-                'owner' => $t->originAccount->owner ? [
-                    'full_name' => $t->originAccount->owner->full_name,
-                    'document_number' => $t->originAccount->owner->document_number,
-                    'phone' => $t->originAccount->owner->phone,
-                ] : null,
+            'payment_method' => [
+                'slug' => $slug,
+                'name' => $t->paymentMethod?->name ?? ucfirst($slug),
             ],
-            'destino' => [
-                'id' => $t->destinationAccount->id,
-                'numero' => $t->destinationAccount->account_number,
-                'banco' => $t->destinationAccount->bank->name,
-                'owner' => $t->destinationAccount->owner ? [
-                    'full_name' => $t->destinationAccount->owner->full_name,
-                    'document_number' => $t->destinationAccount->owner->document_number,
-                    'phone' => $t->destinationAccount->owner->phone,
-                ] : null,
-            ],
+            'origen' => $mapAccount($t->originAccount),
+            'destino' => $mapAccount($t->destinationAccount),
         ];
     });
 
