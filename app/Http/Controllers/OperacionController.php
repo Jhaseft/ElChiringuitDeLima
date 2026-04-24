@@ -12,8 +12,10 @@ use App\Models\TipoCambio;
 use App\Models\TransactionReceipt;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 use Cloudinary\Api\Upload\UploadApi;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class OperacionController extends Controller
 {
@@ -80,20 +82,23 @@ class OperacionController extends Controller
             return response()->json(['message' => 'Error subiendo la imagen QR. Intenta nuevamente.'], 500);
         }
 
-        $account = Account::updateOrCreate(
-            [
-                'user_id'     => $request->user_id,
-                'method_type' => 'qr',
-                'qr_country'  => $request->qr_country,
-            ],
-            [
-                'qr_value'       => $qrUrl,
-                'bank_id'        => null,
-                'account_number' => null,
-                'owner_id'       => null,
-            ]
-        );
- 
+        Account::where('user_id', $request->user_id)
+            ->where('method_type', 'qr')
+            ->where('qr_country', $request->qr_country)
+            ->where('desactivate', 0)
+            ->update(['desactivate' => 1]);
+
+        $account = Account::create([
+            'user_id'        => $request->user_id,
+            'method_type'    => 'qr',
+            'qr_country'     => $request->qr_country,
+            'qr_value'       => $qrUrl,
+            'bank_id'        => null,
+            'account_number' => null,
+            'owner_id'       => null,
+            'desactivate'    => 0,
+        ]);
+
         return response()->json($account);
     }
 
@@ -188,17 +193,9 @@ class OperacionController extends Controller
 
     public function crearTransferencia(Request $request)
     {
-
+        try {
         // Usuario autenticado
         $user = $request->user();
-
-        // Verificación KYC
-        // if ($user->kyc_status !== 'verified') {
-        //     return response()->json([
-        //         'message' => 'Debes completar la verificación KYC antes de crear una transferencia.'
-        //     ], 403); 
-        // }
-
 
         $isEfectivo = $request->payment_method_slug === 'cash';
         $isQR       = $request->payment_method_slug === 'qr';
@@ -267,53 +264,71 @@ class OperacionController extends Controller
         $paymentSlug   = $request->payment_method_slug ?? 'bank_transfer';
         $paymentMethod = \App\Models\PaymentMethod::where('slug', $paymentSlug)->first();
 
-        $transfer = Transfer::create([
-            'user_id'                => $user->id,
-            'payment_method_id'      => $paymentMethod?->id,
-            'origin_account_id'      => $request->origin_account_id ?? null,
-            'destination_account_id' => $request->destination_account_id ?? null,
-            'amount'                 => $request->amount,
-            'exchange_rate'          => $exchangeRate,
-            'converted_amount'       => $convertedAmount,
-            'modo'                   => $request->modo,
-            'status'                 => 'pending',
-        ]);
-
-        // Subir múltiples comprobantes a Cloudinary y guardar en transaction_receipts
+        // 1) Subir comprobantes a Cloudinary ANTES de tocar la BD.
+        //    Si algo falla aquí, no queda ningún registro huérfano.
+        $uploadedUrls = [];
         if ($request->hasFile('comprobantes')) {
             $uploadApi = new UploadApi();
-            $firstUrl = null;
 
             foreach ($request->file('comprobantes') as $file) {
                 try {
                     $uploaded = $uploadApi->upload(
                         $file->getRealPath(),
                         [
-                            'folder' => 'transferencias/comprobantes/'.$user->id,
-                            'resource_type' => 'auto'
+                            'folder'        => 'transferencias/comprobantes/'.$user->id,
+                            'resource_type' => 'auto',
                         ]
                     );
+                    $uploadedUrls[] = $uploaded['secure_url'];
+                } catch (\Exception $e) {
+                    Log::error('❌ Error subiendo comprobante a Cloudinary', [
+                        'user_id' => $user->id,
+                        'message' => $e->getMessage(),
+                    ]);
+                    return response()->json([
+                        'message' => 'No se pudo subir uno de los comprobantes. Intenta nuevamente.',
+                    ], 502);
+                }
+            }
+        }
 
-                    $url = $uploaded['secure_url'];
-                    if (!$firstUrl) $firstUrl = $url;
+        // 2) Crear Transfer + receipts dentro de una transacción atómica.
+        try {
+            $transfer = DB::transaction(function () use (
+                $user, $paymentMethod, $request, $exchangeRate, $convertedAmount, $uploadedUrls
+            ) {
+                $transfer = Transfer::create([
+                    'user_id'                => $user->id,
+                    'payment_method_id'      => $paymentMethod?->id,
+                    'origin_account_id'      => $request->origin_account_id ?? null,
+                    'destination_account_id' => $request->destination_account_id ?? null,
+                    'amount'                 => $request->amount,
+                    'exchange_rate'          => $exchangeRate,
+                    'converted_amount'       => $convertedAmount,
+                    'modo'                   => $request->modo,
+                    'status'                 => 'pending',
+                ]);
 
+                foreach ($uploadedUrls as $url) {
                     TransactionReceipt::create([
                         'transaction_id' => $transfer->id,
                         'receipt_url'    => $url,
                         'receipt_type'   => 'client',
                         'uploaded_by'    => $user->id,
                     ]);
-
-                } catch (\Exception $e) {
-                    Log::error('❌ Error subiendo comprobante a Cloudinary', [
-                        'message' => $e->getMessage()
-                    ]);
                 }
-            }
 
+                return $transfer;
+            });
+        } catch (Throwable $e) {
+            Log::error('❌ Error creando transferencia en BD', [
+                'user_id' => $user->id,
+                'message' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'message' => 'No se pudo registrar la transferencia. Intenta nuevamente.',
+            ], 500);
         }
-
-
 
         // Cargar relaciones
         $transfer->load([
@@ -455,6 +470,20 @@ class OperacionController extends Controller
             'transfer'        => $transfer,
             'transfer_number' => $transferNumber,
         ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Re-lanzar para que Laravel devuelva el 422 con los errores de validación.
+            throw $e;
+        } catch (Throwable $e) {
+            Log::error('❌ Excepción no controlada en crearTransferencia', [
+                'user_id' => $request->user()?->id,
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ]);
+            return response()->json([
+                'message' => 'Ocurrió un error inesperado al procesar la transferencia. Intenta nuevamente.',
+            ], 500);
+        }
     }
-    
+
 }

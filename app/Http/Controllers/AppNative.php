@@ -125,7 +125,7 @@ class AppNative extends Controller
     if (!$userId) {
         $user = $request->user();
         $userId = $user?->id;
-    }
+    } 
 
     if (!$userId) {
         return response()->json(['error' => 'Usuario no encontrado'], 404);
@@ -146,6 +146,7 @@ class AppNative extends Controller
                 'bank_id' => $a->bank?->id,
                 'bank_name' => $a->bank?->name,
                 'bank_logo' => $a->bank?->logo_url,
+                'bank_country' => $a->bank?->country,
                 'owner_full_name' => $a->owner?->full_name,
                 'owner_document' => $a->owner?->document_number,
                 'owner_phone' => $a->owner?->phone,
@@ -166,11 +167,6 @@ class AppNative extends Controller
         ], 400);
     }
 
-     Log::info('Cuentas listadas', [
-        'user_id' => $userId,
-        'method_type' => $method_type,
-        'count' =>  ['accounts' => $accounts],
-    ]);
 
     return response()->json($accounts);
 }

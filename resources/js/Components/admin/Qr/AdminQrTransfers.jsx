@@ -1,0 +1,286 @@
+import { useState } from "react";
+import { router } from "@inertiajs/react";
+import axios from "axios";
+import TransferModal from "./TransferModal";
+import UserModal from "./UserModal";
+import AdminOverlay from "../AdminOverlay";
+import ImagesModal from "../ImagesModal";
+import { Search, UserRoundCog, BanknoteArrowUp, Receipt, ShieldCheck, QrCode } from "lucide-react";
+
+const statusBadge = {
+  pending: "bg-yellow-100 text-yellow-700",
+  completed: "bg-green-100 text-green-700",
+  rejected: "bg-red-100 text-red-700",
+};
+
+const statusLabel = {
+  pending: "Pendiente",
+  completed: "Completado",
+  rejected: "Rechazado",
+};
+
+const countryLabel = (c) => {
+  if (!c) return "—";
+  if (c === "PE") return "🇵🇪 Perú";
+  if (c === "BO") return "🇧🇴 Bolivia";
+  return c;
+};
+
+export default function AdminQrTransfersTable({ transfers, filters = {} }) {
+  const rows = transfers?.data || [];
+  const meta = {
+    current_page: transfers?.current_page ?? 1,
+    last_page: transfers?.last_page ?? 1,
+    per_page: transfers?.per_page ?? 10,
+    total: transfers?.total ?? 0,
+  };
+
+  const [search, setSearch] = useState(filters.search || "");
+  const [loading, setLoading] = useState(false);
+  const [detailOpenUser, setDetailOpenUser] = useState(false);
+  const [detailUser, setDetailUser] = useState(null);
+  const [detailOpenTransfer, setDetailOpenTransfer] = useState(false);
+  const [detailTransfer, setDetailTranfer] = useState(null);
+  const [overlay, setOverlay] = useState(null);
+  const [imagesOpen, setImagesOpen] = useState(false);
+  const [imagesList, setImagesList] = useState([]);
+  const [imagesTitle, setImagesTitle] = useState("Comprobantes");
+
+  const openImages = (list, title) => {
+    if (!list.length) return;
+    setImagesList(list);
+    setImagesTitle(title);
+    setImagesOpen(true);
+  };
+
+  const navigate = (params) => {
+    router.get("/admin/dashboard/qr", params, {
+      preserveState: true,
+      preserveScroll: true,
+      replace: true,
+      onStart: () => setLoading(true),
+      onFinish: () => setLoading(false),
+    });
+  };
+
+  const onSearch = (e) => {
+    e.preventDefault();
+    navigate({ page: 1, perPage: meta.per_page, search });
+  };
+
+  const openDetailUser = async (id) => {
+    try {
+      setOverlay("loading");
+      const { data } = await axios.get(`/admin/transfers/user/${id}`, { withCredentials: true });
+      setDetailUser(data);
+      setOverlay(null);
+      setDetailOpenUser(true);
+    } catch (e) {
+      console.error(e);
+      setOverlay("error");
+    }
+  };
+
+  const openDetailTransfer = async (id) => {
+    try {
+      setOverlay("loading");
+      const { data } = await axios.get(`/admin/transfers/detail/${id}`, { withCredentials: true });
+      setDetailTranfer(data);
+      setOverlay(null);
+      setDetailOpenTransfer(true);
+    } catch (e) {
+      console.error(e);
+      setOverlay("error");
+    }
+  };
+
+  const busy = overlay === "loading" || loading;
+
+  return (
+    <div>
+      <AdminOverlay
+        state={overlay}
+        onDismiss={() => {
+          if (overlay === "success") router.reload({ preserveScroll: true });
+          setOverlay(null);
+        }}
+      />
+
+      <form onSubmit={onSearch} className="flex gap-2 mb-4">
+        <div className="relative flex-1 sm:flex-none">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Usuario, ID o estado…"
+            className="border rounded-xl pl-9 pr-3 py-2 w-full sm:w-72 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <button
+          type="submit"
+          className="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm hover:bg-blue-700 transition whitespace-nowrap"
+        >
+          Buscar
+        </button>
+      </form>
+
+      <div className="overflow-x-auto rounded-xl border border-gray-100">
+        <table className="min-w-full text-sm divide-y divide-gray-100">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">ID</th>
+              <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Usuario</th>
+              <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">QR Destino</th>
+              <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">País</th>
+              <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Monto</th>
+              <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+              <th className="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50 bg-white">
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="py-10 text-center text-gray-400">Cargando…</td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-10 text-center text-gray-400">Sin resultados</td>
+              </tr>
+            ) : (
+              rows.map((r) => (
+                <tr key={r.id} className="hover:bg-blue-50/30 transition">
+                  <td className="py-3 px-4 font-medium text-gray-800">{r.id}</td>
+                  <td className="py-3 px-4 font-medium text-gray-800">
+                    {r.user?.first_name} {r.user?.last_name}
+                  </td>
+                  <td className="py-3 px-4 text-gray-600 hidden md:table-cell">
+                    {r.destination_account?.qr_value ? (
+                      <button
+                        onClick={() => openImages([r.destination_account.qr_value], "QR destino")}
+                        className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 transition"
+                        title="Ver QR"
+                      >
+                        <QrCode size={18} />
+                        <span className="text-xs underline">Ver QR</span>
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 italic text-xs">Sin QR</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4 text-gray-600 hidden lg:table-cell">
+                    {countryLabel(r.destination_account?.qr_country)}
+                  </td>
+                  <td className="py-3 px-4 font-semibold text-gray-800">{r.amount}</td>
+                  <td className="py-3 px-4">
+                    <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${statusBadge[r.status] || "bg-gray-100 text-gray-600"}`}>
+                      {statusLabel[r.status] || r.status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => openDetailUser(r.id)}
+                        title="Ver información del usuario"
+                        disabled={busy}
+                        className="p-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50"
+                      >
+                        <UserRoundCog size={20} />
+                      </button>
+
+                      <button
+                        onClick={() => openDetailTransfer(r.id)}
+                        title="Ver detalle de la transferencia"
+                        disabled={busy}
+                        className="p-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50"
+                      >
+                        <BanknoteArrowUp size={20} />
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          const list = r.client_receipts?.length
+                            ? r.client_receipts.map((rc) => rc.receipt_url)
+                            : r.client_receipt
+                            ? [r.client_receipt]
+                            : [];
+                          openImages(list, "Comprobantes del cliente");
+                        }}
+                        title="Ver comprobantes del cliente"
+                        disabled={busy || (!r.client_receipt && !r.client_receipts?.length)}
+                        className="p-1.5 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <Receipt size={20} />
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          const list = r.admin_receipts?.length
+                            ? r.admin_receipts.map((rc) => rc.receipt_url)
+                            : r.admin_receipt
+                            ? [r.admin_receipt]
+                            : [];
+                          openImages(list, "Comprobantes del admin");
+                        }}
+                        title="Ver comprobantes del admin"
+                        disabled={busy || (!r.admin_receipt && !r.admin_receipts?.length)}
+                        className="p-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <ShieldCheck size={20} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-2">
+        <p className="text-xs text-gray-500">
+          Página {meta.current_page} de {meta.last_page} — {meta.total} registros
+        </p>
+        <div className="flex gap-2">
+          <button
+            disabled={meta.current_page <= 1 || busy}
+            onClick={() => navigate({ page: meta.current_page - 1, perPage: meta.per_page, search })}
+            className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-gray-50 transition"
+          >
+            ← Anterior
+          </button>
+          <button
+            disabled={meta.current_page >= meta.last_page || busy}
+            onClick={() => navigate({ page: meta.current_page + 1, perPage: meta.per_page, search })}
+            className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-40 hover:bg-gray-50 transition"
+          >
+            Siguiente →
+          </button>
+        </div>
+      </div>
+
+      {detailOpenUser && detailUser && (
+        <UserModal
+          selected={detailUser}
+          isOpen={detailOpenUser}
+          onClose={() => setDetailOpenUser(false)}
+        />
+      )}
+
+      {detailOpenTransfer && detailTransfer && (
+        <TransferModal
+          selected={detailTransfer}
+          isOpen={detailOpenTransfer}
+          onClose={() => setDetailOpenTransfer(false)}
+          onUpdated={() => router.reload({ preserveScroll: true })}
+        />
+      )}
+
+      <ImagesModal
+        isOpen={imagesOpen}
+        onClose={() => setImagesOpen(false)}
+        images={imagesList}
+        title={imagesTitle}
+      />
+    </div>
+  );
+}

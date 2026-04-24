@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { X, QrCode, Upload, RefreshCw, ChevronLeft, Copy } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { X, QrCode, Upload, RefreshCw, ChevronLeft, Copy, ImagePlus } from "lucide-react";
 import StatusMessage from "@/Components/ui/StatusMessage";
 
-const paisPorModo = { PENtoBOB: "PE", BOBtoPEN: "BO" };
+const paisPorModo = { PENtoBOB: "BO", BOBtoPEN: "PEN" };
 
 export default function ModalQR({
     isOpen,
@@ -27,11 +27,13 @@ export default function ModalQR({
     const [errorQR, setErrorQR]           = useState("");
     const [mostrarCambiar, setMostrarCambiar] = useState(false);
 
-    // ── comprobante de pago ───────────────────────────────────
-    const [comprobante, setComprobante] = useState(null);
-    const [loading, setLoading]         = useState(false);
-    const [error, setError]             = useState("");
-    const [success, setSuccess]         = useState(false);
+    // ── comprobantes de pago ──────────────────────────────────
+    const [comprobantes, setComprobantes] = useState([]);
+    const [previews, setPreviews]         = useState([]);
+    const [loading, setLoading]           = useState(false);
+    const [error, setError]               = useState("");
+    const [success, setSuccess]           = useState(false);
+    const fileInputRef = useRef(null);
 
     const csrfToken  = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
     const qrCountry  = paisPorModo[modo] ?? "PE";
@@ -46,13 +48,14 @@ export default function ModalQR({
 
         setPaso(1);
         setLoadingCuenta(true);
-        setCuentaQR(null);
+        setCuentaQR(null); 
         setMostrarCambiar(false);
         setImagenQR(null);
         setErrorQR("");
         setError("");
         setSuccess(false);
-        setComprobante(null);
+        setComprobantes([]);
+        setPreviews([]);
 
         fetch(`/operacion/listar-cuentas/${user.id}/qr`)
             .then((r) => r.json())
@@ -98,16 +101,39 @@ export default function ModalQR({
         }
     };
 
+    // ── gestionar comprobantes ────────────────────────────────
+    const handleFileUpload = (e) => {
+        const files = Array.from(e.target.files);
+        const total = comprobantes.length + files.length;
+        if (total > 5) {
+            setError("Máximo 5 comprobantes.");
+            return;
+        }
+        setError("");
+        setComprobantes((prev) => [...prev, ...files]);
+        const newPreviews = files.map((f) =>
+            f.type.startsWith("image/") ? URL.createObjectURL(f) : null
+        );
+        setPreviews((prev) => [...prev, ...newPreviews]);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    const removeFile = (index) => {
+        if (previews[index]) URL.revokeObjectURL(previews[index]);
+        setComprobantes((prev) => prev.filter((_, i) => i !== index));
+        setPreviews((prev) => prev.filter((_, i) => i !== index));
+    };
+
     // ── enviar operación ──────────────────────────────────────
     const handleEnviar = async () => {
-        if (!comprobante) { setError("Sube el comprobante del pago."); return; }
+        if (comprobantes.length === 0) { setError("Sube al menos un comprobante."); return; }
         setLoading(true);
         setError("");
         try {
             const fd = new FormData();
             fd.append("amount", monto);
             fd.append("modo", modo);
-            fd.append("comprobante", comprobante);
+            comprobantes.forEach((file) => fd.append("comprobantes[]", file));
             fd.append("payment_method_slug", "qr");
             fd.append("destination_account_id", cuentaQR.id);
 
@@ -167,7 +193,6 @@ export default function ModalQR({
                 {!success ? (
                     <div className="flex flex-col gap-4">
 
-                        {/* Header con indicador de pasos */}
                         <div>
                             <h2 className="text-lg font-bold text-center text-gray-800">Pago por QR</h2>
                             <div className="flex items-center justify-center gap-2 mt-2">
@@ -315,19 +340,52 @@ export default function ModalQR({
                                     </div>
                                 </div>
 
-                                {/* Comprobante */}
+                                {/* Comprobantes */}
                                 <div>
                                     <label className="block text-sm font-semibold mb-1">
-                                        Subir captura del pago QR
+                                        Subir captura del pago QR <span className="text-gray-400 font-normal">(máx. 5)</span>
                                     </label>
-                                    <input
-                                        type="file"
-                                        accept="image/*,application/pdf"
-                                        onChange={(e) => setComprobante(e.target.files[0])}
-                                        className="w-full text-sm"
-                                    />
-                                    {comprobante && (
-                                        <p className="text-xs text-green-600 mt-1">Archivo: {comprobante.name}</p>
+
+                                    {comprobantes.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 mb-2">
+                                            {comprobantes.map((file, idx) => (
+                                                <div key={idx} className="relative group w-20 h-20">
+                                                    {previews[idx] ? (
+                                                        <img
+                                                            src={previews[idx]}
+                                                            alt={file.name}
+                                                            className="w-full h-full object-cover rounded-lg border border-gray-200"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-xs text-gray-500 text-center p-1">
+                                                            PDF
+                                                        </div>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeFile(idx)}
+                                                        className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow"
+                                                    >
+                                                        <X size={12} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {comprobantes.length < 5 && (
+                                        <label className="flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition text-sm text-gray-500">
+                                            <ImagePlus size={18} />
+                                            {comprobantes.length === 0 ? "Seleccionar comprobantes" : "Agregar más"}
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                accept="image/*,application/pdf"
+                                                multiple
+                                                onChange={handleFileUpload}
+                                                className="hidden"
+                                            />
+                                        </label>
                                     )}
                                 </div>
 
@@ -342,7 +400,7 @@ export default function ModalQR({
                                     </button>
                                     <button
                                         onClick={handleEnviar}
-                                        disabled={loading || !comprobante}
+                                        disabled={loading || comprobantes.length === 0}
                                         className="bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         Enviar Comprobante

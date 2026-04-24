@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminControllerDashboard;
 use App\Http\Controllers\Admin\ReportesController;
 use App\Http\Controllers\Admin\AdminTransfersEfectivo;
+use App\Http\Controllers\Admin\AdminTransfersQr;
 use App\Http\Controllers\Admin\AdminUserMediaController;
 use App\Http\Controllers\Admin\TransferMethodController;
 use App\Http\Controllers\TransferController;
@@ -76,7 +77,7 @@ Route::get('/App', function () {
  
 });
 
-// Operaciones
+// Operaciones 
 Route::middleware(['web'])->group(function () {
     //listar bancos existentes en la abase de datos
     Route::get('/operacion/listar-bancos', [OperacionController::class, 'listarBancos'])->name('operacion.listarBancos');
@@ -160,6 +161,9 @@ Route::prefix('admin')->group(function () {
 
         //quinta pantalla
         Route::get('/dashboard/efectivo', [AdminTransfersEfectivo::class, 'index']);
+
+        //pantalla QR
+        Route::get('/dashboard/qr', [AdminTransfersQr::class, 'index']);
 
          //sexta pantalla
         Route::get('/dashboard/metodos', [TransferMethodController::class, 'index']);

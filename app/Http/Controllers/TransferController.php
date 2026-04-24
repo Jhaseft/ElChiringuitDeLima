@@ -32,7 +32,7 @@ public function historymobile(Request $request)
     $userId = $request->query('user_id') ?? $request->user()?->id;
 
     if (!$userId) {
-        \Log::warning('❌ No se encontró el usuario en historymobile');
+        Log::warning('❌ No se encontró el usuario en historymobile');
         return response()->json(['error' => 'Usuario no encontrado'], 404);
     }
 
@@ -78,8 +78,6 @@ public function historymobile(Request $request)
             'destino' => $mapAccount($t->destinationAccount),
         ];
     });
-
-    \Log::info("📤 historymobile user_id={$userId}", $transfers->toArray());
 
     return response()->json($transfers);
 }
