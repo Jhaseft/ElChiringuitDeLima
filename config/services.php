@@ -59,4 +59,8 @@ return [
         'numbers'  => env('EVOLUTION_NUMBERS', ''), // CSV de números
     ],
 
+    'n8n' => [
+        'chat_webhook' => env('N8N_CHAT_WEBHOOK'),
+    ],
+
 ];

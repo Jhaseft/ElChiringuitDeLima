@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\AdminTransfersQr;
 use App\Http\Controllers\Admin\AdminUserMediaController;
 use App\Http\Controllers\Admin\TransferMethodController;
 use App\Http\Controllers\TransferController;
+use App\Http\Controllers\ChatController;
 use App\Models\Bank;
 use App\Models\TransferMethod;
 use Illuminate\Support\Facades\Cache;
@@ -213,6 +214,10 @@ Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'hist
 
 // Tipo de cambio - API pública
 Route::get('/api/tipo-cambio/compra', [AdminControllerDashboard::class, 'actualizarTipoCambioAutomatico']);
+
+// Chat con asistente (proxy a n8n)
+Route::post('/chat/send', [ChatController::class, 'send']);
+
 
 // Configuración de límites y mínimos - API pública para app móvil
 Route::get('/api/config/transfer', function () {

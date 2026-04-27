@@ -1,6 +1,6 @@
 // InicioLayout.jsx
 import Header from "@/Layouts/Inicio/Header";
-import BotonWhatsApp from "@/Layouts/Inicio/BotonWhatsap";
+import ChatWidget from "@/Layouts/Inicio/ChatWidget";
 
 export default function InicioLayout({ children }) {
   return (
@@ -11,7 +11,7 @@ export default function InicioLayout({ children }) {
           {children}
         </div>
       </main>
-      <BotonWhatsApp />
+      <ChatWidget />
     </div>
   );
 }
