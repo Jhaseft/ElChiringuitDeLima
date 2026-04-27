@@ -206,7 +206,7 @@ class OperacionController extends Controller
             'destination_account_id'  => ($isEfectivo || $isQR) ? ['nullable'] : ['required','exists:accounts,id','different:origin_account_id'],
             'amount'                  => ['required','numeric','min:0.01'],
             'comprobantes'            => ['nullable','array','max:5'],
-            'comprobantes.*'          => ['file','mimes:jpg,jpeg,png,pdf','max:5120'],
+            'comprobantes.*'          => ['file','mimes:jpg,jpeg,png','max:5120'],
             'modo'                    => ['required','in:BOBtoPEN,PENtoBOB'],
             'payment_method_slug'     => ['nullable','string','exists:payment_methods,slug'],
         ]);
