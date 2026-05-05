@@ -152,8 +152,8 @@ export default function AdminTransfersTable({ transfers, filters = {} }) {
                     {r.user?.first_name} {r.user?.last_name}
                   </td>
                   <td className="py-3 px-4 text-gray-600 hidden md:table-cell">
-                    <span className="font-medium">{r.origin_account?.bank?.name || "—"}</span>
-                    <span className="text-gray-400"> · {r.origin_account?.account_number || "N/A"}</span>
+                    <span className="font-medium">{r.origin_account?.bank?.name || "Se recibio en "}</span>
+                    <span className="text-gray-400"> · {r.origin_account?.account_number || "Efectivo"}</span>
                   </td>
                   <td className="py-3 px-4 text-gray-600 hidden lg:table-cell">
                     <span className="font-medium">{r.destination_account?.bank?.name || "—"}</span>

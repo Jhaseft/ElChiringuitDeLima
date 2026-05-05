@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import AccountCard from "../Users/AccountCard";
-import { X, Upload, ArrowRight, ImagePlus } from "lucide-react";
+import { X, Upload, ArrowRight, ImagePlus, Banknote } from "lucide-react";
 
 const STATUS_OPTIONS = [
   { value: "pending",   label: "Pendiente",  ring: "ring-yellow-300",  active: "border-yellow-400 bg-yellow-50 text-yellow-700",  idle: "border-gray-200 bg-white text-gray-500 hover:border-yellow-200" },
@@ -161,7 +161,13 @@ export default function TransferModal({ selected, isOpen, onClose, onUpdated }) 
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cuenta Origen</p>
               {selected.origin_account
                 ? <AccountCard account={selected.origin_account} />
-                : <p className="text-sm text-gray-400 italic">Sin datos</p>}
+                : selected.modo === "BOBtoPEN"
+                  ? (
+                    <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-yellow-50 border border-yellow-200 text-sm font-semibold text-yellow-800">
+                      <Banknote size={16} /> Efectivo (pago en oficina)
+                    </div>
+                  )
+                  : <p className="text-sm text-gray-400 italic">Sin datos</p>}
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Cuenta Destino</p>

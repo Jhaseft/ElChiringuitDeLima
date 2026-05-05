@@ -1,16 +1,13 @@
 import { usePage, Link } from "@inertiajs/react";
 import { useCambioDivisas } from "./hooks/useCambioDivisas";
 import ConversorDivisas from "./ConversorDivisas";
-import SeleccionMetodoPago from "./SeleccionMetodoPago";
 import ModalOperacion from "./Transferencia/ModalOperacion";
-import ModalEfectivo from "./Efectivo/ModalEfectivo";
-import ModalQR from "./QR/ModalQR";
 import ErrorBanner from "./shared/ErrorBanner";
 
 export default function CambioDivisasCard({ tasas, bancos, transferConfig,metodosPago }) {
   const { auth } = usePage().props;
   const user = auth?.user ?? null;
-
+  
   const {
     monto, conversion, modo, error, setError,
     tasa, tasaBOBtoPEN, tasaPENtoBOB, modoDescripcion,
@@ -108,28 +105,10 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig,metodo
         </div>
       </div>
 
-      <SeleccionMetodoPago
-        isOpen={modalActivo === "selector"}
-        onClose={() => setModalActivo(null)}
-        onSelect={(metodo) => setModalActivo(metodo)}
-      />
-
       <ModalOperacion
         isOpen={modalActivo === "transferencia"}
         {...propsModalPago}
         bancos={bancos}
-        metodosPago={metodosPago}
-      />
-
-      <ModalEfectivo
-        isOpen={modalActivo === "efectivo"}
-        {...propsModalPago}
-        metodosPago={metodosPago}
-      />
-
-      <ModalQR
-        isOpen={modalActivo === "qr"}
-        {...propsModalPago}
         metodosPago={metodosPago}
       />
     </>

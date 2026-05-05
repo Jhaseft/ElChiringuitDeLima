@@ -111,6 +111,7 @@ export default function TransferModal({ selected, isOpen, onClose, onUpdated }) 
   if (!isOpen) return null;
 
   const dest = selected.destination_account;
+  const orig = selected.origin_account;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
@@ -198,9 +199,29 @@ export default function TransferModal({ selected, isOpen, onClose, onUpdated }) 
               <p className="text-sm text-gray-400 italic">Sin QR destino</p>
             )}
 
-            <p className="mt-3 text-xs text-gray-400 italic">
-              Este tipo de transferencia no tiene cuenta de origen.
-            </p>
+            {orig ? (
+              <div className="mt-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                  Cuenta Origen
+                </p>
+                <div className="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-3 shadow-sm">
+                  {orig.bank?.logo_url && (
+                    <img src={orig.bank.logo_url} alt={orig.bank?.name} className="w-10 h-10 object-contain" />
+                  )}
+                  <div className="text-sm">
+                    <p className="font-semibold text-gray-800">{orig.bank?.name ?? "—"}</p>
+                    <p className="text-xs text-gray-500 font-mono">{orig.account_number}</p>
+                    {orig.owner?.full_name && (
+                      <p className="text-xs text-gray-500">Titular: {orig.owner.full_name}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-gray-400 italic">
+                Este tipo de transferencia no tiene cuenta de origen.
+              </p>
+            )}
           </div>
 
           <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">

@@ -117,7 +117,7 @@ export function useCambioDivisas({ tasas, transferConfig, user }) {
     }
 
     setError("");
-    setModalActivo("selector");
+    setModalActivo("transferencia");
   };
 
   // ── valores derivados ─────────────────────────────────────

@@ -18,6 +18,8 @@ class AdminTransfersQr extends Controller
         $query = Transfer::with([
             'user',
             'paymentMethod',
+            'originAccount.bank',
+            'originAccount.owner',
             'destinationAccount.bank',
             'destinationAccount.owner',
             'clientReceipts',

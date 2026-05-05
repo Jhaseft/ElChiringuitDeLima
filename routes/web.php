@@ -175,6 +175,8 @@ Route::prefix('admin')->group(function () {
         
         //septima pantalla
         Route::get('/dashboard/reportes', [ReportesController::class, 'index']);
+        Route::get('/dashboard/reportes/datos', [ReportesController::class, 'datos']);
+        Route::get('/dashboard/reportes/excel', [ReportesController::class, 'exportarExcel']);
 
 
 

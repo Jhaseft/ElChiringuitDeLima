@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\ASUS\\\\Desktop\\\\Laravel\\\\Laravel-React\\\\TransferCash\\\\database\\\\migrations\" -Name)",
+      "Bash(Sort-Object)",
+      "Bash(composer require *)",
+      "Bash(npx vite *)",
+      "Bash(php -l app/Http/Controllers/Admin/ReportesController.php)"
+    ]
+  }
+}
