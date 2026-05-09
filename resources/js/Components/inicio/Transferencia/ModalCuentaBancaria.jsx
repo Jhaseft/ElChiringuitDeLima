@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import BankSelect from "../shared/BankSelect";
+import { getCsrfToken } from "@/utils/csrf";
 
 let bancosCache = null;
 
@@ -20,7 +21,7 @@ export default function ModalCuentaBancaria({
   const [bancosDisponibles, setBancosDisponibles] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+  const csrfToken = getCsrfToken();
 
 
   useEffect(() => {

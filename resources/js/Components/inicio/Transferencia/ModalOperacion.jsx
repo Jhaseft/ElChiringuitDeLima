@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import {
   X, Trash2, Plus, Banknote, QrCode, MapPin, ExternalLink, Upload, RefreshCw,
 } from "lucide-react";
+import { getCsrfToken } from "@/utils/csrf";
 import ModalCuentaBancaria from "./ModalCuentaBancaria";
 import ModalCuentaDestino from "./ModalCuentaDestino";
 import ModalTransferencia from "./ModalTransferencia";
@@ -129,7 +130,7 @@ export default function ModalOperacion({
     if (!confirm("¿Estás seguro de eliminar esta cuenta?")) return;
     setEliminandoCuenta(true);
     try {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+      const csrfToken = getCsrfToken();
       const res = await fetch(`/eliminar/${cuenta.id}`, {
         method: "DELETE",
         headers: { "X-CSRF-TOKEN": csrfToken, Accept: "application/json" },
@@ -156,7 +157,7 @@ export default function ModalOperacion({
     setSubiendoQR(true);
     setErrorQR("");
     try {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+      const csrfToken = getCsrfToken();
       const fd = new FormData();
       fd.append("user_id", user.id);
       fd.append("method_type", "qr");

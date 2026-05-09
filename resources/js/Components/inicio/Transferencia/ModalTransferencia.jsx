@@ -1,6 +1,7 @@
 import { X, Copy, ImagePlus } from "lucide-react";
 import { useState, useRef } from "react";
 import StatusMessage from "@/Components/ui/StatusMessage";
+import { getCsrfToken } from "@/utils/csrf";
 
 export default function ModalTransferencia({
   isOpen,
@@ -25,9 +26,7 @@ export default function ModalTransferencia({
 
   if (!isOpen) return null;
 
-  const csrfToken = document
-    .querySelector('meta[name="csrf-token"]')
-    ?.getAttribute("content");
+  const csrfToken = getCsrfToken();
 
   const isBOBtoPEN = modo === "BOBtoPEN";
   const comprobanteOpcional = isBOBtoPEN && paymentMethodSlug === "cash";

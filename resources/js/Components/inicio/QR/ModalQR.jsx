@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X, QrCode, Upload, RefreshCw, ChevronLeft, Copy, ImagePlus } from "lucide-react";
 import StatusMessage from "@/Components/ui/StatusMessage";
+import { getCsrfToken } from "@/utils/csrf";
 
 const paisPorModo = { PENtoBOB: "BO", BOBtoPEN: "PEN" };
 
@@ -35,7 +36,7 @@ export default function ModalQR({
     const [success, setSuccess]           = useState(false);
     const fileInputRef = useRef(null);
 
-    const csrfToken  = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+    const csrfToken  = getCsrfToken();
     const qrCountry  = paisPorModo[modo] ?? "PE";
     const opciones   = metodosPago.filter(m => m.currency_pair === modo);
     const isBOBtoPEN = modo === "BOBtoPEN";

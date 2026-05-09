@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { X, Copy, MapPin, ExternalLink, ImagePlus } from "lucide-react";
 import StatusMessage from "@/Components/ui/StatusMessage";
+import { getCsrfToken } from "@/utils/csrf";
 
 const OFICINAS = [
     {
@@ -24,7 +25,7 @@ export default function ModalEfectivo({ isOpen, onClose, user, monto, conversion
 
     if (!isOpen) return null;
 
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+    const csrfToken = getCsrfToken();
     const isBOBtoPEN = modo === "BOBtoPEN";
     const montoTexto = isBOBtoPEN ? `${monto} BOB` : `${monto} PEN`;
     const conversionTexto = isBOBtoPEN ? `${conversion} PEN` : `${conversion} BOB`;

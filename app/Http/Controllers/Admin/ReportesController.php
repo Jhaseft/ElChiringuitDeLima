@@ -11,7 +11,6 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
 class ReportesController extends Controller
 {
@@ -20,39 +19,26 @@ class ReportesController extends Controller
         return Inertia::render('Admin/Reportes');
     }
 
-    /**
-     * Tasas en BOB/PEN (cuántos BOB equivalen a 1 PEN).
-     * Ej: compra = 2.77, venta = 2.84
-     *
-     * Utilidad BOBtoPEN: cliente da BOB, negocio da PEN
-     *   → negocio aplica compra → ganancia = (BOB_recibidos / compra) - PEN_dados
-     *
-     * Utilidad PENtoBOB: cliente da PEN, negocio da BOB
-     *   → negocio aplica venta → ganancia = PEN_recibidos - (BOB_dados / venta)
-     */
-    private function calcularUtilidad(float $bobEntran, float $penSalen, float $bobSalen, float $penEntran, float $compra, float $venta): float
-    {
-        $utilBobPen = ($bobEntran / $compra) - $penSalen;
-        $utilPenBob = $penEntran - ($bobSalen / $venta);
-        return round($utilBobPen + $utilPenBob, 4);
-    }
-
-    private function consultarFilas(string $inicio, string $fin)
+    private function consultarTransferencias(string $inicio, string $fin)
     {
         return Transfer::query()
             ->where('status', 'completed')
             ->whereBetween('created_at', [$inicio . ' 00:00:00', $fin . ' 23:59:59'])
-            ->selectRaw("
-                DATE(created_at) as fecha,
-                SUM(CASE WHEN modo = 'BOBtoPEN' THEN amount           ELSE 0 END) as bob_entran,
-                SUM(CASE WHEN modo = 'PENtoBOB' THEN converted_amount ELSE 0 END) as bob_salen,
-                SUM(CASE WHEN modo = 'PENtoBOB' THEN amount           ELSE 0 END) as pen_entran,
-                SUM(CASE WHEN modo = 'BOBtoPEN' THEN converted_amount ELSE 0 END) as pen_salen,
-                COUNT(*) as total_ops
-            ")
-            ->groupByRaw('DATE(created_at)')
-            ->orderBy('fecha')
+            ->select('created_at', 'amount', 'exchange_rate', 'converted_amount', 'modo')
+            ->orderBy('created_at')
             ->get();
+    }
+
+    private function mapearFilas($transfers, string $modo): array
+    {
+        $filas = $transfers->where('modo', $modo)->values();
+        return $filas->map(fn($t, $i) => [
+            'item'    => $i + 1,
+            'hora'    => \Carbon\Carbon::parse($t->created_at)->format('H:i'),
+            'ingreso' => round((float) $t->amount, 2),
+            'tc'      => round((float) $t->exchange_rate, 2),
+            'enviado' => round((float) $t->converted_amount, 2),
+        ])->toArray();
     }
 
     public function datos(Request $request)
@@ -60,43 +46,23 @@ class ReportesController extends Controller
         $request->validate([
             'fecha_inicio' => 'required|date',
             'fecha_fin'    => 'required|date|after_or_equal:fecha_inicio',
-            'compra'       => 'required|numeric|min:0.0001',
-            'venta'        => 'required|numeric|min:0.0001',
         ]);
 
-        $compra = (float) $request->compra;
-        $venta  = (float) $request->venta;
-        $filas  = $this->consultarFilas($request->fecha_inicio, $request->fecha_fin);
-
-        $detalle = $filas->map(function ($f) use ($compra, $venta) {
-            $bobEntran = (float) $f->bob_entran;
-            $bobSalen  = (float) $f->bob_salen;
-            $penEntran = (float) $f->pen_entran;
-            $penSalen  = (float) $f->pen_salen;
-
-            return [
-                'fecha'      => $f->fecha,
-                'bob_entran' => round($bobEntran, 2),
-                'bob_salen'  => round($bobSalen, 2),
-                'pen_entran' => round($penEntran, 2),
-                'pen_salen'  => round($penSalen, 2),
-                'utilidad'   => $this->calcularUtilidad($bobEntran, $penSalen, $bobSalen, $penEntran, $compra, $venta),
-                'total_ops'  => (int) $f->total_ops,
-            ];
-        });
-
-        $totales = [
-            'bob_entran' => round($detalle->sum('bob_entran'), 2),
-            'bob_salen'  => round($detalle->sum('bob_salen'), 2),
-            'pen_entran' => round($detalle->sum('pen_entran'), 2),
-            'pen_salen'  => round($detalle->sum('pen_salen'), 2),
-            'utilidad'   => round($detalle->sum('utilidad'), 2),
-            'total_ops'  => $detalle->sum('total_ops'),
-        ];
+        $transfers  = $this->consultarTransferencias($request->fecha_inicio, $request->fecha_fin);
+        $penBobFilas = collect($this->mapearFilas($transfers, 'PENtoBOB'));
+        $bobPenFilas = collect($this->mapearFilas($transfers, 'BOBtoPEN'));
 
         return response()->json([
-            'detalle' => $detalle,
-            'totales' => $totales,
+            'pen_a_bob' => [
+                'filas'         => $penBobFilas->values(),
+                'total_ingreso' => round($penBobFilas->sum('ingreso'), 2),
+                'total_enviado' => round($penBobFilas->sum('enviado'), 2),
+            ],
+            'bob_a_pen' => [
+                'filas'         => $bobPenFilas->values(),
+                'total_ingreso' => round($bobPenFilas->sum('ingreso'), 2),
+                'total_enviado' => round($bobPenFilas->sum('enviado'), 2),
+            ],
         ]);
     }
 
@@ -105,186 +71,151 @@ class ReportesController extends Controller
         $request->validate([
             'fecha_inicio' => 'required|date',
             'fecha_fin'    => 'required|date|after_or_equal:fecha_inicio',
-            'compra'       => 'required|numeric|min:0.0001',
-            'venta'        => 'required|numeric|min:0.0001',
         ]);
 
         $inicio = $request->fecha_inicio;
         $fin    = $request->fecha_fin;
-        $compra = (float) $request->compra;
-        $venta  = (float) $request->venta;
 
-        $filas   = $this->consultarFilas($inicio, $fin);
-        $detalle = $filas->map(function ($f) use ($compra, $venta) {
-            $bobEntran = (float) $f->bob_entran;
-            $bobSalen  = (float) $f->bob_salen;
-            $penEntran = (float) $f->pen_entran;
-            $penSalen  = (float) $f->pen_salen;
-            return [
-                'fecha'      => $f->fecha,
-                'bob_entran' => round($bobEntran, 2),
-                'bob_salen'  => round($bobSalen, 2),
-                'pen_entran' => round($penEntran, 2),
-                'pen_salen'  => round($penSalen, 2),
-                'utilidad'   => $this->calcularUtilidad($bobEntran, $penSalen, $bobSalen, $penEntran, $compra, $venta),
-                'total_ops'  => (int) $f->total_ops,
-            ];
-        });
+        $transfers   = $this->consultarTransferencias($inicio, $fin);
+        $penBobFilas = collect($this->mapearFilas($transfers, 'PENtoBOB'));
+        $bobPenFilas = collect($this->mapearFilas($transfers, 'BOBtoPEN'));
 
-        $totales = [
-            'bob_entran' => round($detalle->sum('bob_entran'), 2),
-            'bob_salen'  => round($detalle->sum('bob_salen'), 2),
-            'pen_entran' => round($detalle->sum('pen_entran'), 2),
-            'pen_salen'  => round($detalle->sum('pen_salen'), 2),
-            'utilidad'   => round($detalle->sum('utilidad'), 2),
-            'total_ops'  => $detalle->sum('total_ops'),
-        ];
+        $totalPenBobIngreso = round($penBobFilas->sum('ingreso'), 2);
+        $totalPenBobEnviado = round($penBobFilas->sum('enviado'), 2);
+        $totalBobPenIngreso = round($bobPenFilas->sum('ingreso'), 2);
+        $totalBobPenEnviado = round($bobPenFilas->sum('enviado'), 2);
 
-        // ── Spreadsheet ───────────────────────────────────────────────────────
+        $numFilas = max($penBobFilas->count(), $bobPenFilas->count(), 14);
+
         $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Reporte');
 
-        $colorHeader  = 'FF1E3A5F';
-        $colorUtilRow = 'FFFFE599';
-        $colorPos     = 'FF1A7C3E';
-        $colorNeg     = 'FFB22222';
-
-        // ── Hoja 1: Resumen ───────────────────────────────────────────────────
-        $s1 = $spreadsheet->getActiveSheet();
-        $s1->setTitle('Resumen');
-        $s1->getColumnDimension('A')->setWidth(34);
-        $s1->getColumnDimension('B')->setWidth(24);
-
-        $s1->mergeCells('A1:B1');
-        $s1->setCellValue('A1', 'REPORTE DE UTILIDAD — TransferCash');
-        $s1->getStyle('A1')->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 14, 'color' => ['argb' => 'FFFFFFFF']],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $colorHeader]],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-        ]);
-        $s1->getRowDimension(1)->setRowHeight(28);
-
-        $meta = [
-            ['Período',            $inicio . '  →  ' . $fin],
-            ['Tasa de compra',     'BOB ' . number_format($compra, 4) . ' por S/ 1'],
-            ['Tasa de venta',      'BOB ' . number_format($venta, 4)  . ' por S/ 1'],
-            ['Solo operaciones',   'Completadas'],
-        ];
-        $row = 3;
-        foreach ($meta as [$label, $val]) {
-            $s1->setCellValue("A{$row}", $label);
-            $s1->setCellValue("B{$row}", $val);
-            $s1->getStyle("A{$row}")->getFont()->setBold(true);
-            $row++;
+        // Anchos de columna: A-E tabla izquierda, F separador, G-K tabla derecha
+        foreach ([
+            'A' => 7, 'B' => 8, 'C' => 16, 'D' => 7, 'E' => 16,
+            'F' => 3,
+            'G' => 7, 'H' => 8, 'I' => 16, 'J' => 7, 'K' => 16,
+        ] as $col => $w) {
+            $sheet->getColumnDimension($col)->setWidth($w);
         }
 
-        $row++;
-        foreach (['A' => 'Concepto', 'B' => 'Valor'] as $col => $hdr) {
-            $s1->setCellValue("{$col}{$row}", $hdr);
-        }
-        $s1->getStyle("A{$row}:B{$row}")->applyFromArray([
+        $colorHeader    = 'FF1F3864'; // azul oscuro como en la imagen
+        $colorSubHeader = 'FF2E5090';
+        $colorTotales   = 'FFFFE599'; // amarillo
+        $borderThin     = ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FF999999']];
+        $borderMedium   = ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['argb' => 'FF666666']];
+
+        // ── Fila 1: títulos de cada tabla ─────────────────────────────────────
+        $sheet->mergeCells('A1:E1');
+        $sheet->setCellValue('A1', 'VENTA DE BOLIVIANOS');
+        $sheet->getStyle('A1')->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
             'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $colorHeader]],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-        ]);
-        $row++;
-
-        $resumen = [
-            ['BOB que entraron (recibidos de clientes)', 'BOB ' . number_format($totales['bob_entran'], 2), $colorPos],
-            ['BOB que salieron (enviados a clientes)',   'BOB ' . number_format($totales['bob_salen'],  2), $colorNeg],
-            ['PEN que entraron (recibidos de clientes)', 'S/ '  . number_format($totales['pen_entran'], 2), $colorPos],
-            ['PEN que salieron (enviados a clientes)',   'S/ '  . number_format($totales['pen_salen'],  2), $colorNeg],
-            ['Total operaciones completadas',            $totales['total_ops'], 'FF444444'],
-        ];
-
-        foreach ($resumen as [$label, $val, $color]) {
-            $s1->setCellValue("A{$row}", $label);
-            $s1->setCellValue("B{$row}", $val);
-            $s1->getStyle("B{$row}")->getFont()->setBold(true)->getColor()->setARGB($color);
-            $s1->getStyle("A{$row}:B{$row}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-            $row++;
-        }
-
-        $uColor = $totales['utilidad'] >= 0 ? $colorPos : $colorNeg;
-        $s1->setCellValue("A{$row}", 'UTILIDAD TOTAL (PEN)');
-        $s1->setCellValue("B{$row}", 'S/ ' . number_format($totales['utilidad'], 2));
-        $s1->getStyle("A{$row}:B{$row}")->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 13, 'color' => ['argb' => $uColor]],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $colorUtilRow]],
-            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM]],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders'   => ['allBorders' => $borderThin],
         ]);
 
-        // ── Hoja 2: Detalle ───────────────────────────────────────────────────
-        $s2 = $spreadsheet->createSheet();
-        $s2->setTitle('Detalle por día');
-
-        foreach (['A' => 14, 'B' => 16, 'C' => 16, 'D' => 16, 'E' => 16, 'F' => 18, 'G' => 14] as $col => $w) {
-            $s2->getColumnDimension($col)->setWidth($w);
-        }
-
-        $s2->mergeCells('A1:G1');
-        $s2->setCellValue('A1', 'DETALLE POR DÍA  —  ' . $inicio . ' al ' . $fin);
-        $s2->getStyle('A1')->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 13, 'color' => ['argb' => 'FFFFFFFF']],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $colorHeader]],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-        ]);
-        $s2->getRowDimension(1)->setRowHeight(24);
-
-        $cabeceras = ['Fecha', 'BOB Entran', 'BOB Salen', 'PEN Entran', 'PEN Salen', 'Utilidad (PEN)', 'Ops.'];
-        foreach ($cabeceras as $i => $c) {
-            $s2->setCellValue(chr(65 + $i) . '3', $c);
-        }
-        $s2->getStyle('A3:G3')->applyFromArray([
+        $sheet->mergeCells('G1:K1');
+        $sheet->setCellValue('G1', 'VENTA DE SOLES');
+        $sheet->getStyle('G1')->applyFromArray([
             'font'      => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF2E5090']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $colorHeader]],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders'   => ['allBorders' => $borderThin],
         ]);
+        $sheet->getRowDimension(1)->setRowHeight(20);
 
-        $dr = 4;
-        foreach ($detalle as $d) {
-            $s2->setCellValue("A{$dr}", $d['fecha']);
-            $s2->setCellValue("B{$dr}", $d['bob_entran']);
-            $s2->setCellValue("C{$dr}", $d['bob_salen']);
-            $s2->setCellValue("D{$dr}", $d['pen_entran']);
-            $s2->setCellValue("E{$dr}", $d['pen_salen']);
-            $s2->setCellValue("F{$dr}", $d['utilidad']);
-            $s2->setCellValue("G{$dr}", $d['total_ops']);
-
-            foreach (['B','C','D','E','F'] as $col) {
-                $s2->getStyle("{$col}{$dr}")->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED2);
+        // ── Fila 2: cabeceras de columna ──────────────────────────────────────
+        $headers = ['ithem', 'HORA', 'INGRESO', 'TC', 'ENVIADO'];
+        foreach ($headers as $i => $h) {
+            $colIzq = chr(65 + $i);       // A-E
+            $colDer = chr(65 + 6 + $i);   // G-K
+            foreach ([$colIzq, $colDer] as $col) {
+                $sheet->setCellValue("{$col}2", $h);
+                $sheet->getStyle("{$col}2")->applyFromArray([
+                    'font'      => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
+                    'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $colorSubHeader]],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                    'borders'   => ['allBorders' => $borderThin],
+                ]);
             }
-            $uc = $d['utilidad'] >= 0 ? $colorPos : $colorNeg;
-            $s2->getStyle("F{$dr}")->getFont()->setBold(true)->getColor()->setARGB($uc);
+        }
+        $sheet->getRowDimension(2)->setRowHeight(16);
 
-            $bg = $dr % 2 === 0 ? 'FFF2F6FF' : 'FFFFFFFF';
-            $s2->getStyle("A{$dr}:G{$dr}")->applyFromArray([
-                'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $bg]],
-                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFCCCCCC']]],
-            ]);
-            $dr++;
+        // ── Filas de datos ────────────────────────────────────────────────────
+        for ($i = 0; $i < $numFilas; $i++) {
+            $row = $i + 3;
+            $bg  = ($i % 2 === 0) ? 'FFFFFFFF' : 'FFF2F2F2';
+
+            // — Tabla izquierda: PENtoBOB —
+            $fPen = $penBobFilas[$i] ?? null;
+            $sheet->setCellValue("A{$row}", $fPen ? $fPen['item'] : '');
+            $sheet->setCellValue("B{$row}", $fPen ? $fPen['hora'] : '');
+            $sheet->setCellValue("C{$row}", $fPen ? number_format($fPen['ingreso'], 2, '.', ' ') . ' PEN' : '');
+            $sheet->setCellValue("D{$row}", $fPen ? $fPen['tc'] : '');
+            $sheet->setCellValue("E{$row}", $fPen ? number_format($fPen['enviado'], 2, '.', ' ') . ' BOB' : '');
+
+            foreach (['A', 'B', 'C', 'D', 'E'] as $col) {
+                $sheet->getStyle("{$col}{$row}")->applyFromArray([
+                    'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $bg]],
+                    'borders'   => ['allBorders' => $borderThin],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
+                ]);
+            }
+            $sheet->getStyle("A{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("B{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            // — Tabla derecha: BOBtoPEN —
+            $fBob = $bobPenFilas[$i] ?? null;
+            $sheet->setCellValue("G{$row}", $fBob ? $fBob['item'] : '');
+            $sheet->setCellValue("H{$row}", $fBob ? $fBob['hora'] : '');
+            $sheet->setCellValue("I{$row}", $fBob ? number_format($fBob['ingreso'], 2, '.', ' ') . ' BOB' : '');
+            $sheet->setCellValue("J{$row}", $fBob ? $fBob['tc'] : '');
+            $sheet->setCellValue("K{$row}", $fBob ? number_format($fBob['enviado'], 2, '.', ' ') . ' PEN' : '');
+
+            foreach (['G', 'H', 'I', 'J', 'K'] as $col) {
+                $sheet->getStyle("{$col}{$row}")->applyFromArray([
+                    'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $bg]],
+                    'borders'   => ['allBorders' => $borderThin],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
+                ]);
+            }
+            $sheet->getStyle("G{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle("H{$row}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
+            $sheet->getRowDimension($row)->setRowHeight(15);
         }
 
-        $s2->setCellValue("A{$dr}", 'TOTALES');
-        $s2->setCellValue("B{$dr}", $totales['bob_entran']);
-        $s2->setCellValue("C{$dr}", $totales['bob_salen']);
-        $s2->setCellValue("D{$dr}", $totales['pen_entran']);
-        $s2->setCellValue("E{$dr}", $totales['pen_salen']);
-        $s2->setCellValue("F{$dr}", $totales['utilidad']);
-        $s2->setCellValue("G{$dr}", $totales['total_ops']);
-        $s2->getStyle("A{$dr}:G{$dr}")->applyFromArray([
-            'font'    => ['bold' => true, 'size' => 11],
-            'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $colorUtilRow]],
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM]],
+        // ── Fila de totales ───────────────────────────────────────────────────
+        $totRow = $numFilas + 3;
+
+        $sheet->setCellValue("A{$totRow}", 'Totales');
+        $sheet->setCellValue("C{$totRow}", number_format($totalPenBobIngreso, 2, '.', ' ') . ' PEN');
+        $sheet->setCellValue("E{$totRow}", number_format($totalPenBobEnviado, 2, '.', ' ') . ' BOB');
+        $sheet->getStyle("A{$totRow}:E{$totRow}")->applyFromArray([
+            'font'      => ['bold' => true],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $colorTotales]],
+            'borders'   => ['allBorders' => $borderMedium],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
         ]);
-        foreach (['B','C','D','E','F'] as $col) {
-            $s2->getStyle("{$col}{$dr}")->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED2);
-        }
+        $sheet->getStyle("A{$totRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
 
-        // ── Respuesta ─────────────────────────────────────────────────────────
-        $spreadsheet->setActiveSheetIndex(0);
-        $filename = 'reporte_utilidad_' . $inicio . '_' . $fin . '.xlsx';
+        $sheet->setCellValue("G{$totRow}", 'Totales');
+        $sheet->setCellValue("I{$totRow}", number_format($totalBobPenIngreso, 2, '.', ' ') . ' BOB');
+        $sheet->setCellValue("K{$totRow}", number_format($totalBobPenEnviado, 2, '.', ' ') . ' PEN');
+        $sheet->getStyle("G{$totRow}:K{$totRow}")->applyFromArray([
+            'font'      => ['bold' => true],
+            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $colorTotales]],
+            'borders'   => ['allBorders' => $borderMedium],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_RIGHT],
+        ]);
+        $sheet->getStyle("G{$totRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        $sheet->getRowDimension($totRow)->setRowHeight(16);
+
+        // ── Enviar archivo ────────────────────────────────────────────────────
+        $tipo     = $inicio === $fin ? 'cierre_caja_' . $inicio : 'reporte_' . $inicio . '_' . $fin;
+        $filename = $tipo . '.xlsx';
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
