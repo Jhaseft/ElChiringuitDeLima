@@ -388,8 +388,8 @@ class OperacionController extends Controller
             ];
 
 
-            // Mail::to("operaciones@transfercash.click")->send(new \App\Mail\NuevaTransferenciaAdmin($payload));
-            // Mail::to($user->email)->send(new \App\Mail\NuevaTransferenciaUsuario($payload));
+            Mail::to("operaciones@transfercash.click")->send(new \App\Mail\NuevaTransferenciaAdmin($payload));
+            Mail::to($user->email)->send(new \App\Mail\NuevaTransferenciaUsuario($payload));
 
             //  Enviar mensaje a WhatsApp vía Evolution API (diferenciado por método de pago)
             try {
@@ -472,41 +472,37 @@ class OperacionController extends Controller
                 $mensaje .= "📎 *Comprobante*: verificar en los Mails.\n\n";
                 $mensaje .= "🔗 Ir al panel de administración:\n" . url('/admin/login');
 
-                Log::info('Mensaje generado:', [
-                    'mensaje' => $mensaje
-                ]);
 
+                // Configuración Evolution API
+                $server   = config('services.evolution.server',   env('EVOLUTION_SERVER'));
+                $instance = config('services.evolution.instance', env('EVOLUTION_INSTANCE'));
+                $apikey   = config('services.evolution.apikey',   env('EVOLUTION_APIKEY'));
+                $numerosRaw = config('services.evolution.numbers', env('EVOLUTION_NUMBERS', ''));
 
-                // // Configuración Evolution API
-                // $server   = config('services.evolution.server',   env('EVOLUTION_SERVER'));
-                // $instance = config('services.evolution.instance', env('EVOLUTION_INSTANCE'));
-                // $apikey   = config('services.evolution.apikey',   env('EVOLUTION_APIKEY'));
-                // $numerosRaw = config('services.evolution.numbers', env('EVOLUTION_NUMBERS', ''));
+                if ($server && $instance && $apikey && $numerosRaw) {
+                    $numeros = array_filter(array_map('trim', explode(',', $numerosRaw)));
 
-                // if ($server && $instance && $apikey && $numerosRaw) {
-                //     $numeros = array_filter(array_map('trim', explode(',', $numerosRaw)));
+                    foreach ($numeros as $numero) {
+                        $whatsPayload = [
+                            'number' => $numero,
+                            'text'   => $mensaje,
+                        ];
 
-                //     foreach ($numeros as $numero) {
-                //         $whatsPayload = [
-                //             'number' => $numero,
-                //             'text'   => $mensaje,
-                //         ];
+                        $response = Http::withHeaders([
+                            'Content-Type' => 'application/json',
+                            'apikey'       => $apikey,
+                        ])->post("$server/message/sendText/$instance", $whatsPayload);
 
-                //         $response = Http::withHeaders([
-                //             'Content-Type' => 'application/json',
-                //             'apikey'       => $apikey,
-                //         ])->post("$server/message/sendText/$instance", $whatsPayload);
-
-                //         if ($response->failed()) {
-                //             Log::error("❌ Error enviando WhatsApp a {$numero}", [
-                //                 'status' => $response->status(),
-                //                 'body'   => $response->body(),
-                //             ]);
-                //         }
-                //     }
-                // } else {
-                //     Log::warning('⚠️ Evolution API no configurada (server/instance/apikey/numbers faltantes). WhatsApp omitido.');
-                // }
+                        if ($response->failed()) {
+                            Log::error("❌ Error enviando WhatsApp a {$numero}", [
+                                'status' => $response->status(),
+                                'body'   => $response->body(),
+                            ]);
+                        }
+                    }
+                } else {
+                    Log::warning('⚠️ Evolution API no configurada (server/instance/apikey/numbers faltantes). WhatsApp omitido.');
+                }
             } catch (\Exception $e) {
                 Log::error("❌ Excepción enviando mensaje a Evolution API: " . $e->getMessage());
             }
