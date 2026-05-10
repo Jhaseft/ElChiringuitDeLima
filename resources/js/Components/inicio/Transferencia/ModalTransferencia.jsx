@@ -113,7 +113,7 @@ export default function ModalTransferencia({
       setLoading(false);
     }
   };
-
+ 
   // ── opciones de pago de la empresa para el modo actual ─────
   const opcionesEmpresa = metodosPago.filter((m) => m.currency_pair === modo);
 
@@ -125,8 +125,8 @@ export default function ModalTransferencia({
       <div className="border rounded-lg bg-yellow-50 border-yellow-300 p-4 text-sm text-gray-800">
         <p className="font-semibold mb-1">Pago en oficina</p>
         <p>
-          Si ya pagaste en nuestra oficina, toma una foto del comprobante que
-          recibiste y súbelo aquí para registrar tu operación.
+          Pagaras en efectivo en oficina. No necesitas subir comprobante; el
+          administrador adjuntará el comprobante al confirmar la operación.
         </p>
       </div>
     );
