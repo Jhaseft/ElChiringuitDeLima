@@ -1,13 +1,18 @@
 import { useState } from "react";
 import AdminLayout from "@/Layouts/admin/AdminLayout";
-import { FileSpreadsheet, Calendar, Archive } from "lucide-react";
+import { FileSpreadsheet, Calendar, Archive, DollarSign } from "lucide-react";
 
 export default function Reportes() {
     const _hoy = new Date();
     const hoy = `${_hoy.getFullYear()}-${String(_hoy.getMonth() + 1).padStart(2, "0")}-${String(_hoy.getDate()).padStart(2, "0")}`;
     const inicioMes = hoy.slice(0, 8) + "01";
 
-    const [form, setForm] = useState({ fecha_inicio: inicioMes, fecha_fin: hoy });
+    const [form, setForm] = useState({
+        fecha_inicio: inicioMes,
+        fecha_fin: hoy,
+        monto_bob: "",
+        monto_pen: "",
+    });
     const [errores, setErrores] = useState({});
 
     const validar = () => {
@@ -15,6 +20,10 @@ export default function Reportes() {
         if (!form.fecha_inicio) e.fecha_inicio = "Requerido";
         if (!form.fecha_fin) e.fecha_fin = "Requerido";
         if (form.fecha_fin < form.fecha_inicio) e.fecha_fin = "Debe ser mayor o igual a la fecha inicio";
+        if (form.monto_bob === "" || isNaN(form.monto_bob) || Number(form.monto_bob) < 0)
+            e.monto_bob = "Ingresa un monto válido";
+        if (form.monto_pen === "" || isNaN(form.monto_pen) || Number(form.monto_pen) < 0)
+            e.monto_pen = "Ingresa un monto válido";
         setErrores(e);
         return Object.keys(e).length === 0;
     };
@@ -75,6 +84,45 @@ export default function Reportes() {
                                 className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 ${errores.fecha_fin ? "border-red-400" : "border-gray-200"}`}
                             />
                             {errores.fecha_fin && <p className="text-xs text-red-500">{errores.fecha_fin}</p>}
+                        </div>
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-4">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1">
+                            <DollarSign size={12} /> Montos entregados al encargado
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <label className="text-xs font-medium text-gray-600">
+                                    Bolivianos iniciales (BOB)
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="Ej: 10000"
+                                    value={form.monto_bob}
+                                    onChange={e => setForm({ ...form, monto_bob: e.target.value })}
+                                    className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 ${errores.monto_bob ? "border-red-400" : "border-gray-200"}`}
+                                />
+                                {errores.monto_bob && <p className="text-xs text-red-500">{errores.monto_bob}</p>}
+                            </div>
+
+                            <div className="space-y-1">
+                                <label className="text-xs font-medium text-gray-600">
+                                    Soles iniciales (PEN)
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="Ej: 10000"
+                                    value={form.monto_pen}
+                                    onChange={e => setForm({ ...form, monto_pen: e.target.value })}
+                                    className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 ${errores.monto_pen ? "border-red-400" : "border-gray-200"}`}
+                                />
+                                {errores.monto_pen && <p className="text-xs text-red-500">{errores.monto_pen}</p>}
+                            </div>
                         </div>
                     </div>
 
