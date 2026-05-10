@@ -3,7 +3,8 @@ import AdminLayout from "@/Layouts/admin/AdminLayout";
 import { FileSpreadsheet, Calendar, Archive } from "lucide-react";
 
 export default function Reportes() {
-    const hoy = new Date().toISOString().slice(0, 10);
+    const _hoy = new Date();
+    const hoy = `${_hoy.getFullYear()}-${String(_hoy.getMonth() + 1).padStart(2, "0")}-${String(_hoy.getDate()).padStart(2, "0")}`;
     const inicioMes = hoy.slice(0, 8) + "01";
 
     const [form, setForm] = useState({ fecha_inicio: inicioMes, fecha_fin: hoy });
