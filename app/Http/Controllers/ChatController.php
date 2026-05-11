@@ -35,16 +35,8 @@ class ChatController extends Controller
             'user_id'        => $user?->id,
             'user_name'      => $user?->first_name,
             'user_email'     => $user?->email,
-            'is_authenticated' => (bool) $user,
+            'is_authenticated' => (bool) $user,  
         ];
-
-        Log::info('[Chat] incoming request', [
-            'session_id'     => $data['session_id'],
-            'message'        => $data['message'],
-            'message_length' => strlen($data['message']),
-            'user_id'        => $user?->id,
-            'webhook'        => $webhook,
-        ]);
 
         try {
             $startedAt = microtime(true);
@@ -55,13 +47,6 @@ class ChatController extends Controller
                 ->post($webhook, $payload);
 
             $elapsedMs = (int) ((microtime(true) - $startedAt) * 1000);
-
-            Log::info('[Chat] n8n response received', [
-                'status'      => $response->status(),
-                'elapsed_ms'  => $elapsedMs,
-                'headers'     => $response->headers(),
-                'raw_body'    => $response->body(),
-            ]);
 
             if (!$response->successful()) {
                 Log::warning('[Chat] n8n webhook returned non-2xx', [
@@ -75,13 +60,6 @@ class ChatController extends Controller
             }
 
             $body = $response->json();
-
-            Log::info('[Chat] decoded body', [
-                'type'    => gettype($body),
-                'is_list' => is_array($body) ? array_is_list($body) : false,
-                'keys'    => is_array($body) ? array_keys($body) : null,
-                'body'    => $body,
-            ]);
 
             if (is_array($body) && array_is_list($body) && !empty($body)) {
                 $body = $body[0];
@@ -106,11 +84,6 @@ class ChatController extends Controller
                 $reply = 'No obtuve una respuesta válida del asistente.';
             }
 
-            Log::info('[Chat] final reply sent to client', [
-                'session_id'   => $data['session_id'],
-                'reply_length' => strlen($reply),
-                'reply'        => $reply,
-            ]);
 
             return response()->json(['reply' => $reply]);
         } catch (\Throwable $e) {

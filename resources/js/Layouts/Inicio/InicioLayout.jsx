@@ -12,8 +12,8 @@ export default function InicioLayout({ children }) {
           {children}
         </div>
       </main>
-      {/* <ChatWidget /> */}
-      <BotonWhatsap />
+      <ChatWidget />
+      {/* <BotonWhatsap /> */}
     </div>
   );
 }
