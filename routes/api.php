@@ -8,7 +8,8 @@ use App\Http\Controllers\MobileFaceController;
 use Illuminate\Support\Facades\Cache;
 use App\Http\Controllers\KycController;
 use App\Http\Controllers\VersionGuardController;
- 
+use App\Http\Controllers\ChatController;
+
 // Registro y verificación
 Route::post('/register', [AppNative::class, 'register']);
 Route::post('/verify-code', [AppNative::class, 'verifyCode']);
@@ -37,6 +38,9 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::get('/version-minima',[VersionGuardController::class,'versionMinima']);
+
+// Chat con asistente n8n (sin CSRF para app móvil)
+Route::post('/chat/send', [ChatController::class, 'send']);
 
 //para la web no para el movil xd
 Route::post('/kyc/webhook', [KycController::class, 'webhook'])->name('kyc.webhook');

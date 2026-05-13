@@ -5,7 +5,11 @@
       "Bash(Sort-Object)",
       "Bash(composer require *)",
       "Bash(npx vite *)",
-      "Bash(php -l app/Http/Controllers/Admin/ReportesController.php)"
+      "Bash(php -l app/Http/Controllers/Admin/ReportesController.php)",
+      "Bash(cd /c/Users/ASUS/Desktop/Lima && ls -la ./app/)",
+      "Read(//c/c/Users/ASUS/Desktop/Lima/**)",
+      "Bash(Get-ChildItem -Recurse -Directory)",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }
