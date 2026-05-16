@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Cloudinary\Api\Upload\UploadApi;
 use Illuminate\Support\Facades\Log;
 use Throwable;
-
+use App\Models\Configuracion;
 class OperacionController extends Controller
 {
     public function listarBancos()
@@ -243,28 +243,28 @@ class OperacionController extends Controller
             // Validar mínimos según modo (valores desde .env vía config/transfercash.php)
             $amount = (float) $request->amount;
             $modo   = $request->modo;
-
-            if ($modo === 'PENtoBOB' && $amount < config('transfercash.min_pen')) {
+ 
+            if ($modo === 'PENtoBOB' && $amount < Configuracion::get('transfer_min_pen', 0)) {
                 return response()->json([
-                    'message' => 'El monto mínimo para transferencias PEN→BOB es S/ ' . config('transfercash.min_pen') . '.'
+                    'message' => 'El monto mínimo para transferencias PEN→BOB es S/ ' . Configuracion::get('transfer_min_pen', 0) . '.'
                 ], 422);
             }
 
-            if ($modo === 'BOBtoPEN' && $amount < config('transfercash.min_bob')) {
+            if ($modo === 'BOBtoPEN' && $amount < Configuracion::get('transfer_min_bob', 0)) {
                 return response()->json([
-                    'message' => 'El monto mínimo para transferencias BOB→PEN es Bs ' . config('transfercash.min_bob') . '.'
+                    'message' => 'El monto mínimo para transferencias BOB→PEN es Bs ' . Configuracion::get('transfer_min_bob', 0) . '.'
                 ], 422);
             }
 
             // Validar límite KYC según modo (valores desde .env vía config/transfercash.php)
             $superaLimiteKyc =
-                ($modo === 'PENtoBOB' && $amount > config('transfercash.kyc_limit_pen')) ||
-                ($modo === 'BOBtoPEN' && $amount > config('transfercash.kyc_limit_bob'));
+                ($modo === 'PENtoBOB' && $amount > Configuracion::get('transfercash.kyc_limit_pen', 0)) ||
+                ($modo === 'BOBtoPEN' && $amount > Configuracion::get('transfercash.kyc_limit_bob', 0));
 
             if ($superaLimiteKyc && $user->kyc_status !== 'verified') {
                 $limite   = $modo === 'PENtoBOB'
-                    ? 'S/ ' . config('transfercash.kyc_limit_pen')
-                    : 'Bs ' . config('transfercash.kyc_limit_bob');
+                    ? 'S/ ' . Configuracion::get('transfercash.kyc_limit_pen', 0)
+                    : 'Bs ' . Configuracion::get('transfercash.kyc_limit_bob', 0);
                 return response()->json([
                     'message' => "Para transferencias superiores a {$limite} debes completar la verificación KYC.",
                     'kyc_required' => true,

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Configuracion;
 use App\Models\TipoCambio;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
@@ -70,7 +71,7 @@ class ActualizarTipoCambio extends Command
             // ===============================
             // CALCULAR CONVERSIÓN Y MÁRGENES
             // ===============================
-
+ 
             // COMPRA: cuántos BOB da TC por 1 PEN del cliente (spread de mercado ya favorece a TC)
             $compraBase = round($bobSell / $penBuy, 4);
 
@@ -82,9 +83,9 @@ class ActualizarTipoCambio extends Command
             $compra = round($compraBase * (1 - $margen), 2);
             $venta  = round($ventaBase  * (1 + $margen), 2);
 
-            // Promoción por separado (editables desde .env → TRANSFER_PIPS_COMPRA / TRANSFER_PIPS_VENTA)
-            $compra = round($compra + config('transfercash.pips_compra'), 2);
-            $venta  = round($venta  + config('transfercash.pips_venta'),  2);
+            // Pips administrables desde la tabla configuracion
+            $compra = round($compra + Configuracion::get('pips_compra', 0), 2);
+            $venta  = round($venta  + Configuracion::get('pips_venta',  0), 2);
 
             // ===============================
             // GUARDAR SOLO SI CAMBIÓ
@@ -109,7 +110,6 @@ class ActualizarTipoCambio extends Command
             ]);
 
             $this->info("Tipo de cambio actualizado → compra: $compra | venta: $venta");
-            Log::info("TipoCambio actualizado: compra=$compra, venta=$venta");
 
             return self::SUCCESS;
 

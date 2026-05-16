@@ -1,5 +1,5 @@
 import { Link, usePage } from "@inertiajs/react";
-import { LogOut, DollarSign, Users, ArrowLeftRight,BanknoteArrowUp , Home, Menu, X,WalletMinimal,BookMarked, QrCode   } from "lucide-react";
+import { LogOut, DollarSign, Users, ArrowLeftRight,BanknoteArrowUp ,Settings, Home, Menu, X,WalletMinimal,BookMarked, QrCode   } from "lucide-react";
 import { useState } from "react";
 
 export default function AdminLayout({ children }) {
@@ -19,6 +19,7 @@ export default function AdminLayout({ children }) {
         { name: "QR", href: "/admin/dashboard/qr", icon: <QrCode size={18} /> },
         { name: "Metodos de Pago", href: "/admin/dashboard/metodos", icon: <WalletMinimal   size={18} /> },
         { name: "Reportes", href: "/admin/dashboard/reportes", icon: <BookMarked size={18} /> },
+        { name: "Configuracion", href: "/admin/dashboard/configuracion", icon: <Settings size={18} /> },
     ];
 
     return (

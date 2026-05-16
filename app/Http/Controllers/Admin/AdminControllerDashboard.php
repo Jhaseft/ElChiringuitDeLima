@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Configuracion;
 use App\Models\TipoCambio;
 use App\Models\Transfer;
 use App\Models\User;
@@ -108,7 +109,9 @@ class AdminControllerDashboard extends Controller
                 ->first();
 
     return Inertia::render('Admin/TipoCambio', [
-        'tipoCambio' => $tipoCambio
+        'tipoCambio'  => $tipoCambio,
+        'pips_compra' => Configuracion::get('pips_compra', 0.03),
+        'pips_venta'  => Configuracion::get('pips_venta', -0.01),
     ]);
 }
 
@@ -117,24 +120,15 @@ class AdminControllerDashboard extends Controller
     public function update(Request $request)
 {
     $request->validate([
-        'compra' => 'required|numeric',
-        'venta' => 'required|numeric',
+        'pips_compra' => 'required|numeric',
+        'pips_venta'  => 'required|numeric',
     ]);
 
-    // Crear un nuevo registro en la tabla
-    $tipoCambio = new TipoCambio();
-    $tipoCambio->compra = $request->compra;
-    $tipoCambio->venta = $request->venta;
-    $tipoCambio->fecha_actualizacion = now();
-    $tipoCambio->save();
+    Configuracion::where('clave', 'pips_compra')->update(['valor' => $request->pips_compra]);
+    Configuracion::where('clave', 'pips_venta')->update(['valor' => $request->pips_venta]);
 
-    // Enviar mail a todos los usuarios (en cola, para no bloquear el request)
-    $users = User::all();
-    foreach ($users as $user) {
-        Mail::to($user->email)->queue(new TipoCambioActualizadoMail($tipoCambio));
-    }
 
-    return response()->json(['success' => true, 'tipoCambio' => $tipoCambio]);
+    return response()->json(['success' => true, 'pips_compra' => $request->pips_compra, 'pips_venta' => $request->pips_venta]);
 }
 
 
@@ -217,15 +211,15 @@ public function historial()
 
         // VENTA base: cuántos BOB cobra TC por cada PEN que entrega
         $ventaBase  = round($bobBuy  / $penSell, 4);
-
+ 
         // Margen (editable desde .env → TRANSFER_MARGEN)
         $margen = config('transfercash.margen');
         $compra = round($compraBase * (1 - $margen), 2);
         $venta  = round($ventaBase  * (1 + $margen), 2);
 
-        // Promoción por separado (editables desde .env → TRANSFER_PIPS_COMPRA / TRANSFER_PIPS_VENTA)
-        $compra = round($compra + config('transfercash.pips_compra'), 2);
-        $venta  = round($venta  + config('transfercash.pips_venta'),  2);
+        // Pips administrables desde la tabla configuracion
+        $compra = round($compra + Configuracion::get('pips_compra', 0), 2);
+        $venta  = round($venta  + Configuracion::get('pips_venta',  0), 2);
 
         // ===============================
         //  GUARDAR EN BD

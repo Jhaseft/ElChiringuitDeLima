@@ -1,4 +1,5 @@
 <?php
+
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompleteProfileController;
 use App\Http\Controllers\OperacionController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Admin\AdminTransfersEfectivo;
 use App\Http\Controllers\Admin\AdminTransfersQr;
 use App\Http\Controllers\Admin\AdminUserMediaController;
 use App\Http\Controllers\Admin\TransferMethodController;
+use App\Http\Controllers\Admin\ConfiguracionController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\ChatController;
 use App\Models\Bank;
@@ -19,12 +21,13 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\KycController;
+use App\Models\Configuracion;
 
 // Página principal
 Route::get('/', function () {
     $bancos = Bank::all();
     $tc = \App\Models\TipoCambio::latest()->first();
-    $transferMethods= TransferMethod::all();
+    $transferMethods = TransferMethod::all();
 
     return Inertia::render('Welcome', [
         'canLogin'    => Route::has('login'),
@@ -33,13 +36,14 @@ Route::get('/', function () {
         'TrMethods'   => $transferMethods,
         'tasas'       => $tc ? ['compra' => (float)$tc->compra, 'venta' => (float)$tc->venta] : null,
         'transferConfig' => [
-            'min_pen'       => config('transfercash.min_pen'),
-            'min_bob'       => config('transfercash.min_bob'),
-            'kyc_limit_pen' => config('transfercash.kyc_limit_pen'),
-            'kyc_limit_bob' => config('transfercash.kyc_limit_bob'),
+            'min_pen'       => Configuracion::get('transfer_min_pen', 0),
+            'min_bob'       => Configuracion::get('transfer_min_bob', 0),
+            'kyc_limit_pen' => Configuracion::get('transfer_kyc_limit_pen', 0),
+            'kyc_limit_bob' => Configuracion::get('transfer_kyc_limit_bob', 0),
         ],
     ]);
 })->name('welcome');
+
 //contacto
 Route::get('/contacto', function () {
     return Inertia::render('Contacto');
@@ -48,20 +52,17 @@ Route::get('/contacto', function () {
 Route::get('/politicas', function () {
 
     return Inertia::render('politicasypriv');
-
 });
 
 //politicasludo
 Route::get('/PoliticasLudo', function () {
 
     return Inertia::render('Politicas');
-
 });
 //pasos ludo
 Route::get('/PasosLudo', function () {
 
     return Inertia::render('Pasos');
-
 });
 
 
@@ -69,13 +70,11 @@ Route::get('/PasosLudo', function () {
 Route::get('/nosotros', function () {
 
     return Inertia::render('Nosotros');
-
 });
 //App Native
 Route::get('/App', function () {
 
     return Inertia::render('AppNative');
- 
 });
 
 // Operaciones 
@@ -83,29 +82,28 @@ Route::middleware(['web'])->group(function () {
     //listar bancos existentes en la abase de datos
     Route::get('/operacion/listar-bancos', [OperacionController::class, 'listarBancos'])->name('operacion.listarBancos');
     //crear cuentas de QR  y Tranferencia bancaria 
-    Route::get('/operacion/listar-cuentas/{user_id}/{method_type}',[OperacionController::class, 'listarCuentas'])->name('operacion.listarCuentas');
-      //guardar una cuenta
+    Route::get('/operacion/listar-cuentas/{user_id}/{method_type}', [OperacionController::class, 'listarCuentas'])->name('operacion.listarCuentas');
+    //guardar una cuenta
     Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta'])->name('operacion.guardarCuenta');
-   //crear una tranferencia con automatizaciones de envio a Evolution y Email
+    //crear una tranferencia con automatizaciones de envio a Evolution y Email
     Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia'])->name('operacion.crearTransferencia');
 });
- 
+
 // Perfil y KYC
 Route::middleware('auth')->group(function () {
     //completar perfil si viene de google
     Route::get('/complete-profile', [CompleteProfileController::class, 'index'])->name('complete-profile');
-    Route::post('/complete-profile', [CompleteProfileController::class, 'store'])->name('complete-profile.store');    
+    Route::post('/complete-profile', [CompleteProfileController::class, 'store'])->name('complete-profile.store');
     //ver historial de tranferencias del usuario
     Route::get('/transfers/history', [TransferController::class, 'history'])->name('transfers.history');
     //eliminar cuenta
     Route::delete('/eliminar/{account_id}', [OperacionController::class, 'eliminarcuenta']);
- 
+
     Route::post('/kyc/session', [KycController::class, 'createSession']);
 
     Route::get('/kyc/resultado', function () {
-    return Inertia::render('KycResultado');
+        return Inertia::render('KycResultado');
     });
-    
 });
 
 // Login Google
@@ -133,7 +131,7 @@ Route::get('/verify-email/{token}', function ($token) {
         'document_number' => $data['document_number'] ?? null,
         'password' => \Illuminate\Support\Facades\Hash::make($data['password']),
         'accepted_terms_at' => now(),          // momento de aceptación
-        
+
     ]);
 
     Cache::forget('register:' . $token);
@@ -154,7 +152,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/dashboard', [AdminControllerDashboard::class, 'Dashboard']);
         //segunda pantalla
         Route::get('/dashboard/tipo-cambio', [AdminControllerDashboard::class, 'tipoCambio']);
-        
+
         //tercera pantalla
         Route::get('/dashboard/usuarios', [AdminUserMediaController::class, 'index']);
         //cuarta pantalla
@@ -166,23 +164,25 @@ Route::prefix('admin')->group(function () {
         //pantalla QR
         Route::get('/dashboard/qr', [AdminTransfersQr::class, 'index']);
 
-         //sexta pantalla
+        //sexta pantalla
         Route::get('/dashboard/metodos', [TransferMethodController::class, 'index']);
         Route::post('/dashboard/metodos/store', [TransferMethodController::class, 'store']);
         Route::post('/dashboard/metodos/{id}/update', [TransferMethodController::class, 'update']);
         Route::delete('/dashboard/metodos/{id}', [TransferMethodController::class, 'destroy']);
 
-        
+
         //septima pantalla
         Route::get('/dashboard/reportes', [ReportesController::class, 'index']);
         Route::get('/dashboard/reportes/datos', [ReportesController::class, 'datos']);
         Route::get('/dashboard/reportes/excel', [ReportesController::class, 'exportarExcel']);
 
-
+        //octava pantalla configuracion
+        Route::get('/dashboard/configuracion', [ConfiguracionController::class, 'index']);
+        Route::post('/dashboard/configuracion', [ConfiguracionController::class, 'update']);
 
         //tipo de cambio
         Route::post('/tipo-cambio', [AdminControllerDashboard::class, 'update']);
-         
+
         //metodos de pago
 
 
@@ -190,16 +190,14 @@ Route::prefix('admin')->group(function () {
         Route::get('/users/{user}/detail/info', [AdminUserMediaController::class, 'showUsers']);
         Route::get('/users/{user}/detail/accounts', [AdminUserMediaController::class, 'showAccounts']);
 
- 
+
         //ver tranferencia especifica de usuario
         Route::get('/transfers/user/{id}', [AdminTransfers::class, 'showUser']);
-         Route::get('/transfers/detail/{id}', [AdminTransfers::class, 'transferDetail']);
+        Route::get('/transfers/detail/{id}', [AdminTransfers::class, 'transferDetail']);
         //actualizar transferemcia
         Route::put('/transfers/{id}', [AdminTransfers::class, 'update']);
         //elimianr tranferencia
         Route::delete('/transfers/{id}', [AdminTransfers::class, 'destroy']);
-
-    
     });
 });
 
@@ -224,11 +222,11 @@ Route::post('/chat/send', [ChatController::class, 'sendweb']);
 // Configuración de límites y mínimos - API pública para app móvil
 Route::get('/api/config/transfer', function () {
     return response()->json([
-        'min_pen'       => config('transfercash.min_pen'),
-        'min_bob'       => config('transfercash.min_bob'),
-        'kyc_limit_pen' => config('transfercash.kyc_limit_pen'),
-        'kyc_limit_bob' => config('transfercash.kyc_limit_bob'),
+        'min_pen'       => Configuracion::get('transfer_min_pen', 0),
+        'min_bob'       => Configuracion::get('transfer_min_bob', 0),
+        'kyc_limit_pen' => Configuracion::get('transfer_kyc_limit_pen', 0),
+        'kyc_limit_bob' => Configuracion::get('transfer_kyc_limit_bob', 0),
     ]);
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

@@ -1,9 +1,11 @@
 import { useState, useCallback } from "react";
 import AdminOverlay from "../AdminOverlay";
 
-export default function TipoCambioForm({ tipoCambio }) {
+export default function TipoCambioForm({ tipoCambio, pips_compra, pips_venta }) {
   const [compra, setCompra] = useState(tipoCambio?.compra || "");
   const [venta, setVenta] = useState(tipoCambio?.venta || "");
+  const [pipsCompra, setPipsCompra] = useState(pips_compra ?? 0.03);
+  const [pipsVenta, setPipsVenta] = useState(pips_venta ?? -0.01);
   const [overlay, setOverlay] = useState(null);
   const [overlayMsg, setOverlayMsg] = useState(null);
 
@@ -21,18 +23,21 @@ export default function TipoCambioForm({ tipoCambio }) {
     try {
       const res = await fetch("/admin/tipo-cambio", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "X-CSRF-TOKEN": token,
           Accept: "application/json",
         },
-        body: JSON.stringify({ compra, venta }),
+        body: JSON.stringify({
+          pips_compra: pipsCompra,
+          pips_venta: pipsVenta,
+        }),
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setOverlayMsg("Tipo de cambio actualizado. Emails enviados a la cola.");
+        setOverlayMsg("Tipo de cambio actualizado.");
         setOverlay("success");
       } else {
         setOverlayMsg(data?.message || "Error al actualizar el tipo de cambio.");
@@ -81,25 +86,40 @@ export default function TipoCambioForm({ tipoCambio }) {
         onSubmit={handleSubmit}
         className="bg-white p-6 sm:p-8 rounded shadow-md w-full max-w-md flex flex-col gap-4"
       >
+
+        <p className="text-sm text-gray-500 -mb-2">
+          Ajustes automáticos (próxima actualización del bot)
+        </p>
+
         <label className="flex flex-col">
-          <span className="font-semibold mb-1">Actualizar Compra:</span>
+          <span className="font-semibold mb-1">
+            Pips Compra:
+            <span className="ml-2 text-xs font-normal text-gray-400">
+              se suma al tipo de cambio de compra
+            </span>
+          </span>
           <input
             type="number"
             step="0.01"
-            value={compra}
-            onChange={(e) => setCompra(e.target.value)}
+            value={pipsCompra}
+            onChange={(e) => setPipsCompra(e.target.value)}
             className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
             required
           />
         </label>
 
         <label className="flex flex-col">
-          <span className="font-semibold mb-1">Actualizar Venta:</span>
+          <span className="font-semibold mb-1">
+            Pips Venta:
+            <span className="ml-2 text-xs font-normal text-gray-400">
+              se suma al tipo de cambio de venta (puede ser negativo)
+            </span>
+          </span>
           <input
             type="number"
             step="0.01"
-            value={venta}
-            onChange={(e) => setVenta(e.target.value)}
+            value={pipsVenta}
+            onChange={(e) => setPipsVenta(e.target.value)}
             className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
             required
           />
@@ -110,7 +130,7 @@ export default function TipoCambioForm({ tipoCambio }) {
           disabled={overlay === "loading"}
           className="bg-blue-500 text-white rounded p-2 mt-2 hover:bg-blue-600 disabled:opacity-50 transition-colors"
         >
-          Actualizar Tipo de Cambio
+          Guardar Cambios
         </button>
       </form>
     </div>
