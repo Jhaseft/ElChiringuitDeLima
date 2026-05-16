@@ -26,7 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/userapp', [AppNative::class, 'user']);
     
     Route::get('/listar-cuentas', [AppNative::class, 'listarCuentas']);
-
+ 
 
     Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta']);
     Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia']);
@@ -40,7 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/version-minima',[VersionGuardController::class,'versionMinima']);
 
 // Chat con asistente n8n (sin CSRF para app móvil)
-Route::post('/chat/send', [ChatController::class, 'send']);
+Route::post('/chat/send', [ChatController::class, 'sendPhone']);
 
 //para la web no para el movil xd
 Route::post('/kyc/webhook', [KycController::class, 'webhook'])->name('kyc.webhook');

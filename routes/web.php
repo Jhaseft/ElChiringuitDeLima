@@ -218,7 +218,7 @@ Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'hist
 Route::get('/api/tipo-cambio/compra', [AdminControllerDashboard::class, 'actualizarTipoCambioAutomatico']);
 
 // Chat con asistente (proxy a n8n)
-Route::post('/chat/send', [ChatController::class, 'send']);
+Route::post('/chat/send', [ChatController::class, 'sendweb']);
 
 
 // Configuración de límites y mínimos - API pública para app móvil
