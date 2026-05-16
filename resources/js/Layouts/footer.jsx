@@ -69,7 +69,7 @@ export default function FooterLayout() {
             <hr className="my-8 border-yellow-400" />
 
             <div className="max-w-7xl mx-auto text-center text-sm md:text-base">
-                <p>© 2025 <strong>Transfer Cash, S.A.C.</strong> - Todos los derechos reservados.</p>
+                <p>© 2026 <strong>Transfer Cash, S.A.C.</strong> - Todos los derechos reservados.</p>
             </div>
         </footer>
     );
