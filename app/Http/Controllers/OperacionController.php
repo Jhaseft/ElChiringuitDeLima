@@ -258,13 +258,13 @@ class OperacionController extends Controller
 
             // Validar límite KYC según modo (valores desde .env vía config/transfercash.php)
             $superaLimiteKyc =
-                ($modo === 'PENtoBOB' && $amount > Configuracion::get('transfercash.kyc_limit_pen', 0)) ||
-                ($modo === 'BOBtoPEN' && $amount > Configuracion::get('transfercash.kyc_limit_bob', 0));
+                ($modo === 'PENtoBOB' && $amount > Configuracion::get('transfer_kyc_limit_pen', 0)) ||
+                ($modo === 'BOBtoPEN' && $amount > Configuracion::get('transfer_kyc_limit_bob', 0));
 
             if ($superaLimiteKyc && $user->kyc_status !== 'verified') {
                 $limite   = $modo === 'PENtoBOB'
-                    ? 'S/ ' . Configuracion::get('transfercash.kyc_limit_pen', 0)
-                    : 'Bs ' . Configuracion::get('transfercash.kyc_limit_bob', 0);
+                    ? 'S/ ' . Configuracion::get('transfer_kyc_limit_pen', 0)
+                    : 'Bs ' . Configuracion::get('transfer_kyc_limit_bob', 0);
                 return response()->json([
                     'message' => "Para transferencias superiores a {$limite} debes completar la verificación KYC.",
                     'kyc_required' => true,
