@@ -13,6 +13,7 @@ use App\Mail\VerifyCodeEmail;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use App\Helpers\AppLog;
 
 class AppNative extends Controller
 {
@@ -48,6 +49,10 @@ class AppNative extends Controller
                 'message' => 'Código enviado al correo. Revisa tu bandeja e ingrésalo para activar tu cuenta.',
             ]);
         } catch (\Exception $e) {
+            AppLog::error('Error enviando código de registro', [
+                'email' => $request->email,
+                'error' => $e->getMessage(),
+            ], 'auth');
             return response()->json([
                 'status' => 'error',
                 'message' => 'No se pudo enviar el código. Inténtalo de nuevo.',
@@ -87,12 +92,14 @@ class AppNative extends Controller
         ]);
 
         if (!Auth::attempt($credentials)) {
+            AppLog::warning('Login fallido', ['email' => $request->email], 'auth');
             return response()->json(['message' => 'Credenciales incorrectas'], 401);
         }
 
         $user = Auth::user();
         $user->tokens()->delete();
         $token = $user->createToken('mobile-app')->plainTextToken;
+    
 
         // Cargar relaciones necesarias
         $user->load(['accounts', 'transfers', 'media']);
@@ -216,6 +223,7 @@ public function loginGoogle(Request $request)
     );
 
     if (!$googleResponse->ok()) {
+        AppLog::warning('Login Google fallido - token inválido', [], 'auth');
         return response()->json([
             'message' => 'Token inválido'
         ], 401);

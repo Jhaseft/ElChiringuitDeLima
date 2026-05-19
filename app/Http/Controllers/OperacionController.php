@@ -17,6 +17,7 @@ use Cloudinary\Api\Upload\UploadApi;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 use App\Models\Configuracion;
+use App\Helpers\AppLog;
 class OperacionController extends Controller
 {
     public function listarBancos()
@@ -39,6 +40,7 @@ class OperacionController extends Controller
         $account->update([
             'desactivate' => 1
         ]);
+
 
         return response()->json([
             'success' => true,
@@ -80,6 +82,7 @@ class OperacionController extends Controller
                 $qrUrl = $uploaded['secure_url'];
             } catch (\Exception $e) {
                 Log::error('❌ Error subiendo QR a Cloudinary', ['message' => $e->getMessage()]);
+                AppLog::error('Error subiendo QR a Cloudinary', ['error' => $e->getMessage()], 'cuentas');
                 return response()->json(['message' => 'Error subiendo la imagen QR. Intenta nuevamente.'], 500);
             }
 
@@ -148,6 +151,7 @@ class OperacionController extends Controller
                 'qr_country' => null,
             ]
         );
+
 
         return response()->json($account);
     }
@@ -314,6 +318,9 @@ class OperacionController extends Controller
                             'user_id' => $user->id,
                             'message' => $e->getMessage(),
                         ]);
+                        AppLog::error('Error subiendo comprobante a Cloudinary', [
+                            'error' => $e->getMessage(),
+                        ], 'transferencia');
                         return response()->json([
                             'message' => 'No se pudo subir uno de los comprobantes. Intenta nuevamente.',
                         ], 502);
@@ -359,6 +366,11 @@ class OperacionController extends Controller
                     'user_id' => $user->id,
                     'message' => $e->getMessage(),
                 ]);
+                AppLog::error('Error creando transferencia en BD', [
+                    'error' => $e->getMessage(),
+                    'monto' => $request->amount,
+                    'modo'  => $request->modo,
+                ], 'transferencia');
                 return response()->json([
                     'message' => 'No se pudo registrar la transferencia. Intenta nuevamente.',
                 ], 500);
@@ -498,6 +510,10 @@ class OperacionController extends Controller
                                 'status' => $response->status(),
                                 'body'   => $response->body(),
                             ]);
+                            AppLog::warning('Error enviando WhatsApp', [
+                                'numero' => $numero,
+                                'status' => $response->status(),
+                            ], 'whatsapp');
                         }
                     }
                 } else {
@@ -521,6 +537,13 @@ class OperacionController extends Controller
                 'file'    => $e->getFile(),
                 'line'    => $e->getLine(),
             ]);
+            AppLog::error('Excepción no controlada en crearTransferencia', [
+                'error' => $e->getMessage(),
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'monto' => $request->amount,
+                'modo'  => $request->modo,
+            ], 'transferencia');
             return response()->json([
                 'message' => 'Ocurrió un error inesperado al procesar la transferencia. Intenta nuevamente.',
             ], 500);
