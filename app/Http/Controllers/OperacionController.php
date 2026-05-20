@@ -400,8 +400,15 @@ class OperacionController extends Controller
             ];
 
 
-            Mail::to("operaciones@transfercash.click")->send(new \App\Mail\NuevaTransferenciaAdmin($payload));
-            Mail::to($user->email)->send(new \App\Mail\NuevaTransferenciaUsuario($payload));
+            try {
+                Mail::to("operaciones@transfercash.click")->send(new \App\Mail\NuevaTransferenciaAdmin($payload));
+                Mail::to($user->email)->send(new \App\Mail\NuevaTransferenciaUsuario($payload));
+            } catch (\Throwable $e) {
+                AppLog::error('Error enviando email de transferencia', [
+                    'transfer_id' => $transfer->id,
+                    'error'       => $e->getMessage(),
+                ], 'transferencia');
+            }
 
             //  Enviar mensaje a WhatsApp vía Evolution API (diferenciado por método de pago)
             try {
@@ -500,7 +507,7 @@ class OperacionController extends Controller
                             'text'   => $mensaje,
                         ];
 
-                        $response = Http::withHeaders([
+                        $response = Http::timeout(10)->withHeaders([
                             'Content-Type' => 'application/json',
                             'apikey'       => $apikey,
                         ])->post("$server/message/sendText/$instance", $whatsPayload);
@@ -521,6 +528,10 @@ class OperacionController extends Controller
                 }
             } catch (\Exception $e) {
                 Log::error("❌ Excepción enviando mensaje a Evolution API: " . $e->getMessage());
+                AppLog::warning('Excepción enviando WhatsApp (Evolution API)', [
+                    'transfer_id' => $transfer->id,
+                    'error'       => $e->getMessage(),
+                ], 'whatsapp');
             }
 
             return response()->json([
