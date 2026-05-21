@@ -30,7 +30,7 @@ class AppLog
                 'mensaje'    => $mensaje,
                 'contexto'   => !empty($contexto) ? json_encode($contexto, JSON_UNESCAPED_UNICODE) : null,
                 'user_id'    => auth()->id(),
-                'ip'         => request()->ip(),
+                'ip'         => request()?->ip(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

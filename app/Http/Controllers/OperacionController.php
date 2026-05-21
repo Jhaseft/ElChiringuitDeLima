@@ -92,16 +92,21 @@ class OperacionController extends Controller
                 ->where('desactivate', 0)
                 ->update(['desactivate' => 1]);
 
-            $account = Account::create([
-                'user_id'        => $request->user_id,
-                'method_type'    => 'qr',
-                'qr_country'     => $request->qr_country,
-                'qr_value'       => $qrUrl,
-                'bank_id'        => null,
-                'account_number' => null,
-                'owner_id'       => null,
-                'desactivate'    => 0,
-            ]);
+            try {
+                $account = Account::create([
+                    'user_id'        => $request->user_id,
+                    'method_type'    => 'qr',
+                    'qr_country'     => $request->qr_country,
+                    'qr_value'       => $qrUrl,
+                    'bank_id'        => null,
+                    'account_number' => null,
+                    'owner_id'       => null,
+                    'desactivate'    => 0,
+                ]);
+            } catch (\Throwable $e) {
+                AppLog::error('Error al crear cuenta QR en DB', ['user_id' => $request->user_id, 'error' => $e->getMessage()], 'cuentas');
+                return response()->json(['message' => 'Error al guardar la cuenta QR.'], 500);
+            }
 
             return response()->json($account);
         }
@@ -126,32 +131,39 @@ class OperacionController extends Controller
                 'owner_phone' => 'required|string',
             ]);
 
-            $owner = AccountOwner::create([
-                'full_name' => $request->owner_full_name,
-                'document_number' => $request->owner_document,
-                'phone' => $request->owner_phone,
-            ]);
-
-            $ownerId = $owner->id;
+            try {
+                $owner = AccountOwner::create([
+                    'full_name' => $request->owner_full_name,
+                    'document_number' => $request->owner_document,
+                    'phone' => $request->owner_phone,
+                ]);
+                $ownerId = $owner->id;
+            } catch (\Throwable $e) {
+                AppLog::error('Error al crear AccountOwner', ['user_id' => $request->user_id, 'error' => $e->getMessage()], 'cuentas');
+                return response()->json(['message' => 'Error al guardar el titular de la cuenta.'], 500);
+            }
         }
 
-        $account = Account::updateOrCreate(
-            [
-                'user_id' => $request->user_id,
-                'method_type' => 'bank',
-                'account_number' => $request->account_number,
-            ],
-            [
-                'bank_id' => $request->bank_id,
-                'account_type' => $request->account_type,
-                'owner_id' => $ownerId,
-
-                // limpiar QR
-                'qr_value' => null,
-                'qr_country' => null,
-            ]
-        );
-
+        try {
+            $account = Account::updateOrCreate(
+                [
+                    'user_id' => $request->user_id,
+                    'method_type' => 'bank',
+                    'account_number' => $request->account_number,
+                ],
+                [
+                    'bank_id' => $request->bank_id,
+                    'account_type' => $request->account_type,
+                    'owner_id' => $ownerId,
+                    'qr_value' => null,
+                    'qr_country' => null,
+                    'desactivate' => 0,
+                ]
+            );
+        } catch (\Throwable $e) {
+            AppLog::error('Error al guardar cuenta bancaria', ['user_id' => $request->user_id, 'bank_id' => $request->bank_id, 'account_number' => $request->account_number, 'error' => $e->getMessage()], 'cuentas');
+            return response()->json(['message' => 'Error al guardar la cuenta bancaria.'], 500);
+        }
 
         return response()->json($account);
     }
@@ -180,7 +192,7 @@ class OperacionController extends Controller
             });
         } elseif ($method_type === 'qr') {
             $accounts = $accounts->map(function ($a) {
-                return [
+                 return [
                     'id' => $a->id,
                     'qr_value' => $a->qr_value,
                     'qr_country' => $a->qr_country,
