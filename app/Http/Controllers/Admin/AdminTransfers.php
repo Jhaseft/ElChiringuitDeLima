@@ -8,6 +8,7 @@ use App\Mail\TransferVerifiedMail;
 use Illuminate\Http\Request;
 use App\Models\Transfer;
 use App\Models\TransactionReceipt;
+use App\Services\TcPuntosService;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Cloudinary\Api\Upload\UploadApi;
@@ -136,6 +137,11 @@ public function update(Request $request, $id)
     // Actualizar estado
     $transfer->status = $request->status;
     $transfer->save();
+
+    // Otorgar TC Puntos si se completó
+    if ($transfer->status === 'completed') {
+        app(TcPuntosService::class)->otorgarPuntos($transfer->fresh());
+    }
 
     // Enviar correo si se completó (el mailable carga todos los comprobantes admin)
     if ($transfer->status === 'completed') {

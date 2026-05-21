@@ -7,6 +7,7 @@ use App\Http\Controllers\TransferController;
 use App\Http\Controllers\KycController;
 use App\Http\Controllers\VersionGuardController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\TcPuntosController;
 
 // Registro y verificación
 Route::post('/register', [AppNative::class, 'register']);
@@ -33,6 +34,11 @@ Route::middleware('auth:sanctum')->group(function () {
      //eliminar cuenta
     Route::delete('/eliminar/{account_id}', [OperacionController::class, 'eliminarcuenta']);
     Route::post('/kyc/session', [KycController::class, 'createSession']);
+
+    Route::get('/tc-puntos/saldo',     [TcPuntosController::class, 'saldo']);
+    Route::get('/tc-puntos/historial', [TcPuntosController::class, 'historial']);
+    Route::get('/tc-puntos/catalogo',  [TcPuntosController::class, 'catalogo']);
+    Route::post('/tc-puntos/canjear',  [TcPuntosController::class, 'canjear']);
 });
 
 Route::get('/version-minima',[VersionGuardController::class,'versionMinima']);

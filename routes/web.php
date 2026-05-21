@@ -13,6 +13,8 @@ use App\Http\Controllers\Admin\AdminTransfersQr;
 use App\Http\Controllers\Admin\AdminUserMediaController;
 use App\Http\Controllers\Admin\TransferMethodController;
 use App\Http\Controllers\Admin\ConfiguracionController;
+use App\Http\Controllers\Admin\AdminProductosTcController;
+use App\Http\Controllers\Admin\AdminCanjesTcController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\ChatController;
 use App\Models\Bank;
@@ -179,6 +181,19 @@ Route::prefix('admin')->group(function () {
         //octava pantalla configuracion
         Route::get('/dashboard/configuracion', [ConfiguracionController::class, 'index']);
         Route::post('/dashboard/configuracion', [ConfiguracionController::class, 'update']);
+
+        // productos TC puntos
+        Route::get('/dashboard/productos-tc', [AdminProductosTcController::class, 'index']);
+        Route::post('/dashboard/productos-tc/categorias/store', [AdminProductosTcController::class, 'storeCategoria']);
+        Route::post('/dashboard/productos-tc/categorias/{id}/update', [AdminProductosTcController::class, 'updateCategoria']);
+        Route::delete('/dashboard/productos-tc/categorias/{id}', [AdminProductosTcController::class, 'destroyCategoria']);
+        Route::post('/dashboard/productos-tc/productos/store', [AdminProductosTcController::class, 'storeProducto']);
+        Route::post('/dashboard/productos-tc/productos/{id}/update', [AdminProductosTcController::class, 'updateProducto']);
+        Route::delete('/dashboard/productos-tc/productos/{id}', [AdminProductosTcController::class, 'destroyProducto']);
+
+        // canjes TC puntos
+        Route::get('/dashboard/canjes-tc', [AdminCanjesTcController::class, 'index']);
+        Route::post('/dashboard/canjes-tc/{id}/status', [AdminCanjesTcController::class, 'updateStatus']);
 
         //tipo de cambio
         Route::post('/tipo-cambio', [AdminControllerDashboard::class, 'update']);
