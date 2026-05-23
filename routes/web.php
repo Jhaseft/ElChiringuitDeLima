@@ -190,7 +190,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/dashboard/productos-tc/productos/store', [AdminProductosTcController::class, 'storeProducto']);
         Route::post('/dashboard/productos-tc/productos/{id}/update', [AdminProductosTcController::class, 'updateProducto']);
         Route::delete('/dashboard/productos-tc/productos/{id}', [AdminProductosTcController::class, 'destroyProducto']);
-
+ 
         // canjes TC puntos
         Route::get('/dashboard/canjes-tc', [AdminCanjesTcController::class, 'index']);
         Route::post('/dashboard/canjes-tc/{id}/status', [AdminCanjesTcController::class, 'updateStatus']);

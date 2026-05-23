@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\TcCanje;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-
+ 
 class AdminCanjesTcController extends Controller
 {
     public function index(Request $request)

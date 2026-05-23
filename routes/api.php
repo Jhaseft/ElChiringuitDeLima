@@ -34,10 +34,15 @@ Route::middleware('auth:sanctum')->group(function () {
      //eliminar cuenta
     Route::delete('/eliminar/{account_id}', [OperacionController::class, 'eliminarcuenta']);
     Route::post('/kyc/session', [KycController::class, 'createSession']);
-
+    //RUTAS PARA LOS TC PUNTOS
+ 
+    //conusultar saldo de usuario
     Route::get('/tc-puntos/saldo',     [TcPuntosController::class, 'saldo']);
+    //historial de usuario
     Route::get('/tc-puntos/historial', [TcPuntosController::class, 'historial']);
+    //catalogo de productos de tc puntos
     Route::get('/tc-puntos/catalogo',  [TcPuntosController::class, 'catalogo']);
+    //post para canjear tc puntos
     Route::post('/tc-puntos/canjear',  [TcPuntosController::class, 'canjear']);
 });
 

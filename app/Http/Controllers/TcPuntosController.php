@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\TcPuntosService;
 use Illuminate\Http\Request;
-
+ 
 class TcPuntosController extends Controller
 {
     public function __construct(private TcPuntosService $service) {}

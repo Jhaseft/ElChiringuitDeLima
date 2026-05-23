@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Services;
-
+ 
 use App\Models\TcPunto;
 use App\Models\TcPuntoTransaccion;
 use App\Models\TcCategoria;
