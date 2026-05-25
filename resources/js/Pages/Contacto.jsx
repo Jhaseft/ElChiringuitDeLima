@@ -3,7 +3,7 @@ import InicioLayout from "@/Layouts/Inicio/InicioLayout";
 import { FaWhatsapp } from "react-icons/fa";
 
 export default function Contacto() {
-  const numerosBolivia = ["59160759545"];
+  const numerosBolivia = ["59163892482"];
   const numerosPeru = ["51907844210"];
 
   const renderCards = (numeros, pais, color) => (

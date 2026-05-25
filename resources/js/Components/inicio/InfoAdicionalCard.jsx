@@ -2,7 +2,7 @@ import NumeroAutorizadoButton from "./shared/NumeroAutorizadoButton";
 
 export default function InfoAdicionalCard() {
   const asesoresBolivia = [
-    { nombre: "Asesor 1", numero: "59160759545" },
+    { nombre: "Asesor 1", numero: "59163892482" },
     { nombre: "Asesor 2", numero: "59175995613" },
     { nombre: "Asesor 3", numero: "59176925774" },
     { nombre: "Asesor 4", numero: "59169325874" },
@@ -22,7 +22,7 @@ export default function InfoAdicionalCard() {
         </p>
 
       </div>
-      <a href="https://wa.me/59160759545?text=Hola,%20necesito%20información" className="bg-yellow-400 text-gray-900 py-3 rounded-lg text-sm font-semibold text-center hover:bg-yellow-500 transition shadow-md">
+      <a href="https://wa.me/59163892482?text=Hola,%20necesito%20información" className="bg-yellow-400 text-gray-900 py-3 rounded-lg text-sm font-semibold text-center hover:bg-yellow-500 transition shadow-md">
         🌍 Envía dinero al extranjero
       </a>
       

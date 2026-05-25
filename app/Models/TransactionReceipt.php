@@ -13,7 +13,7 @@ class TransactionReceipt extends Model
         'receipt_url',
         'receipt_type',
         'uploaded_by',
-    ];
+    ]; 
 
     protected $casts = [
         'receipt_type' => 'string',
