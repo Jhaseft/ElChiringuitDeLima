@@ -35,7 +35,10 @@ class TransferController extends Controller
             return response()->json(['error' => 'Usuario no encontrado'], 404);
         }
 
-        $transfers = Transfer::with([
+        $perPage = (int) $request->query('per_page', 15);
+        $search  = $request->query('search', '');
+
+        $query = Transfer::with([
             'paymentMethod',
             'originAccount.bank',
             'originAccount.owner',
@@ -44,48 +47,57 @@ class TransferController extends Controller
             'receipts'
         ])
             ->where('user_id', $userId)
-            ->latest()
-            ->get()
-            ->map(function ($t) {
-                $mapAccount = function ($acc) {
-                    if (!$acc) return null;
-                    return [
-                        'id' => $acc->id,
-                        'numero' => $acc->account_number,
-                        'banco' => $acc->bank?->name,
-                        'owner' => $acc->owner ? [
-                            'full_name' => $acc->owner->full_name,
-                            'document_number' => $acc->owner->document_number,
-                            'phone' => $acc->owner->phone,
-                        ] : null,
-                    ];
-                };
+            ->latest();
 
-                $slug = $t->paymentMethod?->slug ?? 'bank_transfer';
+        if ($search !== '') {
+            $query->where('id', $search);
+        }
 
-                return [
-                    'id' => $t->id,
-                    'monto' => $t->amount,
-                    'converted_amount' => $t->converted_amount,
-                    'modo' => $t->modo,
-                    'fecha' => $t->created_at->format('Y-m-d H:i:s'),
-                    'estado' => $t->status,
-                    'payment_method' => [
-                        'slug' => $slug,
-                        'name' => $t->paymentMethod?->name ?? ucfirst($slug),
-                    ],
-                    'origen' => $mapAccount($t->originAccount),
-                    'destino' => $mapAccount($t->destinationAccount),
-                    'receipts' => $t->receipts->map(function ($r) {
-                        return [
-                            'id' => $r->id,
-                            'receipt_url' => $r->receipt_url,
-                            'receipt_type' => $r->receipt_type,
-                        ];
-                    })->values(),
-                ];
-            });
+        $paginated = $query->paginate($perPage);
 
-        return response()->json($transfers);
+        $mapAccount = function ($acc) {
+            if (!$acc) return null;
+            return [
+                'id'     => $acc->id,
+                'numero' => $acc->account_number,
+                'banco'  => $acc->bank?->name,
+                'owner'  => $acc->owner ? [
+                    'full_name'       => $acc->owner->full_name,
+                    'document_number' => $acc->owner->document_number,
+                    'phone'           => $acc->owner->phone,
+                ] : null,
+            ];
+        };
+
+        $data = $paginated->getCollection()->map(function ($t) use ($mapAccount) {
+            $slug = $t->paymentMethod?->slug ?? 'bank_transfer';
+
+            return [
+                'id'               => $t->id,
+                'monto'            => $t->amount,
+                'converted_amount' => $t->converted_amount,
+                'modo'             => $t->modo,
+                'fecha'            => $t->created_at->format('Y-m-d H:i:s'),
+                'estado'           => $t->status,
+                'payment_method'   => [
+                    'slug' => $slug,
+                    'name' => $t->paymentMethod?->name ?? ucfirst($slug),
+                ],
+                'origen'  => $mapAccount($t->originAccount),
+                'destino' => $mapAccount($t->destinationAccount),
+                'receipts' => $t->receipts->map(fn($r) => [
+                    'id'           => $r->id,
+                    'receipt_url'  => $r->receipt_url,
+                    'receipt_type' => $r->receipt_type,
+                ])->values(),
+            ];
+        });
+
+        return response()->json([
+            'data'         => $data,
+            'current_page' => $paginated->currentPage(),
+            'last_page'    => $paginated->lastPage(),
+            'total'        => $paginated->total(),
+        ]);
     }
 }

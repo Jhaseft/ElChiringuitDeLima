@@ -16,7 +16,7 @@ class TcPuntosController extends Controller
             'valor_punto' => $this->service->valorPunto(),
         ]);
     }
-
+ 
     public function historial(Request $request)
     {
         return response()->json(
