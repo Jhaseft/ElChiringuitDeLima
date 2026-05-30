@@ -8,6 +8,7 @@ use App\Http\Controllers\KycController;
 use App\Http\Controllers\VersionGuardController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\TcPuntosController;
+use App\Http\Controllers\PushTokenController;
 
 // Registro y verificación
 Route::post('/register', [AppNative::class, 'register']);
@@ -44,6 +45,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tc-puntos/catalogo',  [TcPuntosController::class, 'catalogo']);
     //post para canjear tc puntos
     Route::post('/tc-puntos/canjear',  [TcPuntosController::class, 'canjear']);
+
+    Route::post('/push-tokens', [PushTokenController::class, 'store']);
 });
 
 Route::get('/version-minima',[VersionGuardController::class,'versionMinima']);

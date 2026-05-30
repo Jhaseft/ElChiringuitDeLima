@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Account;
 use App\Mail\VerifyCodeEmail;
 use App\Http\Controllers\Controller;
+use App\Models\PushToken;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use App\Helpers\AppLog;
@@ -113,6 +114,7 @@ class AppNative extends Controller
     // Logout
     public function logout(Request $request)
     {
+        PushToken::where('user_id', $request->user()->id)->delete();
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Sesión cerrada']);
     }

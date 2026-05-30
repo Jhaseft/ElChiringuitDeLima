@@ -26,8 +26,6 @@ export default function ModalTransferencia({
 
   if (!isOpen) return null;
 
-  const csrfToken = getCsrfToken();
-
   const isBOBtoPEN = modo === "BOBtoPEN";
   const comprobanteOpcional = isBOBtoPEN && paymentMethodSlug === "cash";
   const montoTexto = isBOBtoPEN ? `${monto} BOB` : `${monto} PEN`;
@@ -66,6 +64,9 @@ export default function ModalTransferencia({
     setLoading(true);
     setError("");
 
+    // Read token here (not at render time) so it's always fresh on iOS
+    const csrfToken = getCsrfToken();
+
     try {
       const formData = new FormData();
       formData.append("amount", monto);
@@ -95,6 +96,7 @@ export default function ModalTransferencia({
 
       const res = await fetch("/operacion/crear-transferencia", {
         method: "POST",
+        credentials: "same-origin",
         headers: { "X-CSRF-TOKEN": csrfToken, Accept: "application/json" },
         body: formData,
       });
