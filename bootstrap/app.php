@@ -16,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            \App\Http\Middleware\LogRequests::class,
+        ]);
+
+        $middleware->api(prepend: [
+            \App\Http\Middleware\LogRequests::class,
         ]);
 
         // Middlewares para rutas API
