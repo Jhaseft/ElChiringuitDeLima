@@ -167,14 +167,14 @@ public function update(Request $request, $id)
     if ($transfer->status === 'completed') {
         $this->push->sendToUser(
             $transfer->user_id,
-            'Transferencia aprobada ✅',
+            'Transferencia aprobada ✔',
             "Tu envío de {$currency} {$amount} {$methodLabel} fue procesado exitosamente. ¡Gracias por usar Transfer Cash!",
             ['screen' => '/TransfersHistory']
         );
     } elseif ($transfer->status === 'rejected') {
         $this->push->sendToUser(
             $transfer->user_id,
-            'Transferencia rechazada ❌',
+            'Transferencia rechazada ✘',
             "Tu envío de {$currency} {$amount} {$methodLabel} no pudo ser procesado. ¡Gracias por usar Transfer Cash!",
             ['screen' => '/TransfersHistory']
         );

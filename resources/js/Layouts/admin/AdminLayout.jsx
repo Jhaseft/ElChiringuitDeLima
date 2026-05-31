@@ -1,5 +1,5 @@
 import { Link, usePage } from "@inertiajs/react";
-import { LogOut, DollarSign, Users, ArrowLeftRight, BanknoteArrowUp, Settings, Home, Menu, X, WalletMinimal, BookMarked, QrCode, Gift, TicketCheck } from "lucide-react";
+import { LogOut, DollarSign, Users, ArrowLeftRight,Bell , BanknoteArrowUp, Settings, Home, Menu, X, WalletMinimal, BookMarked, QrCode, Gift, TicketCheck } from "lucide-react";
 import { useState } from "react";
 
 export default function AdminLayout({ children }) {
@@ -13,11 +13,12 @@ export default function AdminLayout({ children }) {
     const menu = [
         { name: "Inicio", href: "/admin/dashboard", icon: <Home size={18} /> },
         { name: "Tipo de Cambio", href: "/admin/dashboard/tipo-cambio", icon: <DollarSign size={18} /> },
-        { name: "Usuarios", href: "/admin/dashboard/usuarios", icon: <Users size={18} /> },
+        { name: "Notificaciones", href: "/admin/dashboard/notificaciones", icon: <Bell  size={18} /> },
         { name: "Transferencias", href: "/admin/dashboard/transferencias", icon: <ArrowLeftRight size={18} /> },
         { name: "Efectivo", href: "/admin/dashboard/efectivo", icon: <BanknoteArrowUp  size={18} /> },
         { name: "QR", href: "/admin/dashboard/qr", icon: <QrCode size={18} /> },
         { name: "Metodos de Pago", href: "/admin/dashboard/metodos", icon: <WalletMinimal   size={18} /> },
+        { name: "Usuarios", href: "/admin/dashboard/usuarios", icon: <Users size={18} /> },
         { name: "Reportes", href: "/admin/dashboard/reportes", icon: <BookMarked size={18} /> },
         { name: "Configuracion", href: "/admin/dashboard/configuracion", icon: <Settings size={18} /> },
         { name: "Productos TC", href: "/admin/dashboard/productos-tc", icon: <Gift size={18} /> },

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SendExpoPushNotification;
 use App\Models\PushToken;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -16,20 +17,6 @@ class ExpoPushService
 
         if (empty($tokens)) return;
 
-        $this->send($tokens, $title, $body, $data);
-    }
-
-    public function sendToAll(string $title, string $body, array $data = []): void
-    {
-        $tokens = PushToken::whereNotNull('user_id')->pluck('token')->toArray();
-
-        if (empty($tokens)) return;
-
-        $this->send($tokens, $title, $body, $data);
-    }
-
-    private function send(array $tokens, string $title, string $body, array $data = []): void
-    {
         $messages = array_map(fn($token) => [
             'to'    => $token,
             'title' => $title,
@@ -38,7 +25,6 @@ class ExpoPushService
             'sound' => 'default',
         ], $tokens);
 
-        // Expo acepta hasta 100 mensajes por request
         foreach (array_chunk($messages, 100) as $chunk) {
             try {
                 $response = Http::withHeaders([
@@ -53,5 +39,10 @@ class ExpoPushService
                 Log::error('Expo push exception', ['error' => $e->getMessage()]);
             }
         }
+    }
+
+    public function sendToAll(string $title, string $body, array $data = []): void
+    {
+        SendExpoPushNotification::dispatch($title, $body, $data);
     }
 }

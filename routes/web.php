@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\TransferMethodController;
 use App\Http\Controllers\Admin\ConfiguracionController;
 use App\Http\Controllers\Admin\AdminProductosTcController;
 use App\Http\Controllers\Admin\AdminCanjesTcController;
+use App\Http\Controllers\Admin\AdminNotificacionesController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\ChatController;
 use App\Models\Bank;
@@ -154,6 +155,9 @@ Route::prefix('admin')->group(function () {
         Route::get('/dashboard', [AdminControllerDashboard::class, 'Dashboard']);
         //segunda pantalla
         Route::get('/dashboard/tipo-cambio', [AdminControllerDashboard::class, 'tipoCambio']);
+
+        Route::get('/dashboard/notificaciones', [AdminNotificacionesController::class, 'index']);
+        Route::post('/dashboard/notificaciones/send', [AdminNotificacionesController::class, 'send']);
 
         //tercera pantalla
         Route::get('/dashboard/usuarios', [AdminUserMediaController::class, 'index']);
