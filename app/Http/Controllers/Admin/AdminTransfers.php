@@ -154,28 +154,44 @@ public function update(Request $request, $id)
 
     // Push notification al usuario según el resultado
     $transfer->load('paymentMethod');
-    $amount   = number_format($transfer->amount, 2);
-    $currency = $transfer->modo === 'PENtoBOB' ? 'S/.' : 'Bs.';
-    $slug     = $transfer->paymentMethod?->slug ?? 'bank_transfer';
+    $modo      = $transfer->modo;
+    $amount    = number_format($transfer->amount, 2);
+    $converted = number_format($transfer->converted_amount, 2);
+    $slug      = $transfer->paymentMethod?->slug ?? 'bank_transfer';
 
-    $methodLabel = match ($slug) {
-        'cash' => 'en efectivo',
-        'qr'   => 'vía QR',
-        default => 'vía transferencia bancaria',
-    };
+    // PENtoBOB: envía S/, recibe Bs. — BOBtoPEN: envía Bs., recibe S/
+    $sentCurrency = $modo === 'PENtoBOB' ? 'S/' : 'Bs.';
+    $recvCurrency = $modo === 'PENtoBOB' ? 'Bs.' : 'S/';
 
     if ($transfer->status === 'completed') {
+        $body = match (true) {
+            $modo === 'PENtoBOB' && $slug === 'bank_transfer' =>
+                "Tu envío de {$sentCurrency} {$amount} por transferencia fue procesado. Puedes verificar {$recvCurrency} {$converted} en tu cuenta.",
+            $modo === 'PENtoBOB' && $slug === 'qr' =>
+                "Tu envío de {$sentCurrency} {$amount} fue procesado. Puedes cobrar {$recvCurrency} {$converted} vía QR.",
+            $modo === 'PENtoBOB' && $slug === 'cash' =>
+                "Tu envío de {$sentCurrency} {$amount} fue procesado. Puedes recoger {$recvCurrency} {$converted} en nuestras oficinas.",
+            $modo === 'BOBtoPEN' && $slug === 'bank_transfer' =>
+                "Tu pago de {$sentCurrency} {$amount} por transferencia fue procesado. El destinatario recibirá {$recvCurrency} {$converted} en su cuenta.",
+            $modo === 'BOBtoPEN' && $slug === 'qr' =>
+                "Tu pago de {$sentCurrency} {$amount} vía QR fue procesado. El destinatario recibirá {$recvCurrency} {$converted} en su cuenta.",
+            $modo === 'BOBtoPEN' && $slug === 'cash' =>
+                "Tu pago de {$sentCurrency} {$amount} en efectivo fue procesado. El destinatario recibirá {$recvCurrency} {$converted} en su cuenta.",
+            default =>
+                "Tu envío de {$sentCurrency} {$amount} fue procesado exitosamente. ¡Gracias por usar Transfer Cash!",
+        };
+
         $this->push->sendToUser(
             $transfer->user_id,
             'Transferencia aprobada ✔',
-            "Tu envío de {$currency} {$amount} {$methodLabel} fue procesado exitosamente. ¡Gracias por usar Transfer Cash!",
+            $body,
             ['screen' => '/TransfersHistory']
         );
     } elseif ($transfer->status === 'rejected') {
         $this->push->sendToUser(
             $transfer->user_id,
             'Transferencia rechazada ✘',
-            "Tu envío de {$currency} {$amount} {$methodLabel} no pudo ser procesado. ¡Gracias por usar Transfer Cash!",
+            "Tu envío de {$sentCurrency} {$amount} no pudo ser procesado. Contáctanos si tienes dudas.",
             ['screen' => '/TransfersHistory']
         );
     }
