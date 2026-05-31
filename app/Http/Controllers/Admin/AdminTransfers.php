@@ -153,21 +153,29 @@ public function update(Request $request, $id)
     }
 
     // Push notification al usuario según el resultado
-    $amount = number_format($transfer->amount, 2);
+    $transfer->load('paymentMethod');
+    $amount   = number_format($transfer->amount, 2);
     $currency = $transfer->modo === 'PENtoBOB' ? 'S/.' : 'Bs.';
- 
+    $slug     = $transfer->paymentMethod?->slug ?? 'bank_transfer';
+
+    $methodLabel = match ($slug) {
+        'cash' => 'en efectivo',
+        'qr'   => 'vía QR',
+        default => 'vía transferencia bancaria',
+    };
+
     if ($transfer->status === 'completed') {
         $this->push->sendToUser(
             $transfer->user_id,
             'Transferencia aprobada ✅',
-            "Tu envío de {$currency} {$amount} fue procesado exitosamente.",
+            "Tu envío de {$currency} {$amount} {$methodLabel} fue procesado exitosamente. ¡Gracias por usar Transfer Cash!",
             ['screen' => '/TransfersHistory']
         );
     } elseif ($transfer->status === 'rejected') {
         $this->push->sendToUser(
             $transfer->user_id,
             'Transferencia rechazada ❌',
-            "Tu envío de {$currency} {$amount} no pudo ser procesado.",
+            "Tu envío de {$currency} {$amount} {$methodLabel} no pudo ser procesado. ¡Gracias por usar Transfer Cash!",
             ['screen' => '/TransfersHistory']
         );
     }
