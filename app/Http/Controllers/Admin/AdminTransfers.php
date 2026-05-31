@@ -9,12 +9,15 @@ use Illuminate\Http\Request;
 use App\Models\Transfer;
 use App\Models\TransactionReceipt;
 use App\Services\TcPuntosService;
+use App\Services\ExpoPushService;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Cloudinary\Api\Upload\UploadApi;
 
 class AdminTransfers extends Controller
 {
+    public function __construct(private ExpoPushService $push) {}
+
     // Listar todas las transferencias de forma amigable
     public function index(Request $request)
     {
@@ -147,6 +150,26 @@ public function update(Request $request, $id)
     if ($transfer->status === 'completed') {
         Mail::to($transfer->user->email)
             ->send(new TransferVerifiedMail($transfer));
+    }
+
+    // Push notification al usuario según el resultado
+    $amount = number_format($transfer->amount, 2);
+    $currency = $transfer->modo === 'PENtoBOB' ? 'S/.' : 'Bs.';
+ 
+    if ($transfer->status === 'completed') {
+        $this->push->sendToUser(
+            $transfer->user_id,
+            'Transferencia aprobada ✅',
+            "Tu envío de {$currency} {$amount} fue procesado exitosamente.",
+            ['screen' => '/TransfersHistory']
+        );
+    } elseif ($transfer->status === 'rejected') {
+        $this->push->sendToUser(
+            $transfer->user_id,
+            'Transferencia rechazada ❌',
+            "Tu envío de {$currency} {$amount} no pudo ser procesado.",
+            ['screen' => '/TransfersHistory']
+        );
     }
 
     return response()->json($transfer);
