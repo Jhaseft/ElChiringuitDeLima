@@ -4,93 +4,37 @@ namespace App\Console\Commands;
 
 use App\Models\Configuracion;
 use App\Models\TipoCambio;
+use App\Services\TipoCambioService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-
+ 
 class ActualizarTipoCambio extends Command
 {
     protected $signature   = 'tipo-cambio:actualizar';
     protected $description = 'Obtiene el tipo de cambio PEN/BOB desde Binance P2P y lo guarda si cambió';
 
-    public function handle(): int
+    public function handle(TipoCambioService $service): int
     {
         try {
-            // ===============================
-            // CONSULTAR BINANCE P2P
-            // ===============================
-
-            $fetchPrice = function (string $fiat, string $tradeType): float {
-                $response = Http::post(
-                    'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search',
-                    [
-                        'asset'         => 'USDT',
-                        'fiat'          => $fiat,
-                        'tradeType'     => $tradeType,
-                        'page'          => 1,
-                        'rows'          => 20,
-                        'payTypes'      => [],
-                        'publisherType' => 'merchant',
-                    ]
-                );
-
-                $data = $response->json();
-
-                $top = collect($data['data'] ?? [])
-                    ->filter(fn($item) =>
-                        isset($item['adv'], $item['advertiser']) &&
-                        floatval($item['adv']['tradableQuantity']) > 0
-                    )
-                    ->sort(function ($a, $b) {
-                        if ($b['advertiser']['monthFinishRate'] != $a['advertiser']['monthFinishRate']) {
-                            return $b['advertiser']['monthFinishRate'] <=> $a['advertiser']['monthFinishRate'];
-                        }
-                        if ($b['advertiser']['monthOrderCount'] != $a['advertiser']['monthOrderCount']) {
-                            return $b['advertiser']['monthOrderCount'] <=> $a['advertiser']['monthOrderCount'];
-                        }
-                        return floatval($a['adv']['price']) <=> floatval($b['adv']['price']);
-                    })
-                    ->values()
-                    ->first();
-
-                if (!$top) {
-                    throw new \Exception("No se encontró precio para $fiat ($tradeType)");
-                }
-
-                return floatval($top['adv']['price']);
-            };
-
-            // COMPRA: cliente da PEN → TC compra USDT con PEN (BUY PEN) → TC vende USDT por BOB (SELL BOB)
-            $penBuy  = $fetchPrice('PEN', 'BUY');
-            $bobSell = $fetchPrice('BOB', 'SELL');
-
-            // VENTA: cliente da BOB → TC compra USDT con BOB (BUY BOB) → TC vende USDT por PEN (SELL PEN)
-            $bobBuy  = $fetchPrice('BOB', 'BUY');
-            $penSell = $fetchPrice('PEN', 'SELL');
+            $tc     = $service->calcular();
+            $compra = $tc['compra'];
+            $venta  = $tc['venta'];
 
             // ===============================
-            // CALCULAR CONVERSIÓN Y MÁRGENES
+            // MODO MANUAL → tipo de cambio fijo
             // ===============================
- 
-            // COMPRA: cuántos BOB da TC por 1 PEN del cliente (spread de mercado ya favorece a TC)
-            $compraBase = round($bobSell / $penBuy, 4);
-
-            // VENTA: cuántos BOB pide TC por 1 PEN que entrega al cliente
-            $ventaBase  = round($bobBuy / $penSell, 4);
-
-            // Margen (editable desde .env → TRANSFER_MARGEN)
-            $margen = config('transfercash.margen');
-            $compra = round($compraBase * (1 - $margen), 2);
-            $venta  = round($ventaBase  * (1 + $margen), 2);
-
-            // Pips administrables desde la tabla configuracion
-            $compra = round($compra + Configuracion::get('pips_compra', 0), 2);
-            $venta  = round($venta  + Configuracion::get('pips_venta',  0), 2);
+            // Si el admin desactivó el modo automático, NO se guarda nada:
+            // el tipo de cambio queda fijo. Solo informamos a qué valor
+            // cambiaría si se reactivara el modo automático.
+            if (!Configuracion::get('modo_automatico', true)) {
+                $this->info("Modo manual activo. Tipo de cambio fijo. No se guardó (calculado: compra $compra | venta $venta).");
+                Log::info("TipoCambio: modo manual, sin cambios (calculado $compra / $venta).");
+                return self::SUCCESS;
+            }
 
             // ===============================
             // GUARDAR SOLO SI CAMBIÓ
             // ===============================
-
             $ultimo = TipoCambio::select('compra', 'venta')->orderBy('id', 'desc')->first();
 
             if (

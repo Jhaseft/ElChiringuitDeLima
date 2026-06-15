@@ -201,6 +201,7 @@ Route::prefix('admin')->group(function () {
 
         //tipo de cambio
         Route::post('/tipo-cambio', [AdminControllerDashboard::class, 'update']);
+        Route::get('/tipo-cambio/preview', [AdminControllerDashboard::class, 'previewTipoCambio']);
 
         //metodos de pago
 

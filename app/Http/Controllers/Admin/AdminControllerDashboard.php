@@ -10,10 +10,10 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use App\Mail\TipoCambioActualizadoMail;
+use App\Services\TipoCambioService;
 
 class AdminControllerDashboard extends Controller
 {
@@ -109,9 +109,10 @@ class AdminControllerDashboard extends Controller
                 ->first();
 
     return Inertia::render('Admin/TipoCambio', [
-        'tipoCambio'  => $tipoCambio,
-        'pips_compra' => Configuracion::get('pips_compra', 0.03),
-        'pips_venta'  => Configuracion::get('pips_venta', -0.01),
+        'tipoCambio'      => $tipoCambio,
+        'pips_compra'     => Configuracion::get('pips_compra', 0.03),
+        'pips_venta'      => Configuracion::get('pips_venta', -0.01),
+        'modo_automatico' => Configuracion::get('modo_automatico', true),
     ]);
 }
 
@@ -119,16 +120,67 @@ class AdminControllerDashboard extends Controller
     // Actualizar tipo de cambio
     public function update(Request $request)
 {
-    $request->validate([
-        'pips_compra' => 'required|numeric',
-        'pips_venta'  => 'required|numeric',
+    $modoAutomatico = $request->boolean('modo_automatico');
+
+    Configuracion::where('clave', 'modo_automatico')->update(['valor' => $modoAutomatico ? '1' : '0']);
+
+    if ($modoAutomatico) {
+        // MODO AUTOMÁTICO: el bot calcula el TC; el admin solo ajusta los pips.
+        $data = $request->validate([
+            'pips_compra' => 'required|numeric',
+            'pips_venta'  => 'required|numeric',
+        ]);
+
+        Configuracion::where('clave', 'pips_compra')->update(['valor' => $data['pips_compra']]);
+        Configuracion::where('clave', 'pips_venta')->update(['valor' => $data['pips_venta']]);
+
+        return response()->json([
+            'success'         => true,
+            'modo_automatico' => true,
+            'pips_compra'     => $data['pips_compra'],
+            'pips_venta'      => $data['pips_venta'],
+        ]);
+    }
+
+    // MODO MANUAL: el admin define el TC a su antojo → se agrega un nuevo registro.
+    // La app siempre toma el último, así que basta con crear una fila nueva.
+    $data = $request->validate([
+        'compra' => 'required|numeric|min:0',
+        'venta'  => 'required|numeric|min:0',
     ]);
 
-    Configuracion::where('clave', 'pips_compra')->update(['valor' => $request->pips_compra]);
-    Configuracion::where('clave', 'pips_venta')->update(['valor' => $request->pips_venta]);
+    $tipoCambio = TipoCambio::create([
+        'compra'              => $data['compra'],
+        'venta'               => $data['venta'],
+        'fecha_actualizacion' => now(),
+    ]);
 
+    return response()->json([
+        'success'         => true,
+        'modo_automatico' => false,
+        'tipoCambio'      => $tipoCambio,
+    ]);
+}
 
-    return response()->json(['success' => true, 'pips_compra' => $request->pips_compra, 'pips_venta' => $request->pips_venta]);
+// Calcula a qué tipo de cambio cambiaría (preview) SIN guardarlo.
+// Se usa en modo manual para que el admin vea el valor automático actual.
+public function previewTipoCambio(TipoCambioService $service)
+{
+    try {
+        $tc = $service->calcular();
+
+        return response()->json([
+            'success' => true,
+            'compra'  => $tc['compra'],
+            'venta'   => $tc['venta'],
+        ]);
+    } catch (\Exception $e) {
+        Log::error("Preview tipo de cambio error: " . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'error'   => $e->getMessage(),
+        ], 500);
+    }
 }
 
 
@@ -144,113 +196,49 @@ public function historial()
     return response()->json($historial);
 }
 
-   public function actualizarTipoCambioAutomatico()
+   public function actualizarTipoCambioAutomatico(TipoCambioService $service)
 {
     try {
+        $tc = $service->calcular();
 
-        // ===============================
-        // CONSULTAR BINANCE P2P
-        // ===============================
+        // Modo manual → tipo de cambio fijo: no se guarda, solo se informa
+        // a qué valor cambiaría si el modo automático estuviera activo.
+        if (!Configuracion::get('modo_automatico', true)) {
+            $ultimo = TipoCambio::orderByDesc('id')->first();
 
-        // Función anónima que obtiene el mejor precio de USDT
-        // para la moneda fiat que se le pase (PEN o BOB)
-        $fetchPrice = function (string $fiat, string $tradeType): float {
-            $response = Http::post(
-                'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search',
-                [
-                    "asset"         => "USDT",
-                    "fiat"          => $fiat,
-                    "tradeType"     => $tradeType,
-                    "page"          => 1,
-                    "rows"          => 20,
-                    "payTypes"      => [],
-                    "publisherType" => "merchant"
-                ]
-            );
-
-            $data = $response->json();
-
-            $top = collect($data['data'] ?? [])
-                ->filter(function ($item) {
-                    return isset($item['adv'], $item['advertiser']) &&
-                        floatval($item['adv']['tradableQuantity']) > 0;
-                })
-                ->sort(function ($a, $b) {
-                    if ($b['advertiser']['monthFinishRate'] != $a['advertiser']['monthFinishRate']) {
-                        return $b['advertiser']['monthFinishRate'] <=> $a['advertiser']['monthFinishRate'];
-                    }
-                    if ($b['advertiser']['monthOrderCount'] != $a['advertiser']['monthOrderCount']) {
-                        return $b['advertiser']['monthOrderCount'] <=> $a['advertiser']['monthOrderCount'];
-                    }
-                    return floatval($a['adv']['price']) <=> floatval($b['adv']['price']);
-                })
-                ->values()
-                ->first();
-
-            if (!$top) {
-                throw new \Exception("No se encontró precio para $fiat ($tradeType)");
-            }
-
-            return floatval($top['adv']['price']);
-        };
-
-        // COMPRA: cliente da PEN → TC compra USDT con PEN (BUY PEN) → TC vende USDT por BOB (SELL BOB)
-        $penBuy  = $fetchPrice('PEN', 'BUY');
-        $bobSell = $fetchPrice('BOB', 'SELL');
-
-        // VENTA: cliente da BOB → TC compra USDT con BOB (BUY BOB) → TC vende USDT por PEN (SELL PEN)
-        $bobBuy  = $fetchPrice('BOB', 'BUY');
-        $penSell = $fetchPrice('PEN', 'SELL');
-
-        // ===============================
-        //  CALCULAR CONVERSIÓN
-        // ===============================
-
-        // COMPRA base: cuántos BOB da TC por cada PEN recibido
-        $compraBase = round($bobSell / $penBuy, 4);
-
-        // VENTA base: cuántos BOB cobra TC por cada PEN que entrega
-        $ventaBase  = round($bobBuy  / $penSell, 4);
- 
-        // Margen (editable desde .env → TRANSFER_MARGEN)
-        $margen = config('transfercash.margen');
-        $compra = round($compraBase * (1 - $margen), 2);
-        $venta  = round($ventaBase  * (1 + $margen), 2);
-
-        // Pips administrables desde la tabla configuracion
-        $compra = round($compra + Configuracion::get('pips_compra', 0), 2);
-        $venta  = round($venta  + Configuracion::get('pips_venta',  0), 2);
-
-        // ===============================
-        //  GUARDAR EN BD
-        // ===============================
+            return response()->json([
+                'success'         => true,
+                'modo_automatico' => false,
+                'tipoCambio'      => $ultimo,
+                'compra_final'    => $tc['compra'],
+                'venta_final'     => $tc['venta'],
+                'mensaje'         => 'Modo manual: tipo de cambio fijo, no se guardó.',
+            ]);
+        }
 
         $tipoCambio = TipoCambio::create([
-            'compra' => $compra,
-            'venta'  => $venta,
-            'fecha_actualizacion' => now()
+            'compra'              => $tc['compra'],
+            'venta'               => $tc['venta'],
+            'fecha_actualizacion' => now(),
         ]);
 
         return response()->json([
             'success'         => true,
+            'modo_automatico' => true,
             'tipoCambio'      => $tipoCambio,
-            'pen_buy'         => $penBuy,
-            'pen_sell'        => $penSell,
-            'bob_buy'         => $bobBuy,
-            'bob_sell'        => $bobSell,
-            'compra_base'     => $compraBase,
-            'venta_base'      => $ventaBase,
-            'compra_final'    => $compra,
-            'venta_final'     => $venta,
+            'pen_buy'         => $tc['pen_buy'],
+            'pen_sell'        => $tc['pen_sell'],
+            'bob_buy'         => $tc['bob_buy'],
+            'bob_sell'        => $tc['bob_sell'],
+            'compra_base'     => $tc['compra_base'],
+            'venta_base'      => $tc['venta_base'],
+            'compra_final'    => $tc['compra'],
+            'venta_final'     => $tc['venta'],
         ]);
 
     } catch (\Exception $e) {
-
-        // Si ocurre cualquier error:
-        // Se guarda en logs
         Log::error("Error actualizando tipo de cambio: " . $e->getMessage());
 
-        // Se devuelve error en formato JSON
         return response()->json([
             'success' => false,
             'error' => $e->getMessage()
