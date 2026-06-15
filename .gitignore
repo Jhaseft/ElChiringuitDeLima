@@ -17,6 +17,12 @@ Thumbs.db
 /.zed
 /.nova
 
+# Claude Code
+/.claude
+
+# Expo
+/.expo
+
 # PHP / Composer
 /vendor
 /auth.json
