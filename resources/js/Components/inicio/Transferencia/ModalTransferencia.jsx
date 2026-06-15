@@ -1,7 +1,7 @@
 import { X, Copy, ImagePlus } from "lucide-react";
 import { useState, useRef } from "react";
+import axios from "axios";
 import StatusMessage from "@/Components/ui/StatusMessage";
-import { getCsrfToken } from "@/utils/csrf";
 
 export default function ModalTransferencia({
   isOpen,
@@ -64,9 +64,6 @@ export default function ModalTransferencia({
     setLoading(true);
     setError("");
 
-    // Read token here (not at render time) so it's always fresh on iOS
-    const csrfToken = getCsrfToken();
-
     try {
       const formData = new FormData();
       formData.append("amount", monto);
@@ -94,23 +91,40 @@ export default function ModalTransferencia({
 
       comprobantes.forEach((file) => formData.append("comprobantes[]", file));
 
-      const res = await fetch("/operacion/crear-transferencia", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "X-CSRF-TOKEN": csrfToken, Accept: "application/json" },
-        body: formData,
+      // Instancia propia (sin el interceptor global que inyecta el X-CSRF-TOKEN
+      // del <meta>, que en iOS se queda viejo por el bfcache de Safari). Así
+      // axios usa la cookie XSRF-TOKEN, que Laravel refresca en cada respuesta.
+      const http = axios.create({
+        withCredentials: true,
+        xsrfCookieName: "XSRF-TOKEN",
+        xsrfHeaderName: "X-XSRF-TOKEN",
+        headers: { Accept: "application/json" },
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Error al guardar la transferencia.");
+      const post = () =>
+        http.post("/operacion/crear-transferencia", formData);
+
+      try {
+        await post();
+      } catch (err) {
+        // 419 = CSRF token mismatch. Refrescamos la cookie y reintentamos 1 vez.
+        if (err?.response?.status === 419) {
+          await http.get("/sanctum/csrf-cookie");
+          await post();
+        } else {
+          throw err;
+        }
       }
 
-      await res.json();
       setSuccess(true);
     } catch (err) {
       console.error(err);
-      setError(err.message || "Error al enviar la transferencia.");
+      const msg =
+        err?.response?.data?.message ||
+        (err?.response?.status === 419
+          ? "Tu sesión expiró. Recarga la página e inténtalo de nuevo."
+          : "Error al enviar la transferencia.");
+      setError(msg);
     } finally {
       setLoading(false);
     }
