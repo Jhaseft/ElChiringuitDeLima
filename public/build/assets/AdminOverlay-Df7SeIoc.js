@@ -1,0 +1,7 @@
+import{r as s,j as e}from"./app-DB7sD6Kl.js";import{T as i}from"./triangle-alert-BhXCAFOi.js";import{C as m}from"./circle-x-mqJaoNUY.js";import{C as d,L as x}from"./loader-circle-BZIeSSay.js";function y({state:r,message:l,autoDismiss:o=1800,onDismiss:n}){if(s.useEffect(()=>{if((r==="success"||r==="error"||r==="warning")&&n){const c=setTimeout(n,o);return()=>clearTimeout(c)}},[r,o,n]),!r)return null;const a={loading:{Icon:x,iconCls:"animate-spin text-blue-500",label:"Cargando…"},success:{Icon:d,iconCls:"text-emerald-500",label:"¡Completado!"},error:{Icon:m,iconCls:"text-red-500",label:"Ocurrió un error"},warning:{Icon:i,iconCls:"text-amber-500",label:"Atención"}}[r];if(!a)return null;const{Icon:t}=a;return e.jsxs(e.Fragment,{children:[e.jsx("style",{children:`
+        @keyframes overlayFadeIn {
+          from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .overlay-card { animation: overlayFadeIn 0.2s ease-out both; }
+      `}),e.jsx("div",{className:"fixed inset-0 z-[9999] flex items-center justify-center bg-black/20",children:e.jsxs("div",{className:"overlay-card flex items-center gap-4 bg-white rounded-2xl shadow-xl px-8 py-5 border border-gray-100",children:[e.jsx(t,{size:32,strokeWidth:1.8,className:a.iconCls}),e.jsx("span",{className:"text-sm font-semibold text-gray-700",children:l??a.label})]})})]})}export{y as A};

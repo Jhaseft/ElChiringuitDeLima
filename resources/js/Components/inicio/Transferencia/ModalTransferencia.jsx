@@ -1,7 +1,7 @@
 import { X, Copy, ImagePlus } from "lucide-react";
 import { useState, useRef } from "react";
-import axios from "axios";
 import StatusMessage from "@/Components/ui/StatusMessage";
+import { apiPost, getApiErrorMessage } from "@/utils/http";
 
 export default function ModalTransferencia({
   isOpen,
@@ -91,40 +91,12 @@ export default function ModalTransferencia({
 
       comprobantes.forEach((file) => formData.append("comprobantes[]", file));
 
-      // Instancia propia (sin el interceptor global que inyecta el X-CSRF-TOKEN
-      // del <meta>, que en iOS se queda viejo por el bfcache de Safari). Así
-      // axios usa la cookie XSRF-TOKEN, que Laravel refresca en cada respuesta.
-      const http = axios.create({
-        withCredentials: true,
-        xsrfCookieName: "XSRF-TOKEN",
-        xsrfHeaderName: "X-XSRF-TOKEN",
-        headers: { Accept: "application/json" },
-      });
-
-      const post = () =>
-        http.post("/operacion/crear-transferencia", formData);
-
-      try {
-        await post();
-      } catch (err) {
-        // 419 = CSRF token mismatch. Refrescamos la cookie y reintentamos 1 vez.
-        if (err?.response?.status === 419) {
-          await http.get("/sanctum/csrf-cookie");
-          await post();
-        } else {
-          throw err;
-        }
-      }
+      await apiPost("/operacion/crear-transferencia", formData);
 
       setSuccess(true);
     } catch (err) {
       console.error(err);
-      const msg =
-        err?.response?.data?.message ||
-        (err?.response?.status === 419
-          ? "Tu sesión expiró. Recarga la página e inténtalo de nuevo."
-          : "Error al enviar la transferencia.");
-      setError(msg);
+      setError(getApiErrorMessage(err, "Error al enviar la transferencia."));
     } finally {
       setLoading(false);
     }

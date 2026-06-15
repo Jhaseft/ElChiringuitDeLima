@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X, QrCode, Upload, RefreshCw, ChevronLeft, Copy, ImagePlus } from "lucide-react";
 import StatusMessage from "@/Components/ui/StatusMessage";
-import { getCsrfToken } from "@/utils/csrf";
+import { apiPost, getApiErrorMessage } from "@/utils/http";
 
 const paisPorModo = { PENtoBOB: "BO", BOBtoPEN: "PEN" };
 
@@ -36,7 +36,6 @@ export default function ModalQR({
     const [success, setSuccess]           = useState(false);
     const fileInputRef = useRef(null);
 
-    const csrfToken  = getCsrfToken();
     const qrCountry  = paisPorModo[modo] ?? "PE";
     const opciones   = metodosPago.filter(m => m.currency_pair === modo);
     const isBOBtoPEN = modo === "BOBtoPEN";
@@ -82,21 +81,12 @@ export default function ModalQR({
             fd.append("qr_country", qrCountry);
             fd.append("qr_image", imagenQR);
 
-            const res = await fetch("/operacion/guardar-cuenta", {
-                method: "POST",
-                headers: { "X-CSRF-TOKEN": csrfToken, Accept: "application/json" },
-                body: fd,
-            });
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.message || "Error al guardar el QR.");
-            }
-            const cuenta = await res.json();
+            const { data: cuenta } = await apiPost("/operacion/guardar-cuenta", fd);
             setCuentaQR({ id: cuenta.id, qr_value: cuenta.qr_value, qr_country: cuenta.qr_country });
             setMostrarCambiar(false);
             setImagenQR(null);
         } catch (err) {
-            setErrorQR(err.message || "Error al guardar el QR.");
+            setErrorQR(getApiErrorMessage(err, "Error al guardar el QR."));
         } finally {
             setSubiendoQR(false);
         }
@@ -138,18 +128,10 @@ export default function ModalQR({
             fd.append("payment_method_slug", "qr");
             fd.append("destination_account_id", cuentaQR.id);
 
-            const res = await fetch("/operacion/crear-transferencia", {
-                method: "POST",
-                headers: { "X-CSRF-TOKEN": csrfToken, Accept: "application/json" },
-                body: fd,
-            });
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.message || "Error al registrar la operación.");
-            }
+            await apiPost("/operacion/crear-transferencia", fd);
             setSuccess(true);
         } catch (err) {
-            setError(err.message || "Error al enviar el comprobante.");
+            setError(getApiErrorMessage(err, "Error al enviar el comprobante."));
         } finally {
             setLoading(false);
         }

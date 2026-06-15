@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import {
   X, Trash2, Plus, Banknote, QrCode, MapPin, ExternalLink, Upload, RefreshCw,
 } from "lucide-react";
-import { getCsrfToken } from "@/utils/csrf";
+import { apiPost, apiDelete, getApiErrorMessage } from "@/utils/http";
 import ModalCuentaBancaria from "./ModalCuentaBancaria";
 import ModalCuentaDestino from "./ModalCuentaDestino";
 import ModalTransferencia from "./ModalTransferencia";
@@ -130,19 +130,14 @@ export default function ModalOperacion({
     if (!confirm("¿Estás seguro de eliminar esta cuenta?")) return;
     setEliminandoCuenta(true);
     try {
-      const csrfToken = getCsrfToken();
-      const res = await fetch(`/eliminar/${cuenta.id}`, {
-        method: "DELETE",
-        headers: { "X-CSRF-TOKEN": csrfToken, Accept: "application/json" },
-      });
-      if (!res.ok) throw new Error((await res.text()) || "Error al eliminar la cuenta");
+      await apiDelete(`/eliminar/${cuenta.id}`);
       const nuevas = cuentasUsuario.filter((c) => c.id !== cuenta.id);
       setCuentasUsuario(nuevas);
       updateCache(user.id, nuevas);
       if (tipo === "origen") setCuentaOrigen(null);
       if (tipo === "destino") setCuentaDestino(null);
     } catch (err) {
-      alert(err.message || "No se pudo eliminar la cuenta");
+      alert(getApiErrorMessage(err, "No se pudo eliminar la cuenta"));
     } finally {
       setEliminandoCuenta(false);
     }
@@ -157,22 +152,12 @@ export default function ModalOperacion({
     setSubiendoQR(true);
     setErrorQR("");
     try {
-      const csrfToken = getCsrfToken();
       const fd = new FormData();
       fd.append("user_id", user.id);
       fd.append("method_type", "qr");
       fd.append("qr_country", "BO");
       fd.append("qr_image", imagenQR);
-      const res = await fetch("/operacion/guardar-cuenta", {
-        method: "POST",
-        headers: { "X-CSRF-TOKEN": csrfToken, Accept: "application/json" },
-        body: fd,
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Error al guardar el QR.");
-      }
-      const cuenta = await res.json();
+      const { data: cuenta } = await apiPost("/operacion/guardar-cuenta", fd);
       setQrUserAccount({
         id: cuenta.id,
         qr_value: cuenta.qr_value,
@@ -181,7 +166,7 @@ export default function ModalOperacion({
       setMostrarCambiarQR(false);
       setImagenQR(null);
     } catch (err) {
-      setErrorQR(err.message || "Error al guardar el QR.");
+      setErrorQR(getApiErrorMessage(err, "Error al guardar el QR."));
     } finally {
       setSubiendoQR(false);
     }

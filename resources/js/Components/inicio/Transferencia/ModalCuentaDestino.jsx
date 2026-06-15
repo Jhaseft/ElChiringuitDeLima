@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import axios from "axios";
 import BankSelect from "../shared/BankSelect";
+import { apiPost, getApiErrorMessage } from "@/utils/http";
 
 let bancosCache = null;
 
@@ -99,17 +99,7 @@ export default function ModalCuentaDestino({
     try {
       const bankId = form.banco.id ?? form.banco.value;
 
-      // Instancia propia que usa la cookie XSRF-TOKEN (refrescada por Laravel en
-      // cada respuesta), más confiable en iOS que el <meta> estático que se queda
-      // viejo con el bfcache de Safari.
-      const http = axios.create({
-        withCredentials: true,
-        xsrfCookieName: "XSRF-TOKEN",
-        xsrfHeaderName: "X-XSRF-TOKEN",
-        headers: { Accept: "application/json" },
-      });
-
-      const payload = {
+      const { data } = await apiPost("/operacion/guardar-cuenta", {
         user_id: user.id,
         method_type: "bank",
         account_type: accountType,
@@ -118,35 +108,13 @@ export default function ModalCuentaDestino({
         owner_full_name: form.nombrePropietario,
         owner_document: form.dniPropietario,
         owner_phone: form.contacto,
-      };
-
-      const post = () => http.post("/operacion/guardar-cuenta", payload);
-
-      let data;
-      try {
-        ({ data } = await post());
-      } catch (err) {
-        // 419 = CSRF token mismatch. Refrescamos la cookie y reintentamos 1 vez.
-        if (err?.response?.status === 419) {
-          await http.get("/sanctum/csrf-cookie");
-          ({ data } = await post());
-        } else if (err?.response?.status === 422 && err.response.data?.errors) {
-          const e = err.response.data.errors;
-          throw new Error(
-            Object.keys(e).map((k) => e[k].join("\n")).join("\n")
-          );
-        } else {
-          throw new Error(
-            err?.response?.data?.message || "Error en el servidor"
-          );
-        }
-      }
+      });
 
       onCuentaGuardada && onCuentaGuardada(data);
       onClose();
     } catch (err) {
       console.error(err);
-      alert(err.message || "Error al guardar la cuenta destino");
+      alert(getApiErrorMessage(err, "Error al guardar la cuenta destino"));
     } finally {
       setLoading(false);
     }

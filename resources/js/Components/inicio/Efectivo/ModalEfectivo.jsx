@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { X, Copy, MapPin, ExternalLink, ImagePlus } from "lucide-react";
 import StatusMessage from "@/Components/ui/StatusMessage";
-import { getCsrfToken } from "@/utils/csrf";
+import { apiPost, getApiErrorMessage } from "@/utils/http";
 
 const OFICINAS = [
     {
@@ -25,7 +25,6 @@ export default function ModalEfectivo({ isOpen, onClose, user, monto, conversion
 
     if (!isOpen) return null;
 
-    const csrfToken = getCsrfToken();
     const isBOBtoPEN = modo === "BOBtoPEN";
     const montoTexto = isBOBtoPEN ? `${monto} BOB` : `${monto} PEN`;
     const conversionTexto = isBOBtoPEN ? `${conversion} PEN` : `${conversion} BOB`;
@@ -71,20 +70,11 @@ export default function ModalEfectivo({ isOpen, onClose, user, monto, conversion
             comprobantes.forEach((file) => formData.append("comprobantes[]", file));
             formData.append("payment_method_slug", "cash");
 
-            const res = await fetch("/operacion/crear-transferencia", {
-                method: "POST",
-                headers: { "X-CSRF-TOKEN": csrfToken, Accept: "application/json" },
-                body: formData,
-            });
-
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.message || "Error al guardar la transferencia.");
-            }
+            await apiPost("/operacion/crear-transferencia", formData);
 
             setSuccess(true);
         } catch (err) {
-            setError(err.message || "Error al enviar la transferencia.");
+            setError(getApiErrorMessage(err, "Error al enviar la transferencia."));
         } finally {
             setLoading(false);
         }
