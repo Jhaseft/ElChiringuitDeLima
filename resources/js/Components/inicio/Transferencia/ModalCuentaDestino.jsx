@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import axios from "axios";
 import BankSelect from "../shared/BankSelect";
-import { getCsrfToken } from "@/utils/csrf";
 
 let bancosCache = null;
 
@@ -24,7 +24,6 @@ export default function ModalCuentaDestino({
   });
   const [bancosDisponibles, setBancosDisponibles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const csrfToken = getCsrfToken();
   const accountType = "destination";
 
   // Reset formulario cada vez que se abre el modal
@@ -100,29 +99,48 @@ export default function ModalCuentaDestino({
     try {
       const bankId = form.banco.id ?? form.banco.value;
 
-      const res = await fetch("/operacion/guardar-cuenta", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-TOKEN": csrfToken,
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          method_type: "bank",
-          account_type: accountType,
-          bank_id: bankId,
-          account_number: form.numeroCuenta,
-          owner_full_name: form.nombrePropietario,
-          owner_document: form.dniPropietario,
-          owner_phone: form.contacto,
-        }),
+      // Instancia propia que usa la cookie XSRF-TOKEN (refrescada por Laravel en
+      // cada respuesta), más confiable en iOS que el <meta> estático que se queda
+      // viejo con el bfcache de Safari.
+      const http = axios.create({
+        withCredentials: true,
+        xsrfCookieName: "XSRF-TOKEN",
+        xsrfHeaderName: "X-XSRF-TOKEN",
+        headers: { Accept: "application/json" },
       });
 
-      const text = await res.text();
-      const data = JSON.parse(text);
+      const payload = {
+        user_id: user.id,
+        method_type: "bank",
+        account_type: accountType,
+        bank_id: bankId,
+        account_number: form.numeroCuenta,
+        owner_full_name: form.nombrePropietario,
+        owner_document: form.dniPropietario,
+        owner_phone: form.contacto,
+      };
 
-      if (!res.ok) throw new Error(data.message || "Error en el servidor");
+      const post = () => http.post("/operacion/guardar-cuenta", payload);
+
+      let data;
+      try {
+        ({ data } = await post());
+      } catch (err) {
+        // 419 = CSRF token mismatch. Refrescamos la cookie y reintentamos 1 vez.
+        if (err?.response?.status === 419) {
+          await http.get("/sanctum/csrf-cookie");
+          ({ data } = await post());
+        } else if (err?.response?.status === 422 && err.response.data?.errors) {
+          const e = err.response.data.errors;
+          throw new Error(
+            Object.keys(e).map((k) => e[k].join("\n")).join("\n")
+          );
+        } else {
+          throw new Error(
+            err?.response?.data?.message || "Error en el servidor"
+          );
+        }
+      }
 
       onCuentaGuardada && onCuentaGuardada(data);
       onClose();

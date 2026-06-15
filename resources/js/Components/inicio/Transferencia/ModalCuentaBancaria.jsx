@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import axios from "axios";
 import BankSelect from "../shared/BankSelect";
-import { getCsrfToken } from "@/utils/csrf";
 
 let bancosCache = null;
 
@@ -20,8 +20,6 @@ export default function ModalCuentaBancaria({
   const [terminos, setTerminos] = useState(false);
   const [bancosDisponibles, setBancosDisponibles] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const csrfToken = getCsrfToken();
 
 
   useEffect(() => {
@@ -75,34 +73,44 @@ export default function ModalCuentaBancaria({
     try {
       const bankId = banco.id ?? banco.value;
 
-      const res = await fetch("/operacion/guardar-cuenta", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-TOKEN": csrfToken,
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          method_type: "bank",
-          bank_id: bankId,
-          account_number: numeroCuenta,
-          account_type: accountType,
-        }),
+      // Instancia propia que usa la cookie XSRF-TOKEN (refrescada por Laravel en
+      // cada respuesta), más confiable en iOS que el <meta> estático que se queda
+      // viejo con el bfcache de Safari.
+      const http = axios.create({
+        withCredentials: true,
+        xsrfCookieName: "XSRF-TOKEN",
+        xsrfHeaderName: "X-XSRF-TOKEN",
+        headers: { Accept: "application/json" },
       });
 
-      const text = await res.text();
+      const payload = {
+        user_id: user.id,
+        method_type: "bank",
+        bank_id: bankId,
+        account_number: numeroCuenta,
+        account_type: accountType,
+      };
 
-      const data = JSON.parse(text);
+      const post = () => http.post("/operacion/guardar-cuenta", payload);
 
-      if (!res.ok) {
-        let msg = data.message || "Error en el servidor";
-        if (res.status === 422 && data.errors) {
-          msg = Object.keys(data.errors)
-            .map((k) => data.errors[k].join("\n"))
-            .join("\n");
+      let data;
+      try {
+        ({ data } = await post());
+      } catch (err) {
+        // 419 = CSRF token mismatch. Refrescamos la cookie y reintentamos 1 vez.
+        if (err?.response?.status === 419) {
+          await http.get("/sanctum/csrf-cookie");
+          ({ data } = await post());
+        } else if (err?.response?.status === 422 && err.response.data?.errors) {
+          const e = err.response.data.errors;
+          throw new Error(
+            Object.keys(e).map((k) => e[k].join("\n")).join("\n")
+          );
+        } else {
+          throw new Error(
+            err?.response?.data?.message || "Error en el servidor"
+          );
         }
-        throw new Error(msg);
       }
 
       onCuentaGuardada && onCuentaGuardada(data);
