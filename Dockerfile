@@ -21,10 +21,9 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
  #Copiar php.ini personalizado
 COPY php.ini /usr/local/etc/php/
-# Instalar Node.js 20 LTS y npm
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && npm install -g npm@latest
+# Instalar Node.js 22 LTS (incluye npm compatible)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs
 
 # Instalar Composer globalmente
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
