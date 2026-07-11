@@ -279,16 +279,7 @@ public function loginGoogle(Request $request)
 
 public function loginApple(Request $request)
 {
-    // LOG: lo que llega del teléfono (el identityToken se recorta por seguridad y tamaño).
-    Log::info('Apple Login - datos recibidos del teléfono', [
-        'appleUserId'         => $request->appleUserId,
-        'email'               => $request->email,
-        'firstName'           => $request->firstName,
-        'lastName'            => $request->lastName,
-        'identityToken_corto' => $request->identityToken
-            ? substr($request->identityToken, 0, 25) . '...'
-            : null,
-    ]);
+
 
     $request->validate([
         'identityToken' => 'required|string',
@@ -311,15 +302,6 @@ public function loginApple(Request $request)
 
         $payload = JWT::decode($request->identityToken, JWK::parseKeySet($keys));
 
-        // LOG: lo que Apple devuelve DENTRO del token ya verificado.
-        Log::info('Apple Login - payload verificado de Apple', [
-            'sub'            => $payload->sub ?? null,   // ID estable del usuario de Apple
-            'email'          => $payload->email ?? null,
-            'email_verified' => $payload->email_verified ?? null,
-            'is_private_email' => $payload->is_private_email ?? null,
-            'iss'            => $payload->iss ?? null,
-            'aud'            => $payload->aud ?? null,
-        ]);
     } catch (\Throwable $e) {
         AppLog::warning('Login Apple fallido - token inválido', ['error' => $e->getMessage()], 'auth');
         return response()->json(['message' => 'Token inválido'], 401);
