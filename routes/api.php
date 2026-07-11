@@ -20,6 +20,9 @@ Route::post('/loginapp', [AppNative::class, 'login']);
 //Para Google
 Route::post('/logingoogle', [AppNative::class, 'loginGoogle']);
 
+//Para Apple
+Route::post('/loginapple', [AppNative::class, 'loginApple']);
+
 // Rutas protegidas con token Sanctum
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AppNative::class, 'logout']);

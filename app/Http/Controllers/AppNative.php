@@ -15,6 +15,8 @@ use App\Models\PushToken;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use App\Helpers\AppLog;
+use Firebase\JWT\JWT;
+use Firebase\JWT\JWK;
 
 class AppNative extends Controller
 {
@@ -97,6 +99,7 @@ class AppNative extends Controller
             return response()->json(['message' => 'Credenciales incorrectas'], 401);
         }
 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         $user->tokens()->delete();
         $token = $user->createToken('mobile-app')->plainTextToken;
@@ -253,6 +256,9 @@ public function loginGoogle(Request $request)
         ]);
     }
 
+    // Revocar sesiones anteriores (una sola sesión activa por usuario)
+    $user->tokens()->delete();
+
     // Crear token Sanctum
     $token = $user->createToken('mobile-app')->plainTextToken;
 
@@ -268,6 +274,101 @@ public function loginGoogle(Request $request)
         'user' => $user,
         'token' => $token,
         'needs_profile' => $needsProfile // <-- si es true, app debe redirigir
+    ]);
+}
+
+public function loginApple(Request $request)
+{
+    // LOG: lo que llega del teléfono (el identityToken se recorta por seguridad y tamaño).
+    Log::info('Apple Login - datos recibidos del teléfono', [
+        'appleUserId'         => $request->appleUserId,
+        'email'               => $request->email,
+        'firstName'           => $request->firstName,
+        'lastName'            => $request->lastName,
+        'identityToken_corto' => $request->identityToken
+            ? substr($request->identityToken, 0, 25) . '...'
+            : null,
+    ]);
+
+    $request->validate([
+        'identityToken' => 'required|string',
+        'appleUserId'   => 'nullable|string',
+        'email'         => 'nullable|email',
+        'firstName'     => 'nullable|string|max:255',
+        'lastName'      => 'nullable|string|max:255',
+    ]);
+
+    // Verificar la firma del identityToken contra las llaves públicas de Apple.
+    try {
+        // Apple rota sus llaves; las cacheamos 1 día.
+        $keys = Cache::remember('apple_auth_keys', now()->addDay(), function () {
+            $res = Http::get('https://appleid.apple.com/auth/keys');
+            if (!$res->ok()) {
+                throw new \Exception('No se pudieron obtener las llaves de Apple');
+            }
+            return $res->json();
+        });
+
+        $payload = JWT::decode($request->identityToken, JWK::parseKeySet($keys));
+
+        // LOG: lo que Apple devuelve DENTRO del token ya verificado.
+        Log::info('Apple Login - payload verificado de Apple', [
+            'sub'            => $payload->sub ?? null,   // ID estable del usuario de Apple
+            'email'          => $payload->email ?? null,
+            'email_verified' => $payload->email_verified ?? null,
+            'is_private_email' => $payload->is_private_email ?? null,
+            'iss'            => $payload->iss ?? null,
+            'aud'            => $payload->aud ?? null,
+        ]);
+    } catch (\Throwable $e) {
+        AppLog::warning('Login Apple fallido - token inválido', ['error' => $e->getMessage()], 'auth');
+        return response()->json(['message' => 'Token inválido'], 401);
+    }
+
+    // Validar emisor y que el token sea para NUESTRA app (bundle id).
+    if (($payload->iss ?? null) !== 'https://appleid.apple.com') {
+        return response()->json(['message' => 'Emisor no válido'], 401);
+    }
+
+    $expectedAud = env('APPLE_CLIENT_ID_APP');
+    if ($expectedAud && ($payload->aud ?? null) !== $expectedAud) {
+        return response()->json(['message' => 'Token no válido para esta aplicación'], 401);
+    }
+
+    // El email viene dentro del token verificado (más confiable que el del request).
+    $email = $payload->email ?? $request->email;
+    if (!$email) {
+        return response()->json(['message' => 'No se recibió el correo desde Apple'], 422);
+    }
+
+    // Buscar usuario por email.
+    $user = User::where('email', $email)->first();
+
+    // Si no existe, crearlo. Apple solo envía nombre/apellido en el PRIMER login.
+    if (!$user) {
+        $user = User::create([
+            'first_name' => $request->firstName ?? '',
+            'last_name'  => $request->lastName ?? '',
+            'email'      => $email,
+            'password'   => null,
+        ]);
+    }
+
+    // Revocar sesiones anteriores (una sola sesión activa por usuario)
+    $user->tokens()->delete();
+
+    $token = $user->createToken('mobile-app')->plainTextToken;
+
+    $user->load(['accounts', 'transfers', 'media']);
+
+    $needsProfile = empty($user->nationality) ||
+                    empty($user->phone) ||
+                    empty($user->document_number);
+
+    return response()->json([
+        'user' => $user,
+        'token' => $token,
+        'needs_profile' => $needsProfile
     ]);
 }
 
