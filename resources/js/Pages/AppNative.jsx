@@ -10,7 +10,7 @@ export default function AppNative() {
             <RectanguloLayout background="bg-gray-900 border-b border-yellow-400">
                 <LogoConVideo
                     logoSrc="https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png"
-                    videoSrc="https://res.cloudinary.com/dqemzxnqj/video/upload/v1760799045/Video_de_WhatsApp_2025-10-18_a_las_10.50.10_24e89e79_dsnmkj.mp4"
+                    videoSrc="https://res.cloudinary.com/dnbklbswg/video/upload/v1785184234/Tranfercash_Video_Resumen_zhttc0.mp4"
                 >
 
                     <p className="text-2xl text-white font-extrabold sm:text-xl md:text-5xl font-montserrat  leading-snug sm:leading-tight max-w-[600px] mx-auto">
