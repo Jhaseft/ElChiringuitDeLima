@@ -25,23 +25,38 @@ export default function LogoConVideo({
         <img
           src={logoSrc}
           alt="logo transfer cash"
-          className="w-auto max-w-[150px] sm:max-w-[180px] md:max-w-[220px] h-auto"
+          className="w-[150px] h-[150px] sm:w-[180px] sm:h-[180px] md:w-[220px] md:h-[220px] object-cover rounded-3xl shadow-lg"
         />
 
         {children}
 
-        <a
-          href="https://play.google.com/store/apps/details?id=com.transfercash.lima"
-          download
-          className="flex items-center  rounded-lg"
-        >
-          <img
-            src="/images/google-play-badge-es.png"
-            alt="Google Play"
-            className="w-52 h-16"
-          />
+        <div className="flex items-center flex-wrap justify-center gap-2">
+          <a
+            href="https://play.google.com/store/apps/details?id=com.transfercash.lima"
+            download
+            className="flex items-center  rounded-lg"
+          >
+            <img
+              src="/images/google-play-badge-es.png"
+              alt="Google Play"
+              className="w-52 h-16"
+            />
 
-        </a>
+          </a>
+
+          <a
+            href="#######"
+            download
+            className="flex items-center  rounded-lg"
+          >
+            <img
+              src="/images/apple-appstore-badge-es.png"
+              alt="App Store"
+              className="w-50 h-14"
+            />
+
+          </a>
+        </div>
 
       </motion.div>
 
