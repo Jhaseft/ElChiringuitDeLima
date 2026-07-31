@@ -22,6 +22,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);
+
+        // El chat es solo un proxy al bot (bajo riesgo); lo eximimos de CSRF
+        // para evitar errores 419 por token vencido en pestañas viejas.
+        $middleware->validateCsrfTokens(except: [
+            'chat/send',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
