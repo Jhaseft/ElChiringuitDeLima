@@ -97,6 +97,21 @@ return [
             'sslmode' => 'prefer',
         ],
 
+        // Base de n8n (solo lectura) para importar el histórico de chat a Chatwoot.
+        'n8n_pg' => [
+            'driver' => 'pgsql',
+            'host' => env('N8N_DB_HOST', '127.0.0.1'),
+            'port' => env('N8N_DB_PORT', '5432'),
+            'database' => env('N8N_DB_DATABASE', 'postgres'),
+            'username' => env('N8N_DB_USERNAME', 'postgres'),
+            'password' => env('N8N_DB_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => env('N8N_DB_SSLMODE', 'disable'),
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),

@@ -63,4 +63,14 @@ return [
         'chat_webhook' => env('N8N_CHAT_WEBHOOK'),
     ],
 
+    'chatwoot' => [
+        // Ej: https://app.chatwoot.com  (o la URL de tu instalación self-hosted)
+        'base_url'   => env('CHATWOOT_BASE_URL'),
+        'account_id' => env('CHATWOOT_ACCOUNT_ID'),
+        'inbox_id'   => env('CHATWOOT_INBOX_ID'),
+        // Perfil → Configuración del perfil → Token de acceso
+        'api_token'  => env('CHATWOOT_API_TOKEN'),
+        'enabled'    => env('CHATWOOT_ENABLED', false),
+    ],
+
 ];

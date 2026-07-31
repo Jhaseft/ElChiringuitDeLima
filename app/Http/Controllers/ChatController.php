@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TipoCambio;
+use App\Services\ChatwootMirror;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -84,6 +85,12 @@ class ChatController extends Controller
                 $reply = 'No obtuve una respuesta válida del asistente.';
             }
 
+            $this->mirrorToChatwoot($data['session_id'], [
+                'id'    => $user?->id,
+                'name'  => $user ? trim($user->first_name . ' ' . $user->last_name) : null,
+                'email' => $user?->email,
+                'phone' => $user?->phone,
+            ], $data['message'], $reply);
 
             return response()->json(['reply' => $reply]);
         } catch (\Throwable $e) {
@@ -98,7 +105,7 @@ class ChatController extends Controller
             ], 500);
         }
     }
-  
+
 
     public function sendPhone(Request $request)
     {
@@ -176,6 +183,12 @@ class ChatController extends Controller
                 $reply = 'No obtuve una respuesta válida del asistente.';
             }
 
+            $this->mirrorToChatwoot($payload['session_id'], [
+                'id'    => $payload['user_id'],
+                'name'  => $user ? trim($user->first_name . ' ' . $user->last_name) : ($payload['user_name'] ?? null),
+                'email' => $payload['user_email'],
+                'phone' => $user?->phone,
+            ], $payload['message'], $reply);
 
             return response()->json(['reply' => $reply]);
         } catch (\Throwable $e) {
@@ -189,5 +202,16 @@ class ChatController extends Controller
                 'reply' => 'Hubo un error al procesar tu mensaje.',
             ], 500);
         }
+    }
+
+    /**
+     * Copia (espeja) el mensaje del usuario y la respuesta del bot hacia
+     * Chatwoot, después de responder al cliente para no añadir latencia.
+     */
+    private function mirrorToChatwoot(string $sessionId, array $user, string $userMessage, string $reply): void
+    {
+        dispatch(function () use ($sessionId, $user, $userMessage, $reply) {
+            app(ChatwootMirror::class)->mirror($sessionId, $user, $userMessage, $reply);
+        })->afterResponse();
     }
 }
