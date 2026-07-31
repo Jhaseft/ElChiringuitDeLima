@@ -1,29 +1,54 @@
 import { useState, useRef, useEffect } from "react";
+import { usePage } from "@inertiajs/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BiSolidMessageRoundedDots } from "react-icons/bi";
 import { IoClose, IoSend } from "react-icons/io5";
 import { FaRobot } from "react-icons/fa";
 
-const getSessionId = () => {
-  let id = localStorage.getItem("chat_session");
-  if (!id) {
+const SESSION_KEY = "chat_session";
+const OWNER_KEY = "chat_owner";
+
+const INITIAL_MESSAGE = {
+  message: "¡Hola! 👋 Soy tu asistente. ¿En qué puedo ayudarte hoy?",
+  sender: "bot",
+};
+
+// Ata la sesión del chat al estado de login: si cambia el usuario
+// (inicia o cierra sesión), genera una sesión nueva para que el bot
+// no recuerde a la persona anterior.
+const resolveSession = (user) => {
+  const owner = user?.id ? `u${user.id}` : "guest";
+  let id = localStorage.getItem(SESSION_KEY);
+
+  if (!id || localStorage.getItem(OWNER_KEY) !== owner) {
     id = crypto.randomUUID();
-    localStorage.setItem("chat_session", id);
+    localStorage.setItem(SESSION_KEY, id);
+    localStorage.setItem(OWNER_KEY, owner);
+    return { id, reset: true };
   }
-  return id;
+
+  return { id, reset: false };
 };
 
 export default function ChatWidget() {
+  const { auth } = usePage().props;
+  const user = auth?.user;
+
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      message: "¡Hola! 👋 Soy tu asistente. ¿En qué puedo ayudarte hoy?",
-      sender: "bot",
-    },
-  ]);
+  const [messages, setMessages] = useState([INITIAL_MESSAGE]);
+  const [sessionId, setSessionId] = useState(() => resolveSession(user).id);
   const [typing, setTyping] = useState(false);
   const scrollRef = useRef(null);
+
+  // Al iniciar/cerrar sesión: nueva sesión y chat limpio.
+  useEffect(() => {
+    const { id, reset } = resolveSession(user);
+    setSessionId(id);
+    if (reset) {
+      setMessages([INITIAL_MESSAGE]);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -33,7 +58,6 @@ export default function ChatWidget() {
     const value = text.trim();
     if (!value) return;
 
-    const sessionId = getSessionId();
     const newMessages = [...messages, { message: value, sender: "user" }];
     setMessages(newMessages);
     setInput("");
