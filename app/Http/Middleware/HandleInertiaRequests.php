@@ -29,10 +29,17 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $user,
+                // Sesión de chat estable por usuario (no adivinable): así su
+                // conversación con el bot y en Chatwoot continúa entre logins.
+                'chat_session' => $user
+                    ? hash_hmac('sha256', 'chat-session:' . $user->id, config('app.key'))
+                    : null,
             ],
         ];
     }

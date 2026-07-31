@@ -13,42 +13,50 @@ const INITIAL_MESSAGE = {
   sender: "bot",
 };
 
-// Ata la sesión del chat al estado de login: si cambia el usuario
-// (inicia o cierra sesión), genera una sesión nueva para que el bot
-// no recuerde a la persona anterior.
-const resolveSession = (user) => {
+// Resuelve la sesión del chat según el estado de login:
+// - Logueado: usa la sesión estable del servidor (misma cuenta => misma
+//   conversación siempre, aunque cambie de navegador o vuelva a entrar).
+// - Visitante: sesión aleatoria por navegador.
+// Si cambia el dueño (login/logout), limpia el chat visible.
+const resolveSession = (user, serverSession) => {
   const owner = user?.id ? `u${user.id}` : "guest";
-  let id = localStorage.getItem(SESSION_KEY);
+  const ownerChanged = localStorage.getItem(OWNER_KEY) !== owner;
 
-  if (!id || localStorage.getItem(OWNER_KEY) !== owner) {
-    id = crypto.randomUUID();
-    localStorage.setItem(SESSION_KEY, id);
-    localStorage.setItem(OWNER_KEY, owner);
-    return { id, reset: true };
+  let id;
+  if (user?.id && serverSession) {
+    id = serverSession;
+  } else {
+    id = localStorage.getItem(SESSION_KEY);
+    if (!id || ownerChanged) {
+      id = crypto.randomUUID();
+    }
   }
 
-  return { id, reset: false };
+  localStorage.setItem(SESSION_KEY, id);
+  localStorage.setItem(OWNER_KEY, owner);
+  return { id, reset: ownerChanged };
 };
 
 export default function ChatWidget() {
   const { auth } = usePage().props;
   const user = auth?.user;
+  const serverSession = auth?.chat_session;
 
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
-  const [sessionId, setSessionId] = useState(() => resolveSession(user).id);
+  const [sessionId, setSessionId] = useState(() => resolveSession(user, serverSession).id);
   const [typing, setTyping] = useState(false);
   const scrollRef = useRef(null);
 
-  // Al iniciar/cerrar sesión: nueva sesión y chat limpio.
+  // Al iniciar/cerrar sesión: cambia la sesión y limpia el chat visible.
   useEffect(() => {
-    const { id, reset } = resolveSession(user);
+    const { id, reset } = resolveSession(user, serverSession);
     setSessionId(id);
     if (reset) {
       setMessages([INITIAL_MESSAGE]);
     }
-  }, [user?.id]);
+  }, [user?.id, serverSession]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
