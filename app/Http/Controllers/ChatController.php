@@ -29,14 +29,15 @@ class ChatController extends Controller
         }
  
         $user = Auth::user();
- 
+        $sessionId = $user ? $this->stableSession($user->id) : $data['session_id'];
+
         $payload = [
             'message'        => $data['message'],
-            'session_id'     => $data['session_id'],
+            'session_id'     => $sessionId,
             'user_id'        => $user?->id,
             'user_name'      => $user?->first_name,
             'user_email'     => $user?->email,
-            'is_authenticated' => (bool) $user,  
+            'is_authenticated' => (bool) $user,
         ];
 
         try {
@@ -85,7 +86,7 @@ class ChatController extends Controller
                 $reply = 'No obtuve una respuesta válida del asistente.';
             }
 
-            $this->mirrorToChatwoot($data['session_id'], [
+            $this->mirrorToChatwoot($sessionId, [
                 'id'    => $user?->id,
                 'name'  => $user ? trim($user->first_name . ' ' . $user->last_name) : null,
                 'email' => $user?->email,
@@ -115,6 +116,7 @@ class ChatController extends Controller
             'user_id'          => 'nullable|string|max:100',
             'user_name'        => 'nullable|string|max:200',
             'user_email'       => 'nullable|email|max:255',
+            'user_phone'       => 'nullable|string|max:30',
             'is_authenticated' => 'nullable|boolean',
         ]);
 
@@ -126,11 +128,15 @@ class ChatController extends Controller
             ], 503);
         }
 
-        $user = Auth::user();
+        // Resuelve el usuario por token Sanctum si viene (sin bloquear a invitados).
+        $user = $request->user('sanctum') ?? Auth::user();
+
+        // Usuario autenticado => misma sesión estable que en web (unifica web y móvil).
+        $sessionId = $user ? $this->stableSession($user->id) : $data['session_id'];
 
         $payload = [
             'message'          => $data['message'],
-            'session_id'       => $data['session_id'],
+            'session_id'       => $sessionId,
             'user_id'          => $user?->id          ?? ($data['user_id']    ?? null),
             'user_name'        => $user?->first_name  ?? ($data['user_name']  ?? null),
             'user_email'       => $user?->email       ?? ($data['user_email'] ?? null),
@@ -183,11 +189,11 @@ class ChatController extends Controller
                 $reply = 'No obtuve una respuesta válida del asistente.';
             }
 
-            $this->mirrorToChatwoot($payload['session_id'], [
+            $this->mirrorToChatwoot($sessionId, [
                 'id'    => $payload['user_id'],
                 'name'  => $user ? trim($user->first_name . ' ' . $user->last_name) : ($payload['user_name'] ?? null),
                 'email' => $payload['user_email'],
-                'phone' => $user?->phone,
+                'phone' => $user?->phone ?? ($data['user_phone'] ?? null),
             ], $payload['message'], $reply);
 
             return response()->json(['reply' => $reply]);
@@ -202,6 +208,15 @@ class ChatController extends Controller
                 'reply' => 'Hubo un error al procesar tu mensaje.',
             ], 500);
         }
+    }
+
+    /**
+     * Sesión de chat estable por usuario (misma fórmula que HandleInertiaRequests),
+     * para que su conversación con el bot y en Chatwoot sea la misma en web y móvil.
+     */
+    private function stableSession($userId): string
+    {
+        return hash_hmac('sha256', 'chat-session:' . $userId, config('app.key'));
     }
 
     /**
