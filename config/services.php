@@ -50,6 +50,9 @@ return [
     'kyc' => [
         'key' => env('KYC_API_KEY'),
         'url' => env('KYC_BASE_URL'),
+        // Secreto compartido con el proveedor KYC para autenticar su webhook
+        // (evita que cualquiera marque a un usuario como verificado).
+        'webhook_secret' => env('KYC_WEBHOOK_SECRET'),
     ],
 
     'evolution' => [

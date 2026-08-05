@@ -27,9 +27,11 @@ class User extends Authenticatable
         'nationality',
         'document_number',
         'password',
-        'kyc_session_id',
-        'kyc_status',
     ];
+
+    // OJO: 'kyc_status' y 'kyc_session_id' se asignan explícitamente
+    // (->kyc_status = ...; ->save()) y NO son mass-assignable a propósito,
+    // para que ningún update($request->all()) permita auto-verificarse.
 
     /**
      * Los atributos que deben ocultarse en arrays.

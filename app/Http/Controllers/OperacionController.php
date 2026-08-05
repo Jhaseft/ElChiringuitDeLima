@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Cloudinary\Api\Upload\UploadApi;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Throwable;
 use App\Models\Configuracion;
 use App\Helpers\AppLog;
@@ -26,9 +27,12 @@ class OperacionController extends Controller
     }
 
 
-    public function eliminarcuenta($account_id)
+    public function eliminarcuenta(Request $request, $account_id)
     {
-        $account = Account::find($account_id);
+        // Solo el dueño de la cuenta puede desactivarla.
+        $account = Account::where('id', $account_id)
+            ->where('user_id', $request->user()->id)
+            ->first();
 
         if (!$account) {
             return response()->json([
@@ -53,9 +57,13 @@ class OperacionController extends Controller
     {
         // VALIDACIÓN BASE
         $request->validate([
-            'user_id' => 'required|exists:users,id',
             'method_type' => 'nullable|in:bank,qr',
         ]);
+
+        // El dueño de la cuenta es SIEMPRE el usuario autenticado.
+        // Nunca se confía en un user_id enviado por el cliente (evita crear
+        // cuentas a nombre de otros usuarios).
+        $request->merge(['user_id' => $request->user()->id]);
 
         // Si no se envía method_type, se asume 'bank'
         $methodType = $request->method_type ?? 'bank';
@@ -168,10 +176,12 @@ class OperacionController extends Controller
         return response()->json($account);
     }
 
-    public function listarCuentas($user_id, $method_type)
+    public function listarCuentas(Request $request, $user_id, $method_type)
     {
+        // Se ignora el {user_id} de la URL: solo se devuelven las cuentas del
+        // usuario autenticado (evita IDOR / enumeración de cuentas ajenas).
         $accounts = Account::with(['bank', 'owner'])
-            ->where('user_id', $user_id)
+            ->where('user_id', $request->user()->id)
             ->where('method_type', $method_type)
             ->where('desactivate', false)
             ->get();
@@ -238,20 +248,24 @@ class OperacionController extends Controller
                 ],
             ];
 
+            // Las cuentas referenciadas deben pertenecer al usuario autenticado
+            // (no basta con que existan: evita adjuntar cuentas de terceros).
+            $ownedAccount = fn() => Rule::exists('accounts', 'id')->where('user_id', $user->id);
+
             // Lado bancario obligatorio según modo + qué id puede ir
             if ($modo === 'PENtoBOB') {
                 // Cliente paga por banco PE (origen obligatorio).
                 // Destino solo aplica si recibe por QR (id del QR del usuario).
-                $rules['origin_account_id']      = ['required', 'exists:accounts,id'];
+                $rules['origin_account_id']      = ['required', $ownedAccount()];
                 $rules['destination_account_id'] = $slug === 'qr'
-                    ? ['required', 'exists:accounts,id', 'different:origin_account_id']
+                    ? ['required', $ownedAccount(), 'different:origin_account_id']
                     : ['nullable'];
             } else { // BOBtoPEN
                 // Cliente recibe en banco PE (destino obligatorio).
                 // Si paga por QR, manda la cuenta BO desde la que paga (opcional en backend, frontend lo enforce).
                 // Si paga en efectivo, origen es null.
-                $rules['origin_account_id']      = ['nullable', 'exists:accounts,id'];
-                $rules['destination_account_id'] = ['required', 'exists:accounts,id'];
+                $rules['origin_account_id']      = ['nullable', $ownedAccount()];
+                $rules['destination_account_id'] = ['required', $ownedAccount()];
             }
 
             $validated = $request->validate($rules);

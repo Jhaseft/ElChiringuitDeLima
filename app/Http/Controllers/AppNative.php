@@ -131,13 +131,11 @@ class AppNative extends Controller
     // Listar cuentas del usuario autenticado
     public function listarCuentas(Request $request)
 {
-    $userId = $request->query('user_id'); // obtener user_id desde la query
     $method_type = $request->query('type');
-    // Si no viene user_id, usamos el usuario autenticado (opcional)
-    if (!$userId) {
-        $user = $request->user();
-        $userId = $user?->id;
-    } 
+
+    // El user_id SIEMPRE sale del token, nunca del query (evita IDOR:
+    // leer las cuentas de otro usuario pasando su id).
+    $userId = $request->user()?->id;
 
     if (!$userId) {
         return response()->json(['error' => 'Usuario no encontrado'], 404);

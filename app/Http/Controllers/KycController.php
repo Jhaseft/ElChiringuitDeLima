@@ -61,6 +61,21 @@ class KycController extends Controller
     public function webhook(Request $request)
     {
 
+    // Autenticar al proveedor mediante un secreto compartido. Sin esto,
+    // cualquiera podría marcar a un usuario como KYC "verified" y saltarse
+    // los límites de montos. Si el secreto no está configurado, se rechaza
+    // por defecto (fail-closed) para no dejar el endpoint abierto.
+    $expectedSecret = config('services.kyc.webhook_secret');
+    $providedSecret = $request->header('X-Webhook-Secret')
+        ?? $request->input('webhook_secret');
+
+    if (!$expectedSecret || !is_string($providedSecret) || !hash_equals($expectedSecret, $providedSecret)) {
+        Log::warning('🔒 [KYC] Webhook rechazado: secreto inválido o ausente', [
+            'ip' => $request->ip(),
+        ]);
+        return response()->json(['error' => 'No autorizado'], 401);
+    }
+
     $sessionId = $request->input('session_id');
     $status    = $request->input('status');
 

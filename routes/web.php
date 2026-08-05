@@ -80,11 +80,13 @@ Route::get('/App', function () {
     return Inertia::render('AppNative');
 });
 
-// Operaciones 
-Route::middleware(['web'])->group(function () {
-    //listar bancos existentes en la abase de datos
-    Route::get('/operacion/listar-bancos', [OperacionController::class, 'listarBancos'])->name('operacion.listarBancos');
-    //crear cuentas de QR  y Tranferencia bancaria 
+// Operaciones
+// Listar bancos es información pública (catálogo); el resto exige sesión
+// porque opera sobre cuentas/transferencias del usuario autenticado.
+Route::get('/operacion/listar-bancos', [OperacionController::class, 'listarBancos'])->name('operacion.listarBancos');
+
+Route::middleware('auth')->group(function () {
+    //listar cuentas del usuario autenticado (el {user_id} se ignora por seguridad)
     Route::get('/operacion/listar-cuentas/{user_id}/{method_type}', [OperacionController::class, 'listarCuentas'])->name('operacion.listarCuentas');
     //guardar una cuenta
     Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta'])->name('operacion.guardarCuenta');
@@ -115,7 +117,7 @@ Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallbac
 
 // -------------------- REGISTRO PROVISIONAL Y ENVÍO DE EMAIL -------------------- //
 
-Route::post('/register-provisional', [RegisteredUserController::class, 'store']);
+Route::post('/register-provisional', [RegisteredUserController::class, 'store'])->middleware('throttle:10,1');
 
 // Ruta que crea el usuario después de verificar
 Route::get('/verify-email/{token}', function ($token) {
@@ -236,7 +238,7 @@ Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'hist
 Route::get('/api/tipo-cambio/compra', [AdminControllerDashboard::class, 'actualizarTipoCambioAutomatico']);
 
 // Chat con asistente (proxy a n8n)
-Route::post('/chat/send', [ChatController::class, 'sendweb']);
+Route::post('/chat/send', [ChatController::class, 'sendweb'])->middleware('throttle:20,1');
 
 
 // Configuración de límites y mínimos - API pública para app móvil

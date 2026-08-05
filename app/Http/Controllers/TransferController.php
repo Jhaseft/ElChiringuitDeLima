@@ -29,7 +29,9 @@ class TransferController extends Controller
 
     public function historymobile(Request $request)
     {
-        $userId = $request->query('user_id') ?? $request->user()?->id;
+        // El historial es SIEMPRE el del usuario autenticado; no se acepta
+        // user_id por query (evita leer el historial de otros usuarios).
+        $userId = $request->user()?->id;
 
         if (!$userId) {
             return response()->json(['error' => 'Usuario no encontrado'], 404);
