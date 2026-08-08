@@ -3,7 +3,7 @@ name: Auto Deploy to EasyPanel
 on:
   push:
     branches:
-      - main  # Solo deploya cuando hagas push a main
+      - main
 
 jobs:
   deploy:
@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: Trigger EasyPanel Deploy
         run: |
-          curl -X POST http://76.13.148.149:3000/api/deploy/0a2c6ff5c3ec22f311bf62d2310b844461c86d6e7b6d2aa2
+          curl -X POST "${{ secrets.EASYPANEL_DEPLOY_URL }}"
