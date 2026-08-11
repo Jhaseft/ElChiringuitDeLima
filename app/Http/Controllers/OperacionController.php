@@ -257,9 +257,11 @@ class OperacionController extends Controller
                 // Cliente paga por banco PE (origen obligatorio).
                 // Destino solo aplica si recibe por QR (id del QR del usuario).
                 $rules['origin_account_id']      = ['required', $ownedAccount()];
+                // Aunque en efectivo el destino es opcional, si viene un id DEBE
+                // ser una cuenta del propio usuario (evita adjuntar cuentas ajenas).
                 $rules['destination_account_id'] = $slug === 'qr'
                     ? ['required', $ownedAccount(), 'different:origin_account_id']
-                    : ['nullable'];
+                    : ['nullable', $ownedAccount()];
             } else { // BOBtoPEN
                 // Cliente recibe en banco PE (destino obligatorio).
                 // Si paga por QR, manda la cuenta BO desde la que paga (opcional en backend, frontend lo enforce).
@@ -283,6 +285,22 @@ class OperacionController extends Controller
             if ($modo === 'BOBtoPEN' && $amount < Configuracion::get('transfer_min_bob', 0)) {
                 return response()->json([
                     'message' => 'El monto mínimo para transferencias BOB→PEN es Bs ' . Configuracion::get('transfer_min_bob', 0) . '.'
+                ], 422);
+            }
+
+            // Validar máximo por modo (control de cordura, configurable desde el
+            // panel). Si el valor es 0 / no está configurado, no se aplica tope.
+            $maxPen = (float) Configuracion::get('transfer_max_pen', 0);
+            if ($modo === 'PENtoBOB' && $maxPen > 0 && $amount > $maxPen) {
+                return response()->json([
+                    'message' => 'El monto máximo para transferencias PEN→BOB es S/ ' . $maxPen . '.'
+                ], 422);
+            }
+
+            $maxBob = (float) Configuracion::get('transfer_max_bob', 0);
+            if ($modo === 'BOBtoPEN' && $maxBob > 0 && $amount > $maxBob) {
+                return response()->json([
+                    'message' => 'El monto máximo para transferencias BOB→PEN es Bs ' . $maxBob . '.'
                 ], 422);
             }
 

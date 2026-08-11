@@ -12,7 +12,7 @@ use App\Http\Controllers\PushTokenController;
 
 // Registro y verificación (rate limit para frenar fuerza bruta del código
 // de 6 dígitos y del login por IP).
-Route::middleware('throttle:10,1')->group(function () {
+Route::middleware('ratelimit:5,1')->group(function () {
     Route::post('/register', [AppNative::class, 'register']);
     Route::post('/verify-code', [AppNative::class, 'verifyCode']);
 
@@ -35,7 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
  
 
     Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta']);
-    Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia']);
+    Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia'])->middleware('ratelimit:12,1');
     Route::get('/transfers/historymobile', [TransferController::class, 'historymobile']);
     Route::post('/complete-profile', [AppNative::class, 'completeProfile']);
      //eliminar cuenta
@@ -58,7 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/version-minima',[VersionGuardController::class,'versionMinima']);
 
 // Chat con asistente n8n (sin CSRF para app móvil)
-Route::post('/chat/send', [ChatController::class, 'sendPhone'])->middleware('throttle:20,1');
+Route::post('/chat/send', [ChatController::class, 'sendPhone'])->middleware('ratelimit:20,1');
 
 //para la web no para el movil xd
 Route::post('/kyc/webhook', [KycController::class, 'webhook'])->name('kyc.webhook');

@@ -24,13 +24,28 @@ class AdminAuthController extends Controller
             'password' => 'required',
         ]);
 
+        // Bloqueo por intentos fallidos (email + IP), además del throttle de la ruta.
+        $limiter = app(\App\Services\AuthRateLimiter::class);
+        $email   = (string) $request->input('email');
+
+        if ($limiter->tooManyAttempts($request, $email)) {
+            $seconds = $limiter->availableIn($request, $email);
+            return response()->json([
+                'success' => false,
+                'message' => "Demasiados intentos de acceso. Intenta nuevamente en {$seconds} segundos.",
+            ], 429);
+        }
+
         if (Auth::guard('admin')->attempt($request->only('email','password'))) {
             // Login exitoso
+            $limiter->clear($request, $email);
             return response()->json([
                 'success' => true,
                 'redirect' => url('/admin/dashboard')
             ]);
         }
+
+        $limiter->hit($request, $email);
 
         return response()->json([
             'success' => false,

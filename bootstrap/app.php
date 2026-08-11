@@ -28,6 +28,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'chat/send',
         ]);
+
+        // Rate limit propio con respuesta 429 limpia y localizada.
+        $middleware->alias([
+            'ratelimit' => \App\Http\Middleware\RateLimit::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

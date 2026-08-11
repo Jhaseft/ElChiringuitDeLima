@@ -1,4 +1,4 @@
-import { Link, usePage } from "@inertiajs/react";
+import { Link, router, usePage } from "@inertiajs/react";
 import { LogOut, DollarSign, Users, ArrowLeftRight,Bell , BanknoteArrowUp, Settings, Home, Menu, X, WalletMinimal, BookMarked, QrCode, Gift, TicketCheck } from "lucide-react";
 import { useState } from "react";
 
@@ -7,7 +7,9 @@ export default function AdminLayout({ children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const handleLogout = () => {
-        window.location.href = "/logout";
+        // POST a la ruta de logout del admin (antes hacía GET a /logout del
+        // usuario, que es POST-only → 405). El CSRF va por cookie (bootstrap.js).
+        router.post("/admin/logout");
     };
  
     const menu = [
