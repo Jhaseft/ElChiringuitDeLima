@@ -33,16 +33,24 @@ class AppNative extends Controller
             'password'         => ['required', 'confirmed', 'digits:4'],
         ]);
 
-        $code = rand(100000, 999999);
+        // Código aleatorio criptográficamente seguro (no usar rand()).
+        $code = random_int(100000, 999999);
 
-        Cache::put('register:' . $code, [
-            'first_name'       => $request->first_name,
-            'last_name'        => $request->last_name,
-            'email'            => $request->email,
-            'phone'            => $request->phone,
-            'nationality'      => $request->nationality,
-            'document_number'  => $request->document_number,
-            'password'         => Hash::make($request->password),
+        // La cache se indexa por EMAIL, no por el código. Así el código no vive
+        // en un espacio global adivinable: para probarlo hay que conocer el email
+        // y aun así solo se permiten unos pocos intentos (ver verifyCode).
+        Cache::put('register:' . $request->email, [
+            'code'     => (string) $code,
+            'attempts' => 0,
+            'data'     => [
+                'first_name'       => $request->first_name,
+                'last_name'        => $request->last_name,
+                'email'            => $request->email,
+                'phone'            => $request->phone,
+                'nationality'      => $request->nationality,
+                'document_number'  => $request->document_number,
+                'password'         => Hash::make($request->password),
+            ],
         ], now()->addMinutes(30));
  
         try {
@@ -66,15 +74,35 @@ class AppNative extends Controller
     // Verificar código y crear usuario
     public function verifyCode(Request $request)
     {
-        $request->validate(['code' => 'required|numeric']);
+        // Ahora se exige el email: el código está atado a él (ver register).
+        $request->validate([
+            'email' => 'required|email',
+            'code'  => 'required|digits:6',
+        ]);
 
-        $data = Cache::get('register:' . $request->code);
-        if (!$data) {
+        $key   = 'register:' . $request->email;
+        $entry = Cache::get($key);
+
+        if (!$entry) {
             return response()->json(['status' => 'error', 'message' => 'Código inválido o expirado.'], 400);
         }
 
-        $user = User::create($data);
-        Cache::forget('register:' . $request->code);
+        // Límite de intentos por registro: sin esto, un código de 6 dígitos es
+        // fácil de forzar. Tras 5 fallos se invalida y hay que pedir uno nuevo.
+        if (($entry['attempts'] ?? 0) >= 5) {
+            Cache::forget($key);
+            return response()->json(['status' => 'error', 'message' => 'Demasiados intentos. Solicita un nuevo código.'], 429);
+        }
+
+        // Comparación timing-safe del código.
+        if (!hash_equals((string) $entry['code'], (string) $request->code)) {
+            $entry['attempts'] = ($entry['attempts'] ?? 0) + 1;
+            Cache::put($key, $entry, now()->addMinutes(30));
+            return response()->json(['status' => 'error', 'message' => 'Código inválido o expirado.'], 400);
+        }
+
+        $user = User::create($entry['data']);
+        Cache::forget($key);
 
         $token = $user->createToken('mobile-app')->plainTextToken;
 
@@ -94,10 +122,25 @@ class AppNative extends Controller
             'password' => 'required',
         ]);
 
+        // Bloqueo por intentos fallidos (email + IP), mismo mecanismo robusto
+        // que el login web. Devuelve 429 con los segundos de espera.
+        $limiter = app(\App\Services\AuthRateLimiter::class);
+        $email   = (string) $request->input('email');
+
+        if ($limiter->tooManyAttempts($request, $email)) {
+            $seconds = $limiter->availableIn($request, $email);
+            return response()->json([
+                'message' => "Demasiados intentos de acceso. Intenta nuevamente en {$seconds} segundos.",
+            ], 429);
+        }
+
         if (!Auth::attempt($credentials)) {
+            $limiter->hit($request, $email);
             AppLog::warning('Login fallido', ['email' => $request->email], 'auth');
             return response()->json(['message' => 'Credenciales incorrectas'], 401);
         }
+
+        $limiter->clear($request, $email);
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
@@ -131,13 +174,11 @@ class AppNative extends Controller
     // Listar cuentas del usuario autenticado
     public function listarCuentas(Request $request)
 {
-    $userId = $request->query('user_id'); // obtener user_id desde la query
     $method_type = $request->query('type');
-    // Si no viene user_id, usamos el usuario autenticado (opcional)
-    if (!$userId) {
-        $user = $request->user();
-        $userId = $user?->id;
-    } 
+
+    // El user_id SIEMPRE sale del token, nunca del query (evita IDOR:
+    // leer las cuentas de otro usuario pasando su id).
+    $userId = $request->user()?->id;
 
     if (!$userId) {
         return response()->json(['error' => 'Usuario no encontrado'], 404);
@@ -236,10 +277,20 @@ public function loginGoogle(Request $request)
 
     $googleUser = $googleResponse->json();
 
-    // Verificar que el token sea de TU app
-    if ($googleUser['aud'] !== env('GOOGLE_CLIENT_ID_APP')) {
+    // Verificar que el token sea de TU app (fail-closed: si no hay client id
+    // configurado, se rechaza en vez de dejar pasar sin validar).
+    $expectedAud = config('services.google.Android_app_id');
+    if (!$expectedAud || ($googleUser['aud'] ?? null) !== $expectedAud) {
         return response()->json([
             'message' => 'Token no válido para esta aplicación'
+        ], 401);
+    }
+
+    // El correo de Google debe estar verificado: si no, cualquiera podría
+    // crear una cuenta Google con el email de un tercero y tomar su cuenta.
+    if (!filter_var($googleUser['email_verified'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+        return response()->json([
+            'message' => 'El correo de Google no está verificado'
         ], 401);
     }
 
@@ -312,8 +363,10 @@ public function loginApple(Request $request)
         return response()->json(['message' => 'Emisor no válido'], 401);
     }
 
-    $expectedAud = env('APPLE_CLIENT_ID_APP');
-    if ($expectedAud && ($payload->aud ?? null) !== $expectedAud) {
+    // Fail-closed: si no hay bundle id configurado, se rechaza. Antes, con
+    // $expectedAud null, el check se SALTABA y se aceptaban tokens de otras apps.
+    $expectedAud = config('services.google.Apple_app_id');
+    if (!$expectedAud || ($payload->aud ?? null) !== $expectedAud) {
         return response()->json(['message' => 'Token no válido para esta aplicación'], 401);
     }
 

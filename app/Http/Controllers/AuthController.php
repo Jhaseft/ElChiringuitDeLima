@@ -17,8 +17,23 @@ class AuthController extends Controller
     {
         $googleUser = Socialite::driver('google')->stateless()->user();
 
+        // El correo debe venir VERIFICADO por Google. Si no, no lo usamos para
+        // identificar/loguear a nadie: de lo contrario alguien con un correo no
+        // verificado que coincida con un usuario existente podría tomar su cuenta.
+        $emailVerified = filter_var(
+            $googleUser->user['email_verified'] ?? false,
+            FILTER_VALIDATE_BOOLEAN
+        );
+
+        $email = $googleUser->getEmail();
+
+        if (!$email || !$emailVerified) {
+            return redirect()->route('welcome')
+                ->with('error', 'Tu correo de Google no está verificado. Usa un correo verificado o regístrate con email y contraseña.');
+        }
+
         // Buscar usuario por email
-        $user = User::where('email', $googleUser->getEmail())->first();
+        $user = User::where('email', $email)->first();
 
         if (!$user) {
             $user = User::create([

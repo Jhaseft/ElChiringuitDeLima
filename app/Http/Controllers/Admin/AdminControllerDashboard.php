@@ -116,7 +116,7 @@ class AdminControllerDashboard extends Controller
     ]);
 }
 
- 
+
     // Actualizar tipo de cambio
     public function update(Request $request)
 {
@@ -196,57 +196,9 @@ public function historial()
     return response()->json($historial);
 }
 
-   public function actualizarTipoCambioAutomatico(TipoCambioService $service)
-{
-    try {
-        $tc = $service->calcular();
-
-        // Modo manual → tipo de cambio fijo: no se guarda, solo se informa
-        // a qué valor cambiaría si el modo automático estuviera activo.
-        if (!Configuracion::get('modo_automatico', true)) {
-            $ultimo = TipoCambio::orderByDesc('id')->first();
-
-            return response()->json([
-                'success'         => true,
-                'modo_automatico' => false,
-                'tipoCambio'      => $ultimo,
-                'compra_final'    => $tc['compra'],
-                'venta_final'     => $tc['venta'],
-                'mensaje'         => 'Modo manual: tipo de cambio fijo, no se guardó.',
-            ]);
-        }
-
-        $tipoCambio = TipoCambio::create([
-            'compra'              => $tc['compra'],
-            'venta'               => $tc['venta'],
-            'fecha_actualizacion' => now(),
-        ]);
-
-        return response()->json([
-            'success'         => true,
-            'modo_automatico' => true,
-            'tipoCambio'      => $tipoCambio,
-            'pen_buy'         => $tc['pen_buy'],
-            'pen_sell'        => $tc['pen_sell'],
-            'bob_buy'         => $tc['bob_buy'],
-            'bob_sell'        => $tc['bob_sell'],
-            'compra_base'     => $tc['compra_base'],
-            'venta_base'      => $tc['venta_base'],
-            'compra_final'    => $tc['compra'],
-            'venta_final'     => $tc['venta'],
-        ]);
-
-    } catch (\Exception $e) {
-        Log::error("Error actualizando tipo de cambio: " . $e->getMessage());
-
-        return response()->json([
-            'success' => false,
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
-
-
-
+    // La actualización automática del tipo de cambio se realiza vía scheduler
+    // (App\Console\Commands\ActualizarTipoCambio → 'tipo-cambio:actualizar'),
+    // NO por HTTP. Se eliminó el endpoint público que escribía en BD y consultaba
+    // Binance en cada request por ser abusable (DoS/costos/manipulación del TC).
 
 }

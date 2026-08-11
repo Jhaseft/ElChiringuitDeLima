@@ -6,8 +6,8 @@ import Step1Personal from "@/Components/register_and_complete/register/Step1Pers
 import Step2Extras from "@/Components/register_and_complete/register/Step2Extras";
 import Step3Security from "@/Components/register_and_complete/register/Step3Security";
 import StatusMessage from "@/Components/ui/StatusMessage";
+import CodeVerification from "@/Components/register_and_complete/register/CodeVerification";
 import axios from "axios";
-import { router } from "@inertiajs/react";
 /**
  * Componente principal del registro multistep.
  */
@@ -16,6 +16,11 @@ export default function Register() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [loading, setLoading] = useState(false);
+
+  // Paso de verificación por código (tras enviar el registro).
+  const [awaitingCode, setAwaitingCode] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyError, setVerifyError] = useState("");
 
   const { data, setData, post, processing, errors, reset } = useForm({
     first_name: "",
@@ -59,24 +64,59 @@ export default function Register() {
       try {
         const response = await axios.post("/register-provisional", data);
 
-        setMessageType("success");
-        setMessage(response.data.message || "Correo enviado correctamente.");
-
-        reset("password", "password_confirmation");
-
         if (response.data.status === "success") {
-          setTimeout(() => {
-            router.get("/");
-          }, 1000);
+          // En vez de redirigir, mostramos el paso de código de 6 dígitos.
+          setMessage("");
+          setAwaitingCode(true);
+        } else {
+          setMessageType("error");
+          setMessage(response.data.message || "Hubo un error al enviar el código.");
         }
       } catch (err) {
         setMessageType("error");
         setMessage(
-          err.response?.data?.message || "Hubo un error al enviar el correo."
+          err.response?.data?.message || "Hubo un error al enviar el código."
         );
       } finally {
         setLoading(false);
       }
+    }
+  };
+
+  // Verificar el código de 6 dígitos (se llama solo al completarlo).
+  const handleVerifyCode = async (code) => {
+    setVerifyError("");
+    setVerifyLoading(true);
+    try {
+      const response = await axios.post("/register-provisional/verify", {
+        email: data.email,
+        code,
+      });
+
+      if (response.data.status === "success") {
+        // Recarga COMPLETA (no router.get) para refrescar el <meta csrf-token>:
+        // verifyCode() regeneró la sesión y el token viejo daría 419 en el logout.
+        window.location.href = "/"; // ya queda logueado
+      } else {
+        setVerifyError(response.data.message || "Código incorrecto.");
+      }
+    } catch (err) {
+      setVerifyError(err.response?.data?.message || "Código incorrecto o expirado.");
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  // Reenviar el código (repite el paso 1 con los mismos datos).
+  const handleResendCode = async () => {
+    setVerifyError("");
+    setVerifyLoading(true);
+    try {
+      await axios.post("/register-provisional", data);
+    } catch (err) {
+      setVerifyError(err.response?.data?.message || "No se pudo reenviar el código.");
+    } finally {
+      setVerifyLoading(false);
     }
   };
 
@@ -88,7 +128,7 @@ export default function Register() {
       {loading && (
         <StatusMessage
           type="loading"
-          title="Enviando correo de verificación..."
+          title="Enviando código de verificación..."
         />
       )}
 
@@ -118,40 +158,51 @@ export default function Register() {
         )}
 
 
-        <Stepper step={step} />
+        {awaitingCode ? (
+          <CodeVerification
+            email={data.email}
+            onComplete={handleVerifyCode}
+            onResend={handleResendCode}
+            loading={verifyLoading}
+            error={verifyError}
+          />
+        ) : (
+          <>
+            <Stepper step={step} />
+
+            <form onSubmit={submit} className="space-y-6">
+              {step === 1 && <Step1Personal data={data} setData={setData} errors={errors} />}
+              {step === 2 && <Step2Extras data={data} setData={setData} errors={errors} />}
+              {step === 3 && <Step3Security data={data} setData={setData} errors={errors} passwordRules={passwordRules} />}
 
 
-        <form onSubmit={submit} className="space-y-6">
-          {step === 1 && <Step1Personal data={data} setData={setData} errors={errors} />}
-          {step === 2 && <Step2Extras data={data} setData={setData} errors={errors} />}
-          {step === 3 && <Step3Security data={data} setData={setData} errors={errors} passwordRules={passwordRules} />}
+              <div className="flex justify-between mt-4">
+                {step > 1 && (
+                  <button
+                    type="button"
+                    onClick={prevStep}
+                    disabled={loading}
+                    className="px-4 py-2 rounded-xl border border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-gray-900 disabled:opacity-50 transition"
+                  >
+                    Atrás
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  disabled={processing || isNextDisabled() || loading}
+                  className="px-6 py-2.5 bg-yellow-400 text-gray-900 rounded-xl shadow-md hover:bg-yellow-500 transition disabled:opacity-50 font-semibold"
+                >
+                  {step < 3 ? "Siguiente" : "Registrarse"}
+                </button>
+              </div>
+            </form>
 
 
-          <div className="flex justify-between mt-4">
-            {step > 1 && (
-              <button
-                type="button"
-                onClick={prevStep}
-                disabled={loading}
-                className="px-4 py-2 rounded-xl border border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-gray-900 disabled:opacity-50 transition"
-              >
-                Atrás
-              </button>
-            )}
-            <button
-              type="submit"
-              disabled={processing || isNextDisabled() || loading}
-              className="px-6 py-2.5 bg-yellow-400 text-gray-900 rounded-xl shadow-md hover:bg-yellow-500 transition disabled:opacity-50 font-semibold"
-            >
-              {step < 3 ? "Siguiente" : "Registrarse"}
-            </button>
-          </div>
-        </form>
-
-
-        <div className="mt-6 text-center">
-          <BotonGoogle />
-        </div>
+            <div className="mt-6 text-center">
+              <BotonGoogle />
+            </div>
+          </>
+        )}
       </div>
 
 

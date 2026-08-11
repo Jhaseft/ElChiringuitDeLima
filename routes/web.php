@@ -80,16 +80,18 @@ Route::get('/App', function () {
     return Inertia::render('AppNative');
 });
 
-// Operaciones 
-Route::middleware(['web'])->group(function () {
-    //listar bancos existentes en la abase de datos
-    Route::get('/operacion/listar-bancos', [OperacionController::class, 'listarBancos'])->name('operacion.listarBancos');
-    //crear cuentas de QR  y Tranferencia bancaria 
+// Operaciones
+// Listar bancos es información pública (catálogo); el resto exige sesión
+// porque opera sobre cuentas/transferencias del usuario autenticado.
+Route::get('/operacion/listar-bancos', [OperacionController::class, 'listarBancos'])->name('operacion.listarBancos');
+
+Route::middleware('auth')->group(function () {
+    //listar cuentas del usuario autenticado (el {user_id} se ignora por seguridad)
     Route::get('/operacion/listar-cuentas/{user_id}/{method_type}', [OperacionController::class, 'listarCuentas'])->name('operacion.listarCuentas');
     //guardar una cuenta
     Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta'])->name('operacion.guardarCuenta');
     //crear una tranferencia con automatizaciones de envio a Evolution y Email
-    Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia'])->name('operacion.crearTransferencia');
+    Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia'])->middleware('ratelimit:12,1')->name('operacion.crearTransferencia');
 });
 
 // Perfil y KYC
@@ -113,40 +115,19 @@ Route::middleware('auth')->group(function () {
 Route::get('/auth/redirect', [AuthController::class, 'redirectToGoogle'])->name('google.login');
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('google.callback');
 
-// -------------------- REGISTRO PROVISIONAL Y ENVÍO DE EMAIL -------------------- //
+// -------------------- REGISTRO POR CÓDIGO (web, igual que la app) -------------------- //
 
-Route::post('/register-provisional', [RegisteredUserController::class, 'store']);
+// Paso 1: enviar código de 6 dígitos al correo.
+Route::post('/register-provisional', [RegisteredUserController::class, 'store'])->middleware('ratelimit:10,1');
 
-// Ruta que crea el usuario después de verificar
-Route::get('/verify-email/{token}', function ($token) {
-    $data = Cache::get('register:' . $token);
-
-    if (!$data) {
-        return 'El enlace ha expirado o es inválido.';
-    }
-
-    $user = \App\Models\User::create([
-        'first_name' => $data['first_name'],
-        'last_name' => $data['last_name'],
-        'email' => $data['email'],
-        'phone' => $data['phone'] ?? null,
-        'nationality' => $data['nationality'] ?? null,
-        'document_number' => $data['document_number'] ?? null,
-        'password' => \Illuminate\Support\Facades\Hash::make($data['password']),
-        'accepted_terms_at' => now(),          // momento de aceptación
-
-    ]);
-
-    Cache::forget('register:' . $token);
-
-    \Illuminate\Support\Facades\Auth::login($user);
-
-    return redirect('/')->with('success', 'Cuenta verificada y creada correctamente!');
-})->name('email.verify');
+// Paso 2: verificar el código, crear el usuario y dejarlo logueado.
+Route::post('/register-provisional/verify', [RegisteredUserController::class, 'verifyCode'])->middleware('ratelimit:10,1');
 
 Route::prefix('admin')->group(function () {
     Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
-    Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.post');
+    // Rate limit estricto: es el login más sensible (acceso total al panel).
+    // 5 intentos por minuto por IP para frenar fuerza bruta de credenciales admin.
+    Route::post('/login', [AdminAuthController::class, 'login'])->name('admin.login.post')->middleware('ratelimit:5,1');
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
     Route::middleware('auth:admin')->group(function () {
@@ -229,14 +210,16 @@ Route::get('/api/transfer-methods', function () {
     return response()->json($methods);
 });
 
-// Tipo de cambio - API pública
+// Tipo de cambio - API pública (solo lectura del historial)
 Route::get('/api/tipo-cambio/historial', [AdminControllerDashboard::class, 'historial']);
 
-// Tipo de cambio - API pública
-Route::get('/api/tipo-cambio/compra', [AdminControllerDashboard::class, 'actualizarTipoCambioAutomatico']);
+// NOTA: la actualización automática del tipo de cambio la hace el scheduler
+// (routes/console.php → 'tipo-cambio:actualizar' cada 5 min). NO se expone por
+// HTTP: un endpoint público que escribía en BD y consultaba Binance en cada hit
+// era abusable (DoS/costos/manipulación del TC).
 
 // Chat con asistente (proxy a n8n)
-Route::post('/chat/send', [ChatController::class, 'sendweb']);
+Route::post('/chat/send', [ChatController::class, 'sendweb'])->middleware('ratelimit:20,1');
 
 
 // Configuración de límites y mínimos - API pública para app móvil
@@ -246,6 +229,8 @@ Route::get('/api/config/transfer', function () {
         'min_bob'       => Configuracion::get('transfer_min_bob', 0),
         'kyc_limit_pen' => Configuracion::get('transfer_kyc_limit_pen', 0),
         'kyc_limit_bob' => Configuracion::get('transfer_kyc_limit_bob', 0),
+        'max_pen'       => Configuracion::get('transfer_max_pen',0),
+        'max_bob'       => Configuracion::get('transfer_max_bob',0),
     ]);
 });
 

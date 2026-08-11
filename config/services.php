@@ -36,9 +36,11 @@ return [
     ],
 
     'google' => [
-    'client_id'     => env('GOOGLE_CLIENT_ID'),
-    'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-    'redirect'      => env('GOOGLE_REDIRECT_URI'),
+    'client_id'             => env('GOOGLE_CLIENT_ID'),
+    'client_secret'         => env('GOOGLE_CLIENT_SECRET'),
+    'redirect'              => env('GOOGLE_REDIRECT_URI'),
+    'Android_app_id'        => env('GOOGLE_CLIENT_ID_APP'),
+    'Apple_app_id'          => env('APPLE_CLIENT_ID_APP'),
     ],
 
     'telegram' => [
@@ -50,6 +52,9 @@ return [
     'kyc' => [
         'key' => env('KYC_API_KEY'),
         'url' => env('KYC_BASE_URL'),
+        // Secreto compartido con el proveedor KYC para autenticar su webhook
+        // (evita que cualquiera marque a un usuario como verificado).
+        'webhook_secret' => env('KYC_WEBHOOK_SECRET'),
     ],
 
     'evolution' => [

@@ -10,18 +10,21 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\TcPuntosController;
 use App\Http\Controllers\PushTokenController;
 
-// Registro y verificación
-Route::post('/register', [AppNative::class, 'register']);
-Route::post('/verify-code', [AppNative::class, 'verifyCode']);
+// Registro y verificación (rate limit para frenar fuerza bruta del código
+// de 6 dígitos y del login por IP).
+Route::middleware('ratelimit:5,1')->group(function () {
+    Route::post('/register', [AppNative::class, 'register']);
+    Route::post('/verify-code', [AppNative::class, 'verifyCode']);
 
-// Login 
-Route::post('/loginapp', [AppNative::class, 'login']);
+    // Login
+    Route::post('/loginapp', [AppNative::class, 'login']);
 
-//Para Google
-Route::post('/logingoogle', [AppNative::class, 'loginGoogle']);
+    //Para Google
+    Route::post('/logingoogle', [AppNative::class, 'loginGoogle']);
 
-//Para Apple
-Route::post('/loginapple', [AppNative::class, 'loginApple']);
+    //Para Apple
+    Route::post('/loginapple', [AppNative::class, 'loginApple']);
+});
 
 // Rutas protegidas con token Sanctum
 Route::middleware('auth:sanctum')->group(function () {
@@ -32,7 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
  
 
     Route::post('/operacion/guardar-cuenta', [OperacionController::class, 'guardarCuenta']);
-    Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia']);
+    Route::post('/operacion/crear-transferencia', [OperacionController::class, 'crearTransferencia'])->middleware('ratelimit:12,1');
     Route::get('/transfers/historymobile', [TransferController::class, 'historymobile']);
     Route::post('/complete-profile', [AppNative::class, 'completeProfile']);
      //eliminar cuenta
@@ -55,7 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::get('/version-minima',[VersionGuardController::class,'versionMinima']);
 
 // Chat con asistente n8n (sin CSRF para app móvil)
-Route::post('/chat/send', [ChatController::class, 'sendPhone']);
+Route::post('/chat/send', [ChatController::class, 'sendPhone'])->middleware('ratelimit:20,1');
 
 //para la web no para el movil xd
 Route::post('/kyc/webhook', [KycController::class, 'webhook'])->name('kyc.webhook');
