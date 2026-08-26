@@ -48,6 +48,18 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    /**
+     * Atributos calculados que se agregan a la serialización.
+     * has_password: la app lo usa para saber si debe pedir contraseña
+     * al completar el perfil (usuarios Google/Apple no tienen).
+     */
+    protected $appends = ['has_password'];
+
+    public function getHasPasswordAttribute(): bool
+    {
+        return !is_null($this->password);
+    }
+
     public function accounts()
 {
     return $this->hasMany(Account::class);

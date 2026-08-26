@@ -23,14 +23,12 @@ class AppNative extends Controller
     // Registro con código de verificación
     public function register(Request $request)
     {
+        // El registro por correo ahora solo pide correo + contraseña.
+        // El resto del perfil (nombre, teléfono, etc.) se completa después
+        // en /complete-profile, igual que los usuarios de Google/Apple.
         $request->validate([
-            'first_name'       => 'required|string|max:255',
-            'last_name'        => 'required|string|max:255',
-            'email'            => 'required|string|email|max:255|unique:users,email',
-            'phone'            => 'nullable|string|max:20|unique:users,phone',
-            'nationality'      => 'nullable|string|max:100',
-            'document_number'  => 'nullable|string|max:50|unique:users,document_number',
-            'password'         => ['required', 'confirmed', 'digits:4'],
+            'email'    => 'required|string|email|max:255|unique:users,email',
+            'password' => ['required', 'confirmed', 'digits:4'],
         ]);
 
         // Código aleatorio criptográficamente seguro (no usar rand()).
@@ -39,17 +37,16 @@ class AppNative extends Controller
         // La cache se indexa por EMAIL, no por el código. Así el código no vive
         // en un espacio global adivinable: para probarlo hay que conocer el email
         // y aun así solo se permiten unos pocos intentos (ver verifyCode).
+        // first_name/last_name se guardan vacíos para no chocar con columnas
+        // NOT NULL; el usuario los completa en /complete-profile.
         Cache::put('register:' . $request->email, [
             'code'     => (string) $code,
             'attempts' => 0,
             'data'     => [
-                'first_name'       => $request->first_name,
-                'last_name'        => $request->last_name,
-                'email'            => $request->email,
-                'phone'            => $request->phone,
-                'nationality'      => $request->nationality,
-                'document_number'  => $request->document_number,
-                'password'         => Hash::make($request->password),
+                'first_name' => '',
+                'last_name'  => '',
+                'email'      => $request->email,
+                'password'   => Hash::make($request->password),
             ],
         ], now()->addMinutes(30));
  
@@ -106,11 +103,14 @@ class AppNative extends Controller
 
         $token = $user->createToken('mobile-app')->plainTextToken;
 
+        // Recién se creó con correo + contraseña: el perfil está incompleto,
+        // así la app lo manda a /complete-profile a poner nombre, teléfono, etc.
         return response()->json([
             'status' => 'success',
-            'message' => 'Cuenta verificada y creada correctamente.',
+            'message' => 'Correo verificado. Completa tu perfil para activar la cuenta.',
             'user' => $user,
             'token' => $token,
+            'needs_profile' => true,
         ]);
     }
 
@@ -231,20 +231,36 @@ public function completeProfile(Request $request)
 {
     $user = $request->user();
 
-    $request->validate([
+    $rules = [
+        'first_name'      => 'required|string|max:255',
+        'last_name'       => 'required|string|max:255',
         'nationality'     => 'required|string|max:255',
         'phone'           => 'required|string|max:255|unique:users,phone,' . $user->id,
         'document_number' => 'required|string|max:255|unique:users,document_number,' . $user->id,
         'terms'           => 'required|accepted',
-        'password'        => ['required', 'confirmed', 'digits:4'],
-    ]);
+    ];
 
-    $user->update([
-        'nationality'       => $request->nationality,
-        'phone'             => $request->phone,
-        'document_number'   => $request->document_number,
-        'password'          => Hash::make($request->password),
-    ]);
+    // La contraseña solo se exige si el usuario aún no tiene (Google/Apple).
+    // Los que se registran por correo ya la definieron al registrarse.
+    if (is_null($user->password)) {
+        $rules['password'] = ['required', 'confirmed', 'digits:4'];
+    }
+
+    $request->validate($rules);
+
+    $data = [
+        'first_name'      => $request->first_name,
+        'last_name'       => $request->last_name,
+        'nationality'     => $request->nationality,
+        'phone'           => $request->phone,
+        'document_number' => $request->document_number,
+    ];
+
+    if (is_null($user->password)) {
+        $data['password'] = Hash::make($request->password);
+    }
+
+    $user->update($data);
 
     //  Cargar relaciones como en login y Google
     $user->load(['accounts', 'transfers', 'media']);
