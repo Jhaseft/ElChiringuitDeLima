@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl-dev \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql pgsql zip mbstring xml gd sockets \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
  #Copiar php.ini personalizado
 COPY php.ini /usr/local/etc/php/

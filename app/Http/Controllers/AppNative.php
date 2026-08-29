@@ -232,11 +232,11 @@ public function completeProfile(Request $request)
     $user = $request->user();
 
     $rules = [
-        'first_name'      => 'required|string|max:255',
-        'last_name'       => 'required|string|max:255',
+        'first_name'      => ['required', 'string', 'min:2', 'max:255', 'regex:/^[\pL\s\'’\-]+$/u'],
+        'last_name'       => ['required', 'string', 'min:2', 'max:255', 'regex:/^[\pL\s\'’\-]+$/u'],
         'nationality'     => 'required|string|max:255',
-        'phone'           => 'required|string|max:255|unique:users,phone,' . $user->id,
-        'document_number' => 'required|string|max:255|unique:users,document_number,' . $user->id,
+        'phone'           => ['required', 'string', 'regex:/^\+?\d{8,20}$/', 'unique:users,phone,' . $user->id],
+        'document_number' => ['required', 'string', 'regex:/^\d{5,20}$/', 'unique:users,document_number,' . $user->id],
         'terms'           => 'required|accepted',
     ];
 
@@ -246,7 +246,14 @@ public function completeProfile(Request $request)
         $rules['password'] = ['required', 'confirmed', 'digits:4'];
     }
 
-    $request->validate($rules);
+    $messages = [
+        'first_name.regex'      => 'El nombre solo puede contener letras.',
+        'last_name.regex'       => 'El apellido solo puede contener letras.',
+        'phone.regex'           => 'El teléfono solo puede contener números.',
+        'document_number.regex' => 'El documento solo puede contener números.',
+    ];
+
+    $request->validate($rules, $messages);
 
     $data = [
         'first_name'      => $request->first_name,
