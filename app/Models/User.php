@@ -53,11 +53,23 @@ class User extends Authenticatable
      * has_password: la app lo usa para saber si debe pedir contraseña
      * al completar el perfil (usuarios Google/Apple no tienen).
      */
-    protected $appends = ['has_password'];
+    protected $appends = ['has_password', 'needs_profile'];
 
     public function getHasPasswordAttribute(): bool
     {
         return !is_null($this->password);
+    }
+
+    /**
+     * needs_profile: true si al usuario le falta completar datos clave del
+     * perfil (nacionalidad, teléfono o documento). La app lo usa para marcar
+     * en rojo "Detalles de perfil" y empujar a /complete-profile.
+     */
+    public function getNeedsProfileAttribute(): bool
+    {
+        return empty($this->nationality)
+            || empty($this->phone)
+            || empty($this->document_number);
     }
 
     public function accounts()

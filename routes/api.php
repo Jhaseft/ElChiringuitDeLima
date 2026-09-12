@@ -64,6 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tc-puntos/canjear',  [TcPuntosController::class, 'canjear']);
 
     Route::post('/push-tokens', [PushTokenController::class, 'store']);
+    Route::delete('/push-tokens', [PushTokenController::class, 'destroy']);
 });
 
 Route::get('/version-minima',[VersionGuardController::class,'versionMinima']);

@@ -18,4 +18,15 @@ class PushTokenController extends Controller
 
         return response()->json(['ok' => true]);
     }
+
+    public function destroy(Request $request)
+    {
+        $request->validate(['token' => 'required|string']);
+
+        PushToken::where('user_id', $request->user()->id)
+            ->where('token', $request->token)
+            ->delete();
+
+        return response()->json(['ok' => true]);
+    }
 }
