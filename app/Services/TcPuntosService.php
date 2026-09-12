@@ -27,8 +27,12 @@ class TcPuntosService
         $soles = $transfer->modo === 'PENtoBOB'
             ? (float) $transfer->amount
             : (float) $transfer->converted_amount;
+    
+        $total =  (int) floor($soles / $this->umbral());
 
-        return (int) floor($soles / $this->umbral());
+        print ($total); 
+        
+        return $total;
     }
 
     public function otorgarPuntos(Transfer $transfer): void

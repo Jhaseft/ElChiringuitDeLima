@@ -1,5 +1,5 @@
 import { Link, router, usePage } from "@inertiajs/react";
-import { LogOut, DollarSign, Users, ArrowLeftRight,Bell , BanknoteArrowUp, Settings, Home, Menu, X, WalletMinimal, BookMarked, QrCode, Gift, TicketCheck } from "lucide-react";
+import { LogOut, DollarSign, Users, ArrowLeftRight,Bell , BanknoteArrowUp, Settings, Home, Menu, X, WalletMinimal, BookMarked, QrCode, Gift, TicketCheck, GalleryHorizontalEnd } from "lucide-react";
 import { useState } from "react";
 
 export default function AdminLayout({ children }) {
@@ -25,6 +25,7 @@ export default function AdminLayout({ children }) {
         { name: "Configuracion", href: "/admin/dashboard/configuracion", icon: <Settings size={18} /> },
         { name: "Productos TC", href: "/admin/dashboard/productos-tc", icon: <Gift size={18} /> },
         { name: "Canjes TC",    href: "/admin/dashboard/canjes-tc",    icon: <TicketCheck size={18} /> },
+        { name: "Banners",      href: "/admin/dashboard/banners",      icon: <GalleryHorizontalEnd size={18} /> },
     ];
 
     return (

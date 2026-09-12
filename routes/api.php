@@ -26,10 +26,21 @@ Route::middleware('ratelimit:5,1')->group(function () {
     Route::post('/loginapple', [AppNative::class, 'loginApple']);
 });
 
+// Banners del home (público, solo lectura). Se administran desde el panel.
+Route::get('/banners', function () {
+    return \App\Models\Banner::where('is_active', true)
+        ->orderBy('sort_order')
+        ->orderBy('id')
+        ->get(['id', 'image_url', 'sort_order']);
+});
+
 // Rutas protegidas con token Sanctum
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AppNative::class, 'logout']);
     Route::get('/userapp', [AppNative::class, 'user']);
+
+    // Resumen del home: total operaciones, soles y bolivianos cambiados.
+    Route::get('/operaciones/resumen', [OperacionController::class, 'resumen']);
     
     Route::get('/listar-cuentas', [AppNative::class, 'listarCuentas']);
  

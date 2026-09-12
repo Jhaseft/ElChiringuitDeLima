@@ -217,6 +217,31 @@ class OperacionController extends Controller
         return response()->json($accounts);
     }
 
+    // Resumen del usuario para el home: total de operaciones completadas,
+    // soles cambiados y bolivianos cambiados. Se usa el usuario autenticado
+    // (se ignora cualquier user_id del cliente para evitar IDOR).
+    //
+    // Semántica de montos según modo:
+    //   PENtoBOB → paga en soles (amount = PEN), recibe bolivianos (converted_amount = BOB).
+    //   BOBtoPEN → paga en bolivianos (amount = BOB), recibe soles (converted_amount = PEN).
+    public function resumen(Request $request)
+    {
+        $userId = $request->user()->id;
+
+        $stats = Transfer::where('user_id', $userId)
+            ->where('status', 'completed')
+            ->selectRaw('COUNT(*) as total_operaciones')
+            ->selectRaw("COALESCE(SUM(CASE WHEN modo = 'PENtoBOB' THEN amount ELSE converted_amount END), 0) as soles")
+            ->selectRaw("COALESCE(SUM(CASE WHEN modo = 'PENtoBOB' THEN converted_amount ELSE amount END), 0) as bolivianos")
+            ->first();
+
+        return response()->json([
+            'total_operaciones'    => (int) $stats->total_operaciones,
+            'soles_cambiados'      => round((float) $stats->soles, 2),
+            'bolivianos_cambiados' => round((float) $stats->bolivianos, 2),
+        ]);
+    }
+
     public function crearTransferencia(Request $request)
     {
         try {

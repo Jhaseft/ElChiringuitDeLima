@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\ConfiguracionController;
 use App\Http\Controllers\Admin\AdminProductosTcController;
 use App\Http\Controllers\Admin\AdminCanjesTcController;
 use App\Http\Controllers\Admin\AdminNotificacionesController;
+use App\Http\Controllers\Admin\AdminBannersController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\ChatController;
 use App\Models\Bank;
@@ -176,9 +177,15 @@ Route::prefix('admin')->group(function () {
         Route::post('/dashboard/productos-tc/productos/{id}/update', [AdminProductosTcController::class, 'updateProducto']);
         Route::delete('/dashboard/productos-tc/productos/{id}', [AdminProductosTcController::class, 'destroyProducto']);
  
-        // canjes TC puntos 
+        // canjes TC puntos
         Route::get('/dashboard/canjes-tc', [AdminCanjesTcController::class, 'index']);
         Route::post('/dashboard/canjes-tc/{id}/status', [AdminCanjesTcController::class, 'updateStatus']);
+
+        // banners del home
+        Route::get('/dashboard/banners', [AdminBannersController::class, 'index']);
+        Route::post('/dashboard/banners/store', [AdminBannersController::class, 'store']);
+        Route::post('/dashboard/banners/{id}/update', [AdminBannersController::class, 'update']);
+        Route::delete('/dashboard/banners/{id}', [AdminBannersController::class, 'destroy']);
 
         //tipo de cambio
         Route::post('/tipo-cambio', [AdminControllerDashboard::class, 'update']);
