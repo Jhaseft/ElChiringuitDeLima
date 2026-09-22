@@ -21,7 +21,7 @@ export default function Nosotros() {
             </div>
           </div>
 
-    
+
           <section className="max-w-4xl mx-auto mb-10">
             <h2 className="text-2xl font-bold mb-4 text-white">Nuestra Historia</h2>
             <p className="text-gray-300 text-sm md:text-base leading-relaxed">
@@ -33,7 +33,7 @@ export default function Nosotros() {
             </p>
           </section>
 
-         
+
           <section className="max-w-4xl mx-auto mb-10 grid md:grid-cols-2 gap-8">
             <div className="bg-gray-800 p-6 rounded-lg shadow-md border border-yellow-400">
               <h3 className="text-xl font-semibold mb-2 text-yellow-400">Misión</h3>
@@ -58,4 +58,3 @@ export default function Nosotros() {
     </>
   );
 }
-//hola como estas

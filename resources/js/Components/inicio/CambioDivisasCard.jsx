@@ -1,4 +1,5 @@
 import { usePage, Link } from "@inertiajs/react";
+import { MessageCircle } from "lucide-react";
 import { useCambioDivisas } from "./hooks/useCambioDivisas";
 import ConversorDivisas from "./ConversorDivisas";
 import ModalOperacion from "./Transferencia/ModalOperacion";
@@ -26,32 +27,52 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig,metodo
       {error && <ErrorBanner message={error} onClose={() => setError("")} />}
 
     
-      <div className="bg-gray-800 rounded-2xl shadow-xl p-6 flex flex-col gap-5 border border-yellow-400 transition hover:shadow-2xl hover:scale-[1.01] duration-300 relative">
+      <div className="bg-gray-800 rounded-2xl shadow-xl p-5 flex flex-col gap-3 border border-yellow-400 transition hover:shadow-2xl hover:scale-[1.01] duration-300 relative">
 
-  
-        <div className="flex flex-col items-center mb-2">
-          <h1 className="text-2xl font-bold text-white">TransferCash</h1>
-          <p className="text-sm text-gray-300 text-center">
-            Cambio de divisas rápido, seguro y confiables
-          </p>
+
+        <div className="flex items-center gap-3">
           <img
             src="https://res.cloudinary.com/dxa8nat3p/image/upload/v1774708728/Logo_y_Texto_wvkwil.png"
             alt="Logo"
-            className="mt-3 w430 h-40 object-contain"
+            className="h-14 w-14 object-contain shrink-0"
           />
+          <div>
+            <h1 className="text-lg font-bold text-white leading-tight">TransferCash</h1>
+            <p className="text-xs text-gray-300 leading-snug">
+              Cambio de divisas rápido, seguro y confiables
+            </p>
+          </div>
         </div>
 
-   
-        <div className="flex justify-between text-base font-semibold px-2">
-          <span className="text-blue-400">
-            COMPRA: <span className="font-bold">{tasaPENtoBOB.toFixed(2)}</span>
-          </span>
-          <span className="text-green-400">
-            VENTA: <span className="font-bold">{tasaBOBtoPEN.toFixed(2)}</span>
-          </span>
+
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => modo !== "BOBtoPEN" && toggleModo()}
+            className={`flex flex-col items-center rounded-xl py-2 transition-colors ${
+              modo === "BOBtoPEN"
+                ? "bg-yellow-400 text-gray-900"
+                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+            }`}
+          >
+            <span className="text-[11px] font-semibold tracking-wide">VENTA</span>
+            <span className="text-lg font-bold">{tasaBOBtoPEN.toFixed(2)}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => modo !== "PENtoBOB" && toggleModo()}
+            className={`flex flex-col items-center rounded-xl py-2 transition-colors ${
+              modo === "PENtoBOB"
+                ? "bg-yellow-400 text-gray-900"
+                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+            }`}
+          >
+            <span className="text-[11px] font-semibold tracking-wide">COMPRA</span>
+            <span className="text-lg font-bold">{tasaPENtoBOB.toFixed(2)}</span>
+          </button>
         </div>
 
-     
+
         <ConversorDivisas
           modo={modo}
           monto={monto}
@@ -60,17 +81,26 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig,metodo
           onToggle={toggleModo}
         />
 
-     
+
         <button
           onClick={iniciarOperacion}
-          className="bg-yellow-400 text-gray-900 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-500 shadow-md transition-all mt-3"
+          className="bg-yellow-400 text-gray-900 py-2.5 rounded-xl text-sm font-semibold hover:bg-yellow-500 shadow-md transition-all"
         >
-          Iniciar Operación
+          Iniciar operación
         </button>
 
-       
+        <a
+          href="https://wa.me/59163892482?text=Hola,%20quiero%20cambiar%20con%20un%20asesor"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 border border-gray-600 text-gray-300 py-2.5 rounded-xl text-sm font-semibold hover:border-yellow-400 hover:text-yellow-400 transition-colors"
+        >
+          <MessageCircle size={18} />
+          Cambiar con un asesor
+        </a>
+
         {!user && (
-          <div className="flex flex-col sm:flex-row gap-2 justify-center mt-2">
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
             <Link
               href="/login"
               className="flex-1 text-center py-2 rounded-lg text-sm font-semibold border border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-gray-900 transition"
@@ -86,23 +116,10 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig,metodo
           </div>
         )}
 
-      
-        <p className="text-yellow-400 text-lg text-center">
-          Para personas que quieran enviar dinero a terceros, esta operación debe
-          ser realizada mediante la atención de un asesor.
+        <p className="text-gray-500 text-[11px] text-center leading-snug">
+          Para enviar dinero a terceros, la operación debe ser realizada
+          mediante un asesor.
         </p>
-
-        <div className="flex justify-center mt-2">
-          <svg
-            className="w-6 h-6 text-yellow-400 animate-pulse rotate-0 lg:-rotate-90"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
       </div>
 
       <ModalOperacion

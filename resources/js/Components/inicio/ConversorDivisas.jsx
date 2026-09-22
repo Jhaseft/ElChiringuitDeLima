@@ -1,47 +1,64 @@
 import { RefreshCw } from "lucide-react";
 
+const MONEDA = {
+  BOB: { flag: "🇧🇴", code: "BOB" },
+  PEN: { flag: "🇵🇪", code: "PEN" },
+};
+
 /**
  * UI pura: dos campos de monto + botón de swap.
  * No contiene lógica de negocio.
  */
 export default function ConversorDivisas({ modo, monto, conversion, onChange, onToggle }) {
   const isBOBtoPEN = modo === "BOBtoPEN";
+  const origen = isBOBtoPEN ? MONEDA.BOB : MONEDA.PEN;
+  const destino = isBOBtoPEN ? MONEDA.PEN : MONEDA.BOB;
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-      <div className="flex flex-col w-full">
-        <label className="text-sm font-medium text-gray-300 mb-1 text-center">
-          {isBOBtoPEN ? "TIENES BOLIVIANOS" : "TIENES SOLES"}
-        </label>
-        <input
-          type="number"
-          min="0"
-          value={monto}
-          onChange={(e) => onChange(e.target.value)}
-          className="border border-yellow-400 rounded-lg px-1 py-2 text-center font-semibold bg-gray-700 text-white focus:ring-2 focus:ring-yellow-400 focus:outline-none shadow-sm"
-        />
+    <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[11px] font-semibold tracking-wide text-gray-400 text-right uppercase">
+          Tienes {isBOBtoPEN ? "bolivianos" : "soles"}
+        </span>
+        <div className="flex items-center justify-between gap-2 bg-gray-900/60 border border-yellow-400 rounded-xl px-4 py-2.5">
+          <span className="flex items-center gap-2 text-white font-semibold">
+            <span className="text-xl leading-none">{origen.flag}</span>
+            {origen.code}
+          </span>
+          <input
+            type="number"
+            min="0"
+            value={monto}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="0.00"
+            className="w-24 bg-transparent text-right font-semibold text-white focus:outline-none"
+          />
+        </div>
       </div>
 
-      <div className="flex justify-center">
+      <div className="flex justify-center -my-2.5 z-10">
         <button
           onClick={onToggle}
-          className="p-2 bg-gray-700 rounded-full hover:bg-gray-600 transition shadow-md"
+          className="p-2 bg-yellow-400 text-gray-900 rounded-full hover:bg-yellow-300 transition shadow-md border-4 border-gray-800"
           title="Cambiar dirección"
         >
-          <RefreshCw className="w-6 h-6 text-yellow-400" />
+          <RefreshCw className="w-5 h-5" />
         </button>
       </div>
 
-      <div className="flex flex-col w-full">
-        <label className="text-sm font-medium text-gray-300 mb-1 text-center">
-          {isBOBtoPEN ? "RECIBES SOLES" : "RECIBES BOLIVIANOS"}
-        </label>
-        <input
-          type="text"
-          value={conversion}
-          readOnly
-          className="border border-yellow-400 rounded-lg px-1 py-2 text-center font-semibold bg-gray-700 text-white shadow-sm"
-        />
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[11px] font-semibold tracking-wide text-gray-400 text-right uppercase">
+          Recibes {isBOBtoPEN ? "soles" : "bolivianos"}
+        </span>
+        <div className="flex items-center justify-between gap-2 bg-gray-900/60 border border-yellow-400 rounded-xl px-4 py-2.5">
+          <span className="flex items-center gap-2 text-white font-semibold">
+            <span className="text-xl leading-none">{destino.flag}</span>
+            {destino.code}
+          </span>
+          <span className="w-24 text-right font-semibold text-white truncate">
+            {conversion || "0.00"}
+          </span>
+        </div>
       </div>
     </div>
   );
