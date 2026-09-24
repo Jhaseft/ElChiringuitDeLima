@@ -30,7 +30,7 @@ export default function ConversorDivisas({ modo, monto, conversion, onChange, on
           value={monto}
           onChange={(e) => onChange(e.target.value)}
           placeholder="0.00"
-          className="w-24 bg-transparent text-right font-semibold text-white text-lg tabular-nums placeholder-gray-500 outline-none border-0 [appearance:textfield] [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0"
+          className="flex-1 min-w-0 bg-transparent text-right font-semibold text-white text-lg tabular-nums placeholder-gray-500 outline-none border-0 [appearance:textfield] [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0"
         />
       </div>
 
@@ -52,7 +52,7 @@ export default function ConversorDivisas({ modo, monto, conversion, onChange, on
           <img src={destino.flag} alt="" className="w-6 h-[18px] rounded-sm object-cover" />
           {destino.code}
         </span>
-        <span className="w-24 text-right font-semibold text-white text-lg tabular-nums truncate">
+        <span className="flex-1 min-w-0 text-right font-semibold text-white text-lg tabular-nums break-all">
           {conversion || "0.00"}
         </span>
       </div>
