@@ -26,13 +26,22 @@ export default function MobileNav({ links, user, menuOpen, setMenuOpen }) {
 
         {/* Autenticación */}
         {!user ? (
-          <a
-            href="/login"
-            className="block text-lg font-medium text-gray-300 hover:text-gray-900 hover:bg-yellow-400 rounded-lg px-3 py-2 transition-all"
-            onClick={() => setMenuOpen(false)}
-          >
-            Iniciar Sesión
-          </a>
+          <div className="flex flex-col gap-2">
+            <a
+              href="/login"
+              className="block text-center text-lg font-semibold text-white bg-gray-700 hover:bg-gray-600 rounded-lg px-3 py-2 transition-all shadow-sm"
+              onClick={() => setMenuOpen(false)}
+            >
+              Iniciar Sesión
+            </a>
+            <a
+              href="/register"
+              className="block text-center text-lg font-semibold text-gray-900 bg-yellow-400 hover:bg-yellow-500 rounded-lg px-3 py-2 transition-all shadow-sm"
+              onClick={() => setMenuOpen(false)}
+            >
+              Regístrate
+            </a>
+          </div>
         ) : (
           <div className="relative">
             {/* Botón usuario */}

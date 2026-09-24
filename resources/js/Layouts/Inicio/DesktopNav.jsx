@@ -18,13 +18,20 @@ export default function DesktopNav({ links, user, userMenu, setUserMenu }) {
  
 
       {!user ? (
-        <a
-          href="/login"
-          className="relative group text-gray-300 hover:text-yellow-400 transition-colors px-2 py-1"
-        >
-          Iniciar Sesión
-          <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-yellow-400 transition-all duration-300 group-hover:w-full"></span>
-        </a>
+        <div className="flex items-center gap-3">
+          <a
+            href="/login"
+            className="bg-gray-700 text-white font-semibold px-4 py-1.5 rounded-lg hover:bg-gray-600 transition-colors shadow-sm"
+          >
+            Iniciar Sesión
+          </a>
+          <a
+            href="/register"
+            className="bg-yellow-400 text-gray-900 font-semibold px-4 py-1.5 rounded-lg hover:bg-yellow-500 transition-colors shadow-sm"
+          >
+            Regístrate
+          </a>
+        </div>
       ) : (
         <div className="relative">
           <button
