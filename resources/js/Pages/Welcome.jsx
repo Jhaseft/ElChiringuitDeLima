@@ -5,6 +5,7 @@ import CambioDivisasCard from "@/Components/inicio/CambioDivisasCard";
 import InfoAdicionalCard from "@/Components/inicio/InfoAdicionalCard";
 import { useState } from "react";
 import Grafico from "@/Components/inicio/Grafico";
+import PreguntasFrecuentes from "@/Components/inicio/PreguntasFrecuentes";
 import FooterLayout from "@/Layouts/footer";
 
 export default function Welcome({ bancos, tasas: tasasInicial, transferConfig , TrMethods }) {
@@ -35,6 +36,8 @@ export default function Welcome({ bancos, tasas: tasasInicial, transferConfig , 
           </div>
 
           <InfoAdicionalCard />
+
+          <PreguntasFrecuentes orden={[2, 4, 0, 5, 1, 3]} />
         </div>
       </InicioLayout>
       <FooterLayout />

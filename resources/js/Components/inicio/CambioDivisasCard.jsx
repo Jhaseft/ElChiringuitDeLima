@@ -48,18 +48,6 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig,metodo
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={() => modo !== "BOBtoPEN" && toggleModo()}
-            className={`flex flex-col items-center rounded-xl py-2 transition-colors ${
-              modo === "BOBtoPEN"
-                ? "bg-yellow-400 text-gray-900"
-                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-            }`}
-          >
-            <span className="text-[11px] font-semibold tracking-wide">VENTA</span>
-            <span className="text-lg font-bold">{tasaBOBtoPEN.toFixed(2)}</span>
-          </button>
-          <button
-            type="button"
             onClick={() => modo !== "PENtoBOB" && toggleModo()}
             className={`flex flex-col items-center rounded-xl py-2 transition-colors ${
               modo === "PENtoBOB"
@@ -69,6 +57,18 @@ export default function CambioDivisasCard({ tasas, bancos, transferConfig,metodo
           >
             <span className="text-[11px] font-semibold tracking-wide">COMPRA</span>
             <span className="text-lg font-bold">{tasaPENtoBOB.toFixed(2)}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => modo !== "BOBtoPEN" && toggleModo()}
+            className={`flex flex-col items-center rounded-xl py-2 transition-colors ${
+              modo === "BOBtoPEN"
+                ? "bg-yellow-400 text-gray-900"
+                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+            }`}
+          >
+            <span className="text-[11px] font-semibold tracking-wide">VENTA</span>
+            <span className="text-lg font-bold">{tasaBOBtoPEN.toFixed(2)}</span>
           </button>
         </div>
 

@@ -9,9 +9,8 @@ import StatusMessage from "@/Components/ui/StatusMessage";
 import CodeVerification from "@/Components/register_and_complete/register/CodeVerification";
 import FondoAnimado from "@/Layouts/Inicio/FondoAnimado";
 import axios from "axios";
-/**
- * Componente principal del registro multistep.
- */
+
+
 export default function Register() {
   const [step, setStep] = useState(1);
   const [message, setMessage] = useState("");

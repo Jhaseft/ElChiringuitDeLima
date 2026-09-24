@@ -13,6 +13,17 @@ import {
 const COLOR_COMPRA = "#3987e5";
 const COLOR_VENTA = "#c98500";
 
+const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+const MESES = [
+  "ENE", "FEB", "MAR", "ABR", "MAY", "JUN",
+  "JUL", "AGO", "SEP", "OCT", "NOV", "DIC",
+];
+
+function formatFechaHoy() {
+  const hoy = new Date();
+  return `${DIAS[hoy.getDay()]} ${hoy.getDate()} - ${MESES[hoy.getMonth()]} - ${hoy.getFullYear()}`;
+}
+
 function LeyendaPersonalizada({ payload }) {
   const etiquetas = { compra: "Compra", venta: "Venta" };
   return (
@@ -32,14 +43,15 @@ function LeyendaPersonalizada({ payload }) {
   );
 }
 
-function TooltipPersonalizado({ active, payload, label }) {
+function TooltipPersonalizado({ active, payload }) {
   if (!active || !payload?.length) return null;
+  const fecha = payload[0]?.payload?.fechaCompleta;
   return (
     <div className="rounded-lg border border-gray-700 bg-gray-900/95 px-3 py-2 shadow-xl backdrop-blur-sm">
-      <p className="mb-1 text-[11px] font-medium text-gray-400">{label}</p>
+      <p className="mb-1 text-[11px] font-medium text-gray-400">{fecha}</p>
       {payload.map((entry) => (
         <p key={entry.dataKey} className="text-sm font-semibold" style={{ color: entry.color }}>
-          {entry.dataKey === "compra" ? "Compra" : "Venta"}: {entry.value}
+          {entry.dataKey === "compra" ? "Compra" : "Venta"}: {Number(entry.value).toFixed(3)}
         </p>
       ))}
     </div>
@@ -57,16 +69,20 @@ export default function Grafico({ setTasas }) {
         const json = await res.json();
 
         // Mapear los datos para Recharts
-        const formattedData = json.map((item) => ({
-          time: new Date(item.fecha_actualizacion).toLocaleString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            day: "2-digit",
-            month: "2-digit",
-          }),
-          compra: Number(item.compra),
-          venta: Number(item.venta),
-        }));
+        const formattedData = json.map((item) => {
+          const fecha = new Date(item.fecha_actualizacion);
+          return {
+            time: fecha.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            fechaCompleta: fecha.toLocaleString([], {
+              day: "2-digit",
+              month: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            compra: Number(item.compra),
+            venta: Number(item.venta),
+          };
+        });
 
         setData(formattedData);
 
@@ -93,6 +109,9 @@ export default function Grafico({ setTasas }) {
       <h2 className="text-base sm:text-lg font-bold text-center text-white">
         Evolución de la moneda
       </h2>
+      <p className="text-xs text-center text-gray-400 -mt-1 mb-1">
+        {formatFechaHoy()}
+      </p>
 
       {loading && (
         <p className="text-center text-gray-400 text-sm sm:text-base">
@@ -103,7 +122,7 @@ export default function Grafico({ setTasas }) {
       {!loading && (
         <div className="w-full flex-1 min-h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 0, right: 8, left: -12, bottom: 0 }}>
+            <AreaChart data={data} margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorCompra" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={COLOR_COMPRA} stopOpacity={0.35} />
@@ -121,13 +140,16 @@ export default function Grafico({ setTasas }) {
                 tick={{ fontSize: 11, fill: "#9ca3af" }}
                 axisLine={{ stroke: "#4b5563" }}
                 tickLine={false}
+                minTickGap={32}
+                padding={{ left: 8, right: 8 }}
               />
               <YAxis
                 tick={{ fontSize: 11, fill: "#9ca3af" }}
                 axisLine={false}
                 tickLine={false}
                 domain={["auto", "auto"]}
-                width={40}
+                tickFormatter={(value) => value.toFixed(2)}
+                width={48}
               />
               <Tooltip content={<TooltipPersonalizado />} cursor={{ stroke: "#4b5563", strokeWidth: 1 }} />
               <Legend content={<LeyendaPersonalizada />} verticalAlign="top" />
