@@ -1,4 +1,5 @@
 import { useForm } from '@inertiajs/react';
+import FondoAnimado from "@/Layouts/Inicio/FondoAnimado";
 
 export default function ForgotPassword({ status }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -11,7 +12,8 @@ export default function ForgotPassword({ status }) {
     };
 
     return (
-        <div className="min-h-screen flex flex-col justify-center items-center bg-gray-900 px-4">
+        <div className="relative min-h-screen flex flex-col justify-center items-center bg-gray-900 px-4 overflow-hidden">
+            <FondoAnimado />
             <img
                 src="https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png"
                 alt="Logo"

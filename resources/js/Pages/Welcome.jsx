@@ -15,7 +15,7 @@ export default function Welcome({ bancos, tasas: tasasInicial, transferConfig , 
   return (
     <>
       <Head title="Transfer Cash" />
-      <InicioLayout>
+      <InicioLayout animatedBg>
 
         <div className="flex  flex-col gap-8 w-full max-w-7xl mx-auto px-4  lg:py-10">
 

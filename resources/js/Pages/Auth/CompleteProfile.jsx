@@ -5,6 +5,7 @@ import Step1Personal from "@/Components/register_and_complete/complete-profile/S
 import Step2Security from "@/Components/register_and_complete/complete-profile/Step2Security";
 import Step3Terms from "@/Components/register_and_complete/complete-profile/Step3Terms";
 import StatusMessage from "@/Components/ui/StatusMessage";
+import FondoAnimado from "@/Layouts/Inicio/FondoAnimado";
 
 /**
  * Wizard para completar el perfil de un usuario ya registrado.
@@ -64,7 +65,8 @@ export default function CompleteProfile({ user }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4 py-10">
+    <div className="relative min-h-screen flex items-center justify-center bg-gray-900 px-4 py-10 overflow-hidden">
+      <FondoAnimado />
       <div className="w-full max-w-lg bg-gray-800 rounded-2xl shadow-xl border-2 border-yellow-400 p-8 sm:p-12">
         <div className="flex flex-col items-center mb-6">
           <a href="/" className="hover:opacity-80 transition-opacity">

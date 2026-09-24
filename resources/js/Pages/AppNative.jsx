@@ -7,7 +7,7 @@ export default function AppNative() {
     return (
         <>
             <Head title='Transfer-Cash APP' />
-            <RectanguloLayout background="bg-gray-900 border-b border-yellow-400">
+            <RectanguloLayout background="bg-gray-900 border-b border-yellow-400" animatedBg>
                 <LogoConVideo
                     logoSrc="/images/logoFull.png"
                     videoSrc="https://res.cloudinary.com/dnbklbswg/video/upload/v1785184234/Tranfercash_Video_Resumen_zhttc0.mp4"

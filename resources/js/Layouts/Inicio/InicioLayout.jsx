@@ -2,10 +2,12 @@
 import Header from "@/Layouts/Inicio/Header";
 import ChatWidget from "@/Layouts/Inicio/ChatWidget";
 import BotonWhatsap from "@/Layouts/Inicio/BotonWhatsap";
+import FondoAnimado from "@/Layouts/Inicio/FondoAnimado";
 
-export default function InicioLayout({ children }) {
+export default function InicioLayout({ children, animatedBg = false }) {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-900">
+    <div className="relative min-h-screen flex flex-col bg-gray-900 overflow-hidden">
+      {animatedBg && <FondoAnimado />}
       <Header />
       <main className="flex-1 pt-2 flex items-start justify-center p-2 md:p-1">
         <div className="w-full max-w-7xl flex flex-col md:flex-row gap-6 mt-[110px]">

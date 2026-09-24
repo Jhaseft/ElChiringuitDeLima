@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from "@inertiajs/react";
 import BotonGoogle from "@/Components/auth/Botongoogle"; //  importa el botón
+import FondoAnimado from "@/Layouts/Inicio/FondoAnimado";
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -16,7 +17,8 @@ export default function Login({ status, canResetPassword }) {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-900 px-6 py-10">
+        <div className="relative min-h-screen flex items-center justify-center bg-gray-900 px-6 py-10 overflow-hidden">
+            <FondoAnimado />
             <Head title="Iniciar sesión" />
 
             <div className="w-full max-w-5xl bg-gray-800 rounded-3xl shadow-xl border-2 border-yellow-400 overflow-hidden flex flex-col md:flex-row">
