@@ -2,6 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Lemon Milk Pro';
+  src: url('../fonts/lemon-milk/lemon-milk-pro-ftr-ultralight.otf') format('opentype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lemon Milk Pro';
+  src: url('../fonts/lemon-milk/lemon-milk-pro-ftr-regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lemon Milk Pro';
+  src: url('../fonts/lemon-milk/lemon-milk-pro-ftr-medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Lemon Milk Pro';
+  src: url('../fonts/lemon-milk/lemon-milk-pro-ftr-bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @keyframes fade-slide {
   0% {
     opacity: 0;
@@ -82,6 +114,16 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* Jerarquía de peso sobre Lemon Milk Pro (fuente base de todo el proyecto). */
+  h1, h2 {
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  h3, h4, h5, h6 {
+    font-weight: 500;
+    letter-spacing: 0.01em;
   }
 }

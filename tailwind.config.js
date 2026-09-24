@@ -15,9 +15,18 @@ export default {
     	extend: {
     		fontFamily: {
     			sans: [
+    				'"Lemon Milk Pro"',
     				'Figtree',
                     ...defaultTheme.fontFamily.sans
-                ]
+                ],
+    			display: [
+    				'"Lemon Milk Pro"',
+    				'Figtree',
+    				...defaultTheme.fontFamily.sans
+    			]
+    		},
+    		fontWeight: {
+    			ultralight: '200'
     		},
     		borderRadius: {
     			lg: 'var(--radius)',
