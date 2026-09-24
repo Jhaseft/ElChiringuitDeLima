@@ -14,6 +14,8 @@ class TcPuntosController extends Controller
         return response()->json([
             'balance'     => $this->service->saldo($request->user()->id),
             'valor_punto' => $this->service->valorPunto(),
+            'moneda'      => $this->service->moneda(),
+            'umbral'      => $this->service->umbral(),
         ]);
     }
  

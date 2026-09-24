@@ -22,17 +22,18 @@ class TcPuntosService
         return (float) env('TC_PUNTOS_VALOR', 1);
     }
 
-    public function calcularPuntos(Transfer $transfer): int
+    public function moneda(): string
+    {
+        return (string) env('TC_PUNTOS_MONEDA', 'S/');
+    }
+
+    public function calcularPuntos(Transfer $transfer): float
     {
         $soles = $transfer->modo === 'PENtoBOB'
             ? (float) $transfer->amount
             : (float) $transfer->converted_amount;
-    
-        $total =  (int) floor($soles / $this->umbral());
 
-        print ($total); 
-        
-        return $total;
+        return round($soles / $this->umbral(), 2);
     }
 
     public function otorgarPuntos(Transfer $transfer): void
