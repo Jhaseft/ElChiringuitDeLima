@@ -5,10 +5,6 @@ const MONEDA = {
   PEN: { flag: "https://flagcdn.com/24x18/pe.png", code: "PEN" },
 };
 
-/**
- * UI pura: dos campos de monto + botón de swap.
- * No contiene lógica de negocio.
- */
 export default function ConversorDivisas({ modo, monto, conversion, onChange, onToggle }) {
   const isBOBtoPEN = modo === "BOBtoPEN";
   const origen = isBOBtoPEN ? MONEDA.BOB : MONEDA.PEN;
@@ -25,12 +21,16 @@ export default function ConversorDivisas({ modo, monto, conversion, onChange, on
           {origen.code}
         </span>
         <input
-          type="number"
-          min="0"
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
           value={monto}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            const valor = e.target.value;
+            if (valor === "" || /^\d*\.?\d*$/.test(valor)) onChange(valor);
+          }}
           placeholder="0.00"
-          className="flex-1 min-w-0 bg-transparent text-right font-semibold text-white text-lg tabular-nums placeholder-gray-500 outline-none border-0 [appearance:textfield] [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-inner-spin-button]:m-0"
+          className="flex-1 min-w-0 bg-transparent text-right font-semibold text-white text-lg tabular-nums placeholder-gray-500 outline-none focus:outline-none border-0 focus:border-0 ring-0 focus:ring-0 shadow-none focus:shadow-none appearance-none"
         />
       </div>
 

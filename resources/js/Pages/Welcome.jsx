@@ -29,10 +29,8 @@ export default function Welcome({ bancos, tasas: tasasInicial, transferConfig , 
           </div>
                   )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-            <div className="bg-gray-800 rounded-2xl shadow-xl p-6 w-full border border-yellow-400 transition hover:shadow-2xl hover:scale-[1.01] duration-300">
-              <Grafico setTasas={setTasas} />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <Grafico setTasas={setTasas} />
             <CambioDivisasCard tasas={tasas} bancos={bancos} transferConfig={transferConfig} metodosPago={TrMethods} />
           </div>
 
