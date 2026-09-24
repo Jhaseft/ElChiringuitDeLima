@@ -1,8 +1,8 @@
 import { RefreshCw } from "lucide-react";
 
 const MONEDA = {
-  BOB: { flag: "🇧🇴", code: "BOB" },
-  PEN: { flag: "🇵🇪", code: "PEN" },
+  BOB: { flag: "https://flagcdn.com/24x18/bo.png", code: "BOB" },
+  PEN: { flag: "https://flagcdn.com/24x18/pe.png", code: "PEN" },
 };
 
 /**
@@ -22,7 +22,7 @@ export default function ConversorDivisas({ modo, monto, conversion, onChange, on
         </span>
         <div className="flex items-center justify-between gap-2 bg-gray-900/60 border border-yellow-400 rounded-xl px-4 py-2.5">
           <span className="flex items-center gap-2 text-white font-semibold">
-            <span className="text-xl leading-none">{origen.flag}</span>
+            <img src={origen.flag} alt="" className="w-6 h-[18px] rounded-sm object-cover" />
             {origen.code}
           </span>
           <input
@@ -52,7 +52,7 @@ export default function ConversorDivisas({ modo, monto, conversion, onChange, on
         </span>
         <div className="flex items-center justify-between gap-2 bg-gray-900/60 border border-yellow-400 rounded-xl px-4 py-2.5">
           <span className="flex items-center gap-2 text-white font-semibold">
-            <span className="text-xl leading-none">{destino.flag}</span>
+            <img src={destino.flag} alt="" className="w-6 h-[18px] rounded-sm object-cover" />
             {destino.code}
           </span>
           <span className="w-24 text-right font-semibold text-white truncate">
