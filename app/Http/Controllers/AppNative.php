@@ -184,42 +184,44 @@ class AppNative extends Controller
         return response()->json(['error' => 'Usuario no encontrado'], 404);
     }
 
-    $accounts = Account::with(['bank', 'owner'])
-        ->where('user_id', $userId)
-        ->where('method_type', $method_type)
-        ->where('desactivate',false)
-        ->get();
+    if (!in_array($method_type, ['bank', 'qr'], true)) {
+        return response()->json(['error' => 'Método no válido'], 400);
+    }
 
-    if ($method_type === 'bank') {
-        $accounts = $accounts->map(function ($a) {
-            return [
-                'id' => $a->id,
-                'account_number' => $a->account_number,
-                'account_type' => $a->account_type,
-                'bank_id' => $a->bank?->id,
-                'bank_name' => $a->bank?->name,
-                'bank_logo' => $a->bank?->logo_url,
-                'bank_country' => $a->bank?->country,
-                'owner_full_name' => $a->owner?->full_name,
-                'owner_document' => $a->owner?->document_number,
-                'owner_phone' => $a->owner?->phone,
-            ];
-        });
+    // Cache por-usuario y por-tipo (TTL 30 min). Se invalida al guardar/eliminar
+    // cuentas (OperacionController::guardarCuenta / eliminarcuenta).
+    $accounts = Cache::remember("cuentas:user:{$userId}:{$method_type}", now()->addMinutes(30), function () use ($userId, $method_type) {
+        $accounts = Account::with(['bank', 'owner'])
+            ->where('user_id', $userId)
+            ->where('method_type', $method_type)
+            ->where('desactivate', false)
+            ->get();
 
-    } elseif ($method_type === 'qr') {
-        $accounts = $accounts->map(function ($a) {
+        if ($method_type === 'bank') {
+            return $accounts->map(function ($a) {
+                return [
+                    'id' => $a->id,
+                    'account_number' => $a->account_number,
+                    'account_type' => $a->account_type,
+                    'bank_id' => $a->bank?->id,
+                    'bank_name' => $a->bank?->name,
+                    'bank_logo' => $a->bank?->logo_url,
+                    'bank_country' => $a->bank?->country,
+                    'owner_full_name' => $a->owner?->full_name,
+                    'owner_document' => $a->owner?->document_number,
+                    'owner_phone' => $a->owner?->phone,
+                ];
+            })->values();
+        }
+
+        return $accounts->map(function ($a) {
             return [
                 'id' => $a->id,
                 'qr_value' => $a->qr_value,
                 'qr_country' => $a->qr_country,
-            ]; 
-        });
-    } else {
-        return response()->json([
-            'error' => 'Método no válido'
-        ], 400);
-    }
-
+            ];
+        })->values();
+    });
 
     return response()->json($accounts);
 }

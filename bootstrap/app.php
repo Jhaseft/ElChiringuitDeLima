@@ -31,7 +31,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Rate limit propio con respuesta 429 limpia y localizada.
         $middleware->alias([
-            'ratelimit' => \App\Http\Middleware\RateLimit::class,
+            'ratelimit'       => \App\Http\Middleware\RateLimit::class,
+            'globalratelimit' => \App\Http\Middleware\GlobalRateLimit::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

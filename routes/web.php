@@ -211,9 +211,12 @@ Route::prefix('admin')->group(function () {
 
 // Métodos de transferencia - API pública (web + app móvil)
 Route::get('/api/transfer-methods', function () {
-    $methods = \App\Models\TransferMethod::all()
-        ->groupBy('currency_pair')
-        ->map(fn($group) => $group->values());
+    // Cache 24 h; se invalida via TransferMethodObserver al editar en el panel.
+    $methods = Cache::remember('transfer_methods', now()->addHours(24), function () {
+        return \App\Models\TransferMethod::all()
+            ->groupBy('currency_pair')
+            ->map(fn($group) => $group->values());
+    });
     return response()->json($methods);
 });
 
@@ -231,14 +234,18 @@ Route::post('/chat/send', [ChatController::class, 'sendweb'])->middleware('ratel
 
 // Configuración de límites y mínimos - API pública para app móvil
 Route::get('/api/config/transfer', function () {
-    return response()->json([
-        'min_pen'       => Configuracion::get('transfer_min_pen', 0),
-        'min_bob'       => Configuracion::get('transfer_min_bob', 0),
-        'kyc_limit_pen' => Configuracion::get('transfer_kyc_limit_pen', 0),
-        'kyc_limit_bob' => Configuracion::get('transfer_kyc_limit_bob', 0),
-        'max_pen'       => Configuracion::get('transfer_max_pen',0),
-        'max_bob'       => Configuracion::get('transfer_max_bob',0),
-    ]);
+    // Cache 24 h; se invalida en ConfiguracionController::update al guardar límites.
+    $config = Cache::remember('config_transfer', now()->addHours(24), function () {
+        return [
+            'min_pen'       => Configuracion::get('transfer_min_pen', 0),
+            'min_bob'       => Configuracion::get('transfer_min_bob', 0),
+            'kyc_limit_pen' => Configuracion::get('transfer_kyc_limit_pen', 0),
+            'kyc_limit_bob' => Configuracion::get('transfer_kyc_limit_bob', 0),
+            'max_pen'       => Configuracion::get('transfer_max_pen', 0),
+            'max_bob'       => Configuracion::get('transfer_max_bob', 0),
+        ];
+    });
+    return response()->json($config);
 });
 
 require __DIR__ . '/auth.php';

@@ -9,6 +9,7 @@ use App\Models\TcCanje;
 use App\Models\TcProducto;
 use App\Models\Transfer;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class TcPuntosService
 {
@@ -69,14 +70,20 @@ class TcPuntosService
                 'descripcion' => "Transferencia #{$transfer->id} completada ({$transfer->modo})",
             ]);
         });
+
+        Cache::forget("tcpuntos_saldo:user:{$transfer->user_id}");
     }
 
     public function catalogo()
     {
-        return TcCategoria::with(['productos' => fn($q) => $q->where('activo', 1)->orderBy('orden')])
-            ->where('activo', 1)
-            ->orderBy('orden')
-            ->get();
+        // Catálogo global cacheado (TTL 30 min como red de seguridad). Se invalida
+        // al editar productos/categorías (observers) y al canjear (baja el stock).
+        return Cache::remember('tcpuntos_catalogo', now()->addMinutes(30), function () {
+            return TcCategoria::with(['productos' => fn($q) => $q->where('activo', 1)->orderBy('orden')])
+                ->where('activo', 1)
+                ->orderBy('orden')
+                ->get();
+        });
     }
 
     public function canjear(string $userId, int $productoId): array
@@ -101,6 +108,7 @@ class TcPuntosService
 
             if ($producto->stock !== null) {
                 $producto->decrement('stock');
+                Cache::forget('tcpuntos_catalogo');
             }
 
             TcCanje::create([
@@ -118,6 +126,8 @@ class TcPuntosService
                 'descripcion' => "Canje: {$producto->nombre}",
             ]);
 
+            Cache::forget("tcpuntos_saldo:user:{$userId}");
+
             return [
                 'balance'  => (float) $saldo->fresh()->balance,
                 'producto' => $producto->nombre,
@@ -127,7 +137,10 @@ class TcPuntosService
 
     public function saldo(string $userId): float
     {
-        return (float) TcPunto::where('user_id', $userId)->value('balance') ?? 0;
+        // Cache por-usuario (TTL 10 min). Se invalida al ganar u otorgar puntos.
+        return Cache::remember("tcpuntos_saldo:user:{$userId}", now()->addMinutes(10), function () use ($userId) {
+            return (float) (TcPunto::where('user_id', $userId)->value('balance') ?? 0);
+        });
     }
 
     public function historial(string $userId, int $perPage = 15)

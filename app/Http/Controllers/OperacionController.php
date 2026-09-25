@@ -9,21 +9,26 @@ use App\Models\AccountOwner;
 use App\Models\Bank;
 use App\Models\Transfer;
 use App\Models\TipoCambio;
-use App\Models\TransactionReceipt;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Cloudinary\Api\Upload\UploadApi;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Throwable;
 use App\Models\Configuracion;
 use App\Helpers\AppLog;
+use App\Jobs\SubirComprobantesTransferencia;
+use App\Jobs\EnviarWhatsappTransferencia;
 class OperacionController extends Controller
 {
     public function listarBancos()
     {
-        return response()->json(Bank::all());
+        // Bancos casi nunca cambian: cache 24 h. Se invalida via BankObserver.
+        return response()->json(
+            Cache::remember('bancos_all', now()->addHours(24), fn() => Bank::all())
+        );
     }
 
 
@@ -45,6 +50,7 @@ class OperacionController extends Controller
             'desactivate' => 1
         ]);
 
+        Cache::forget("cuentas:user:{$account->user_id}:{$account->method_type}");
 
         return response()->json([
             'success' => true,
@@ -116,6 +122,8 @@ class OperacionController extends Controller
                 return response()->json(['message' => 'Error al guardar la cuenta QR.'], 500);
             }
 
+            Cache::forget("cuentas:user:{$request->user_id}:qr");
+
             return response()->json($account);
         }
 
@@ -179,6 +187,8 @@ class OperacionController extends Controller
             return response()->json(['message' => 'Error al guardar la cuenta bancaria.'], 500);
         }
 
+        Cache::forget("cuentas:user:{$request->user_id}:bank");
+
         return response()->json($account);
     }
 
@@ -234,18 +244,24 @@ class OperacionController extends Controller
     {
         $userId = $request->user()->id;
 
-        $stats = Transfer::where('user_id', $userId)
-            ->where('status', 'completed')
-            ->selectRaw('COUNT(*) as total_operaciones')
-            ->selectRaw("COALESCE(SUM(CASE WHEN modo = 'PENtoBOB' THEN amount ELSE converted_amount END), 0) as soles")
-            ->selectRaw("COALESCE(SUM(CASE WHEN modo = 'PENtoBOB' THEN converted_amount ELSE amount END), 0) as bolivianos")
-            ->first();
+        // Cache por-usuario (TTL 10 min). Se invalida al completar una
+        // transferencia (AdminTransfers::update), que es cuando cambian los totales.
+        $data = Cache::remember("resumen:user:{$userId}", now()->addMinutes(10), function () use ($userId) {
+            $stats = Transfer::where('user_id', $userId)
+                ->where('status', 'completed')
+                ->selectRaw('COUNT(*) as total_operaciones')
+                ->selectRaw("COALESCE(SUM(CASE WHEN modo = 'PENtoBOB' THEN amount ELSE converted_amount END), 0) as soles")
+                ->selectRaw("COALESCE(SUM(CASE WHEN modo = 'PENtoBOB' THEN converted_amount ELSE amount END), 0) as bolivianos")
+                ->first();
 
-        return response()->json([
-            'total_operaciones'    => (int) $stats->total_operaciones,
-            'soles_cambiados'      => round((float) $stats->soles, 2),
-            'bolivianos_cambiados' => round((float) $stats->bolivianos, 2),
-        ]);
+            return [
+                'total_operaciones'    => (int) $stats->total_operaciones,
+                'soles_cambiados'      => round((float) $stats->soles, 2),
+                'bolivianos_cambiados' => round((float) $stats->bolivianos, 2),
+            ];
+        });
+
+        return response()->json($data);
     }
 
     public function crearTransferencia(Request $request)
@@ -372,48 +388,26 @@ class OperacionController extends Controller
             $paymentSlug   = $request->payment_method_slug ?? 'bank_transfer';
             $paymentMethod = \App\Models\PaymentMethod::where('slug', $paymentSlug)->first();
 
-            // 1) Subir comprobantes a Cloudinary ANTES de tocar la BD.
-            //    Si algo falla aquí, no queda ningún registro huérfano.
-            $uploadedUrls = [];
+            // 1) Guardar los comprobantes en disco temporal (rápido). La subida a
+            //    Cloudinary se hace en un Job por detrás (no bloquea el request).
+            $tempPaths = [];
             if ($request->hasFile('comprobantes')) {
-                $uploadApi = new UploadApi();
-
                 foreach ($request->file('comprobantes') as $file) {
-                    try {
-                        $uploaded = $uploadApi->upload(
-                            $file->getRealPath(),
-                            [
-                                'folder'        => 'transferencias/comprobantes/' . $user->id,
-                                'resource_type' => 'auto',
-                            ]
-                        );
-                        $uploadedUrls[] = $uploaded['secure_url'];
-                    } catch (\Exception $e) {
-                        Log::error('❌ Error subiendo comprobante a Cloudinary', [
-                            'user_id' => $user->id,
-                            'message' => $e->getMessage(),
-                        ]);
-                        AppLog::error('Error subiendo comprobante a Cloudinary', [
-                            'error' => $e->getMessage(),
-                        ], 'transferencia');
-                        return response()->json([
-                            'message' => 'No se pudo subir uno de los comprobantes. Intenta nuevamente.',
-                        ], 502);
-                    }
+                    $tempPaths[] = $file->store('tmp/comprobantes/' . $user->id, 'local');
                 }
             }
 
-            // 2) Crear Transfer + receipts dentro de una transacción atómica.
+            // 2) Crear la transferencia (pending). Los comprobantes se adjuntan luego
+            //    vía Job; la operación nace válida y no se pierde si la subida falla.
             try {
                 $transfer = DB::transaction(function () use (
                     $user,
                     $paymentMethod,
                     $request,
                     $exchangeRate,
-                    $convertedAmount,
-                    $uploadedUrls
+                    $convertedAmount
                 ) {
-                    $transfer = Transfer::create([
+                    return Transfer::create([
                         'user_id'                => $user->id,
                         'payment_method_id'      => $paymentMethod?->id,
                         'origin_account_id'      => $request->origin_account_id ?? null,
@@ -424,17 +418,6 @@ class OperacionController extends Controller
                         'modo'                   => $request->modo,
                         'status'                 => 'pending',
                     ]);
-
-                    foreach ($uploadedUrls as $url) {
-                        TransactionReceipt::create([
-                            'transaction_id' => $transfer->id,
-                            'receipt_url'    => $url,
-                            'receipt_type'   => 'client',
-                            'uploaded_by'    => $user->id,
-                        ]);
-                    }
-
-                    return $transfer;
                 });
             } catch (Throwable $e) {
                 Log::error('❌ Error creando transferencia en BD', [
@@ -459,6 +442,11 @@ class OperacionController extends Controller
                 'destinationAccount.owner',
                 'user',
             ]);
+
+            // Subir comprobantes a Cloudinary por detrás (no bloquea el request).
+            if (!empty($tempPaths)) {
+                SubirComprobantesTransferencia::dispatch($transfer->id, $tempPaths, $user->id);
+            }
 
             // Número de operación
             $transferNumber = 'OP-' . str_pad($transfer->id, 5, '0', STR_PAD_LEFT);
@@ -485,129 +473,9 @@ class OperacionController extends Controller
                 ], 'transferencia');
             }
 
-            //  Enviar mensaje a WhatsApp vía Evolution API (diferenciado por método de pago)
-            try {
-                $fecha = $transfer->created_at->format('d/m/Y H:i');
-
-                $mensaje  = "📌 *Nueva transferencia registrada*\n\n";
-                $mensaje .= "📝 *Detalles de la operación*\n";
-                $mensaje .= "• Número de operación: {$transferNumber}\n";
-                $mensaje .= "• Fecha: {$fecha}\n";
-                $mensaje .= "• Método de pago: " . ($paymentMethod?->name ?? ucfirst($paymentSlug)) . "\n";
-                $mensaje .= "• Tipo de cambio aplicado: {$transfer->exchange_rate}\n\n";
-
-                // === Bloque de PAGO (cómo nos paga el cliente) ===
-                $mensaje .= "💳 *Pago del cliente*\n";
-                $mensaje .= "• Monto: " . number_format($transfer->amount, 2) . " {$depositCurrency}\n";
-
-                if ($modo === 'PENtoBOB') {
-                    // Cliente siempre paga por banco PE
-                    $mensaje .= "• Método: Transferencia bancaria PE\n";
-                    if ($transfer->originAccount?->bank) {
-                        $mensaje .= "• Banco origen: {$transfer->originAccount->bank->name}\n";
-                        $mensaje .= "• Número de cuenta origen: {$transfer->originAccount->account_number}\n";
-                    }
-                } else { // BOBtoPEN
-                    if ($paymentSlug === 'cash') {
-                        $mensaje .= "• Método: Efectivo en oficina (BOB)\n";
-                        $mensaje .= "• El cliente debe haber pagado en oficina.\n";
-                    } elseif ($paymentSlug === 'qr') {
-                        $mensaje .= "• Método: QR de la empresa (BOB)\n";
-                        $mensaje .= "• El cliente escaneó nuestro QR de Bolivia para pagar.\n";
-                        if ($transfer->originAccount?->bank) {
-                            $mensaje .= "• Banco origen (BO): {$transfer->originAccount->bank->name}\n";
-                            $mensaje .= "• Número de cuenta origen: {$transfer->originAccount->account_number}\n";
-                        }
-                    }
-                }
-                $mensaje .= "\n";
-
-                // === Cliente ===
-                $mensaje .= "👤 *Cliente*\n";
-                $mensaje .= "• Nombre: {$user->first_name} {$user->last_name}\n";
-                $mensaje .= "• Email: {$user->email}\n";
-                $mensaje .= "• Teléfono: " . ($user->phone ?? 'N/D') . "\n";
-                $mensaje .= "• Nacionalidad: " . ucfirst($user->nationality ?? 'N/D') . "\n";
-                $mensaje .= "• Documento: " . ($user->document_number ?? 'N/D') . "\n\n";
-
-                // === Bloque de ENTREGA (cómo recibe el cliente) ===
-                $mensaje .= "📤 *Entrega al cliente*\n";
-                $mensaje .= "• Monto: " . number_format($convertedAmount, 2) . " {$receiveCurrency}\n";
-
-                if ($modo === 'BOBtoPEN') {
-                    // Cliente siempre recibe en banco PE
-                    $mensaje .= "• Método: Transferencia a cuenta PE del cliente\n";
-                    if ($transfer->destinationAccount?->bank) {
-                        $mensaje .= "• Banco destino: {$transfer->destinationAccount->bank->name}\n";
-                        $mensaje .= "• Número de cuenta destino: {$transfer->destinationAccount->account_number}\n";
-
-                        if ($transfer->destinationAccount->owner) {
-                            $destOwner = $transfer->destinationAccount->owner;
-                            $mensaje .= "\n👤 *Titular de la cuenta destino*\n";
-                            $mensaje .= "• Nombre: " . ($destOwner->full_name ?? 'N/D') . "\n";
-                            $mensaje .= "• Documento: " . ($destOwner->document_number ?? 'N/D') . "\n";
-                            $mensaje .= "• Teléfono: " . ($destOwner->phone ?? 'N/D') . "\n";
-                        }
-                    }
-                } else { // PENtoBOB
-                    if ($paymentSlug === 'cash') {
-                        $mensaje .= "• Método: Efectivo en oficina (BOB)\n";
-                        $mensaje .= "• Coordinar entrega del efectivo al cliente.\n";
-                    } elseif ($paymentSlug === 'qr') {
-                        $mensaje .= "• Método: QR del cliente (BOB)\n";
-                        if ($transfer->destinationAccount?->qr_value) {
-                            $mensaje .= "• País QR destino: {$transfer->destinationAccount->qr_country}\n";
-                            $mensaje .= "• URL QR destino: {$transfer->destinationAccount->qr_value}\n";
-                        }
-                    }
-                }
-                $mensaje .= "\n";
-
-                $mensaje .= "📎 *Comprobante*: verificar en los Mails.\n\n";
-                $mensaje .= "🔗 Ir al panel de administración:\n" . url('/admin/login');
-
-
-                // Configuración Evolution API
-                $server   = config('services.evolution.server',   env('EVOLUTION_SERVER'));
-                $instance = config('services.evolution.instance', env('EVOLUTION_INSTANCE'));
-                $apikey   = config('services.evolution.apikey',   env('EVOLUTION_APIKEY'));
-                $numerosRaw = config('services.evolution.numbers', env('EVOLUTION_NUMBERS', ''));
-
-                if ($server && $instance && $apikey && $numerosRaw) {
-                    $numeros = array_filter(array_map('trim', explode(',', $numerosRaw)));
-
-                    foreach ($numeros as $numero) {
-                        $whatsPayload = [
-                            'number' => $numero,
-                            'text'   => $mensaje,
-                        ];
-
-                        $response = Http::timeout(10)->withHeaders([
-                            'Content-Type' => 'application/json',
-                            'apikey'       => $apikey,
-                        ])->post("$server/message/sendText/$instance", $whatsPayload);
-
-                        if ($response->failed()) {
-                            Log::error("❌ Error enviando WhatsApp a {$numero}", [
-                                'status' => $response->status(),
-                                'body'   => $response->body(),
-                            ]);
-                            AppLog::warning('Error enviando WhatsApp', [
-                                'numero' => $numero,
-                                'status' => $response->status(),
-                            ], 'whatsapp');
-                        }
-                    }
-                } else {
-                    Log::warning('⚠️ Evolution API no configurada (server/instance/apikey/numbers faltantes). WhatsApp omitido.');
-                }
-            } catch (\Exception $e) {
-                Log::error("❌ Excepción enviando mensaje a Evolution API: " . $e->getMessage());
-                AppLog::warning('Excepción enviando WhatsApp (Evolution API)', [
-                    'transfer_id' => $transfer->id,
-                    'error'       => $e->getMessage(),
-                ], 'whatsapp');
-            }
+            // Aviso por WhatsApp (Evolution API) en background: antes se hacía dentro
+            // del request (HTTP con timeout de 10 s por número) y lo hacía lento.
+            EnviarWhatsappTransferencia::dispatch($transfer->id);
 
             return response()->json([
                 'transfer'        => $transfer,

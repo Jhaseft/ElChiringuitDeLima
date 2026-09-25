@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use App\Mail\TipoCambioActualizadoMail;
 use App\Services\TipoCambioService;
@@ -187,11 +188,15 @@ public function previewTipoCambio(TipoCambioService $service)
 // Historial de tipo de cambio
 public function historial()
 {
-    $historial = TipoCambio::orderBy('id', 'desc')
-        ->limit(50)
-        ->get()
-        ->reverse()
-        ->values();
+    // Cacheado en Redis (TTL 8 min como red de seguridad). Se invalida al
+    // instante cuando cambia el TC via TipoCambioObserver (scheduler o panel).
+    $historial = Cache::remember('tc_historial', now()->addMinutes(8), function () {
+        return TipoCambio::orderBy('id', 'desc')
+            ->limit(50)
+            ->get()
+            ->reverse()
+            ->values();
+    });
 
     return response()->json($historial);
 }

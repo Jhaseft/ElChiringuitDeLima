@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Configuracion;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class ConfiguracionController extends Controller
@@ -41,6 +42,9 @@ class ConfiguracionController extends Controller
         foreach ($data as $clave => $valor) {
             Configuracion::set($clave, $valor);
         }
+
+        // Invalida el caché de límites/mínimos que consume la app móvil.
+        Cache::forget('config_transfer');
 
         return response()->json(['success' => true]);
     }

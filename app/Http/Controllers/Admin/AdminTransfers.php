@@ -11,6 +11,7 @@ use App\Models\TransactionReceipt;
 use App\Services\TcPuntosService;
 use App\Services\ExpoPushService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Cloudinary\Api\Upload\UploadApi;
 
@@ -140,6 +141,10 @@ public function update(Request $request, $id)
     // Actualizar estado
     $transfer->status = $request->status;
     $transfer->save();
+
+    // El resumen del usuario (totales de operaciones completadas) cambia al
+    // cambiar el estado → invalidar su caché.
+    Cache::forget("resumen:user:{$transfer->user_id}");
 
     // Otorgar TC Puntos si se completó
     if ($transfer->status === 'completed') {

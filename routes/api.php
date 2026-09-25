@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Cache;
 use App\Http\Controllers\AppNative;
 use App\Http\Controllers\OperacionController;
 use App\Http\Controllers\TransferController;
@@ -28,14 +29,19 @@ Route::middleware('ratelimit:5,1')->group(function () {
 
 // Banners del home (público, solo lectura). Se administran desde el panel.
 Route::get('/banners', function () {
-    return \App\Models\Banner::where('is_active', true)
-        ->orderBy('sort_order')
-        ->orderBy('id')
-        ->get(['id', 'image_url', 'sort_order']);
+    // Cache 24 h; se invalida via BannerObserver al editar en el panel.
+    return Cache::remember('banners_activos', now()->addHours(24), function () {
+        return \App\Models\Banner::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get(['id', 'image_url', 'sort_order']);
+    });
 });
 
-// Rutas protegidas con token Sanctum
-Route::middleware('auth:sanctum')->group(function () {
+// Rutas protegidas con token Sanctum. El límite GLOBAL (150 acciones/min por
+// usuario, sumando todas las rutas) frena el abuso tipo "spam de refresh": al
+// superarlo se bloquea TODA la app y el bloqueo escala (5→15→30→... min).
+Route::middleware(['auth:sanctum', 'globalratelimit:100,1'])->group(function () {
     Route::post('/logout', [AppNative::class, 'logout']);
     Route::get('/userapp', [AppNative::class, 'user']);
 
