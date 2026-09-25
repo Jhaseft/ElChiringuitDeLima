@@ -13,15 +13,17 @@ import {
 const COLOR_COMPRA = "#3987e5";
 const COLOR_VENTA = "#c98500";
 
-const DIAS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+const DIAS = [
+  "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado",
+];
 const MESES = [
-  "ENE", "FEB", "MAR", "ABR", "MAY", "JUN",
-  "JUL", "AGO", "SEP", "OCT", "NOV", "DIC",
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
 function formatFechaHoy() {
   const hoy = new Date();
-  return `${DIAS[hoy.getDay()]} ${hoy.getDate()} - ${MESES[hoy.getMonth()]} - ${hoy.getFullYear()}`;
+  return `${DIAS[hoy.getDay()]} ${hoy.getDate()} de ${MESES[hoy.getMonth()]} ${hoy.getFullYear()}`;
 }
 
 function LeyendaPersonalizada({ payload }) {
