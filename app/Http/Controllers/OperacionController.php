@@ -124,8 +124,10 @@ class OperacionController extends Controller
         // =========================
         $request->validate([
             'bank_id' => 'required|exists:banks,id',
-            'account_number' => 'required|string',
+            'account_number' => ['required', 'string', 'regex:/^\d{6,20}$/'],
             'account_type' => 'required|in:origin,destination',
+        ], [
+            'account_number.regex' => 'El número de cuenta solo puede contener números (6 a 20 dígitos).',
         ]);
 
         $ownerId = null;
@@ -134,9 +136,13 @@ class OperacionController extends Controller
         if ($request->account_type === 'destination') {
 
             $request->validate([
-                'owner_full_name' => 'required|string',
-                'owner_document' => 'required|string',
-                'owner_phone' => 'required|string',
+                'owner_full_name' => ['required', 'string', 'min:3', 'max:60', 'regex:/^[\pL\s\'’\-]+$/u'],
+                'owner_document'  => ['required', 'string', 'regex:/^\d{5,20}$/'],
+                'owner_phone'     => ['required', 'string', 'regex:/^\+?\d{7,20}$/'],
+            ], [
+                'owner_full_name.regex' => 'El nombre del titular solo puede contener letras.',
+                'owner_document.regex'  => 'El documento solo puede contener números.',
+                'owner_phone.regex'     => 'El teléfono solo puede contener números.',
             ]);
 
             try {
