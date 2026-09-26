@@ -25,7 +25,7 @@ class SubirComprobantesTransferencia implements ShouldQueue
     public function __construct(
         public int $transferId,
         public array $paths,
-        public int $userId
+        public string $userId
     ) {}
 
     public function handle(): void
