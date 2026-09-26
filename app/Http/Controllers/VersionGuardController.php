@@ -6,10 +6,16 @@ use Illuminate\Http\Request;
 
 class VersionGuardController extends Controller
 {
-    public function versionMinima()
+    public function versionMinima(Request $request)
 {
+    $platform = strtolower($request->query('platform', ''));
+
+    $version = $platform === 'ios'
+        ? config('app.version_app_ios')
+        : config('app.version_app_android');
+
     return response()->json([
-        'version_minima' => config('app.version_app')
+        'version_minima' => $version,
     ]);
 }
 }
