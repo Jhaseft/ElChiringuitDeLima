@@ -77,14 +77,15 @@ class AdminProductosTcController extends Controller
     public function storeProducto(Request $request)
     {
         $data = $request->validate([
-            'categoria_id' => 'required|exists:tc_categorias,id',
-            'nombre'       => 'required|string|max:150',
-            'descripcion'  => 'nullable|string',
-            'costo_puntos' => 'required|numeric|min:0',
-            'stock'        => 'nullable|integer|min:0',
-            'activo'       => 'boolean',
-            'orden'        => 'integer|min:0',
-            'imagen'       => 'nullable|file|mimes:jpg,jpeg,png,webp|max:4096',
+            'categoria_id'         => 'required|exists:tc_categorias,id',
+            'nombre'               => 'required|string|max:150',
+            'descripcion'          => 'nullable|string',
+            'instrucciones_correo' => 'nullable|string|max:5000',
+            'costo_puntos'         => 'required|numeric|min:0',
+            'stock'                => 'nullable|integer|min:0',
+            'activo'               => 'boolean',
+            'orden'                => 'integer|min:0',
+            'imagen'               => 'nullable|file|mimes:jpg,jpeg,png,webp|max:4096',
         ]);
 
         if ($request->hasFile('imagen')) {
@@ -102,13 +103,14 @@ class AdminProductosTcController extends Controller
         $producto = TcProducto::findOrFail($id);
 
         $data = $request->validate([
-            'nombre'       => 'required|string|max:150',
-            'descripcion'  => 'nullable|string',
-            'costo_puntos' => 'required|numeric|min:0',
-            'stock'        => 'nullable|integer|min:0',
-            'activo'       => 'boolean',
-            'orden'        => 'integer|min:0',
-            'imagen'       => 'nullable|file|mimes:jpg,jpeg,png,webp|max:4096',
+            'nombre'               => 'required|string|max:150',
+            'descripcion'          => 'nullable|string',
+            'instrucciones_correo' => 'nullable|string|max:5000',
+            'costo_puntos'         => 'required|numeric|min:0',
+            'stock'                => 'nullable|integer|min:0',
+            'activo'               => 'boolean',
+            'orden'                => 'integer|min:0',
+            'imagen'               => 'nullable|file|mimes:jpg,jpeg,png,webp|max:4096',
         ]);
 
         if ($request->hasFile('imagen')) {

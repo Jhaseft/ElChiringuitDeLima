@@ -8,8 +8,12 @@ use App\Models\TcCategoria;
 use App\Models\TcCanje;
 use App\Models\TcProducto;
 use App\Models\Transfer;
+use App\Models\User;
+use App\Mail\CanjeInstruccionesMail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class TcPuntosService
 {
@@ -88,7 +92,7 @@ class TcPuntosService
 
     public function canjear(string $userId, int $productoId): array
     {
-        return DB::transaction(function () use ($userId, $productoId) {
+        ['producto' => $producto, 'balance' => $balance] = DB::transaction(function () use ($userId, $productoId) {
             $producto = TcProducto::where('id', $productoId)
                 ->where('activo', 1)
                 ->lockForUpdate()
@@ -129,10 +133,43 @@ class TcPuntosService
             Cache::forget("tcpuntos_saldo:user:{$userId}");
 
             return [
+                'producto' => $producto,
                 'balance'  => (float) $saldo->fresh()->balance,
-                'producto' => $producto->nombre,
             ];
         });
+
+        $this->enviarCorreoCanje($userId, $producto);
+
+        return [
+            'balance'  => $balance,
+            'producto' => $producto->nombre,
+        ];
+    }
+
+    // Correo con las instrucciones que el admin configuró por producto. Se envía
+    // fuera de la transacción; un fallo de correo no revierte el canje.
+    private function enviarCorreoCanje(string $userId, TcProducto $producto): void
+    {
+        try {
+            $email = User::where('id', $userId)->value('email');
+
+            if (!$email) {
+                return;
+            }
+
+            Mail::to($email)->send(new CanjeInstruccionesMail(
+                $producto->nombre,
+                (float) $producto->costo_puntos,
+                $producto->instrucciones_correo,
+                $producto->imagen_url,
+            ));
+        } catch (\Throwable $e) {
+            Log::error('Error enviando correo de canje TC', [
+                'user_id'     => $userId,
+                'producto_id' => $producto->id,
+                'msg'         => $e->getMessage(),
+            ]);
+        }
     }
 
     public function saldo(string $userId): float

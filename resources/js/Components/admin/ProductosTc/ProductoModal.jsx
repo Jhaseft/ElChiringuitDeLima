@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { X, ImageIcon, Upload } from "lucide-react";
 
-const EMPTY = { nombre: "", descripcion: "", costo_puntos: "", stock: "", activo: true, orden: 0 };
+const EMPTY = { nombre: "", descripcion: "", instrucciones_correo: "", costo_puntos: "", stock: "", activo: true, orden: 0 };
 
 export default function ProductoModal({ isOpen, onClose, onSaved, categoriaId, producto = null }) {
     const isEdit = Boolean(producto);
@@ -17,9 +17,10 @@ export default function ProductoModal({ isOpen, onClose, onSaved, categoriaId, p
         if (isOpen) {
             if (isEdit) {
                 setData({
-                    nombre:       producto.nombre ?? "",
-                    descripcion:  producto.descripcion ?? "",
-                    costo_puntos: producto.costo_puntos ?? "",
+                    nombre:               producto.nombre ?? "",
+                    descripcion:          producto.descripcion ?? "",
+                    instrucciones_correo: producto.instrucciones_correo ?? "",
+                    costo_puntos:         producto.costo_puntos ?? "",
                     stock:        producto.stock ?? "",
                     activo:       producto.activo ?? true,
                     orden:        producto.orden ?? 0,
@@ -56,6 +57,7 @@ export default function ProductoModal({ isOpen, onClose, onSaved, categoriaId, p
         form.append("categoria_id",  categoriaId);
         form.append("nombre",        data.nombre);
         form.append("descripcion",   data.descripcion);
+        form.append("instrucciones_correo", data.instrucciones_correo);
         form.append("costo_puntos",  data.costo_puntos);
         form.append("stock",         data.stock);
         form.append("activo",        data.activo ? 1 : 0);
@@ -118,6 +120,24 @@ export default function ProductoModal({ isOpen, onClose, onSaved, categoriaId, p
                             placeholder="Describe el producto brevemente"
                             className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                            Instrucciones del correo <span className="text-gray-400 font-normal normal-case">(se envían al usuario al canjear)</span>
+                        </label>
+                        <textarea
+                            name="instrucciones_correo"
+                            value={data.instrucciones_correo}
+                            onChange={handleChange}
+                            rows={4}
+                            placeholder="Ej: Acércate a nuestro local para recoger tu premio: https://maps.app.goo.gl/... Horario: L-V 9am-6pm. Presenta este correo y tu DNI."
+                            className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">
+                            Puedes pegar enlaces (ubicación, formularios, etc.). Cada línea aparece como un párrafo y los enlaces se vuelven clicables.
+                        </p>
+                        {errors.instrucciones_correo && <p className="text-red-500 text-xs mt-1">{errors.instrucciones_correo[0]}</p>}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

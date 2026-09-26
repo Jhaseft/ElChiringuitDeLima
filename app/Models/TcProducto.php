@@ -9,7 +9,7 @@ class TcProducto extends Model
     protected $table = 'tc_productos';
 
     protected $fillable = [
-        'categoria_id', 'nombre', 'descripcion',
+        'categoria_id', 'nombre', 'descripcion', 'instrucciones_correo',
         'imagen_url', 'costo_puntos', 'stock', 'activo', 'orden',
     ];
 
