@@ -43,9 +43,13 @@ export default function ResetPassword({ token, email }) {
 
                     <input
                         type="password"
-                        placeholder="Password"
+                        inputMode="numeric"
+                        maxLength={4}
+                        placeholder="Nueva contraseña (4 dígitos)"
                         value={data.password}
-                        onChange={(e) => setData('password', e.target.value)}
+                        onChange={(e) =>
+                            setData('password', e.target.value.replace(/\D/g, '').slice(0, 4))
+                        }
                         className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400/20 focus:border-yellow-400"
                         required
                     />
@@ -55,10 +59,12 @@ export default function ResetPassword({ token, email }) {
 
                     <input
                         type="password"
-                        placeholder="Confirm Password"
+                        inputMode="numeric"
+                        maxLength={4}
+                        placeholder="Confirmar contraseña (4 dígitos)"
                         value={data.password_confirmation}
                         onChange={(e) =>
-                            setData('password_confirmation', e.target.value)
+                            setData('password_confirmation', e.target.value.replace(/\D/g, '').slice(0, 4))
                         }
                         className="w-full px-4 py-2 bg-gray-700 border border-gray-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400/20 focus:border-yellow-400"
                         required
