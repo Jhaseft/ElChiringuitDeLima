@@ -134,8 +134,10 @@ Route::prefix('admin')->group(function () {
 
     Route::middleware('auth:admin')->group(function () {
 
-        // Inicio: accesible a cualquier admin logueado (pantalla de aterrizaje).
-        Route::get('/dashboard', [AdminControllerDashboard::class, 'Dashboard']);
+        // Inicio: solo si el rol tiene la pestana asignada (o es super).
+        Route::middleware('admin.can:dashboard')->group(function () {
+            Route::get('/dashboard', [AdminControllerDashboard::class, 'Dashboard']);
+        });
 
         // Tipo de Cambio
         Route::middleware('admin.can:tipo-cambio')->group(function () {

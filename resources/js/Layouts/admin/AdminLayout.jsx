@@ -33,10 +33,9 @@ export default function AdminLayout({ children }) {
         { key: "administradores", name: "Administradores", href: "/admin/dashboard/administradores", icon: <ShieldCheck size={18} />, superOnly: true },
     ];
 
-    // Inicio siempre visible; el resto segun el rol. Super ve todo. El filtrado
-    // es solo UX: el acceso real lo corta el middleware admin.can en el backend.
+    // Cada pestana (incluida Inicio) se muestra segun el rol. Super ve todo. El
+    // filtrado es solo UX: el acceso real lo corta el middleware admin.can.
     const visibleMenu = menu.filter((item) => {
-        if (item.key === "dashboard") return true;
         if (item.superOnly) return isSuper;
         return isSuper || permissions.includes(item.key);
     });

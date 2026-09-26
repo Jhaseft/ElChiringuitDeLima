@@ -36,9 +36,46 @@ class AdminRole extends Model
         'banners'        => 'Banners',
     ];
 
+    /**
+     * URL del panel para cada modulo. Se usa para redirigir tras el login a la
+     * primera pestana permitida del rol (mismo orden que MODULES).
+     */
+    public const MODULE_ROUTES = [
+        'dashboard'      => '/admin/dashboard',
+        'tipo-cambio'    => '/admin/dashboard/tipo-cambio',
+        'notificaciones' => '/admin/dashboard/notificaciones',
+        'transferencias' => '/admin/dashboard/transferencias',
+        'efectivo'       => '/admin/dashboard/efectivo',
+        'qr'             => '/admin/dashboard/qr',
+        'metodos'        => '/admin/dashboard/metodos',
+        'usuarios'       => '/admin/dashboard/usuarios',
+        'reportes'       => '/admin/dashboard/reportes',
+        'configuracion'  => '/admin/dashboard/configuracion',
+        'productos-tc'   => '/admin/dashboard/productos-tc',
+        'canjes-tc'      => '/admin/dashboard/canjes-tc',
+        'banners'        => '/admin/dashboard/banners',
+    ];
+
     public function accounts()
     {
         return $this->hasMany(AdminAccount::class, 'role_id');
+    }
+
+    /**
+     * URL de aterrizaje tras el login: la primera pestana (en orden de MODULES)
+     * a la que el admin tiene acceso. null si no tiene ninguna asignada.
+     */
+    public static function landingPathFor(?AdminAccount $admin): ?string
+    {
+        if (!$admin || !$admin->role) {
+            return null;
+        }
+        foreach (self::MODULE_ROUTES as $module => $path) {
+            if ($admin->canAccess($module)) {
+                return $path;
+            }
+        }
+        return null;
     }
 
     /**
