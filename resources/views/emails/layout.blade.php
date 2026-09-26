@@ -1,7 +1,7 @@
 @php
     $appName = config('app.name', 'TransferCash');
     $appUrl  = config('app.site_url', config('app.url'));
-    $logo    = rtrim($appUrl, '/').'/images/Logo_web_03.webp';
+    $logo    = rtrim(config('app.url'), '/').'/images/Logo_web_03.webp';
 @endphp
 <!DOCTYPE html>
 <html lang="es">
