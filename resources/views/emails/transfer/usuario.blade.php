@@ -45,8 +45,8 @@
 
     <h2 style="{{ $h2 }}">Horarios de atención</h2>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-        <tr><td style="{{ $th }}">Perú</td><td style="{{ $td }}">Lun a Vie 09:00 - 18:00 · Sáb 09:00 - 13:00</td></tr>
-        <tr><td style="{{ $th }}">Bolivia</td><td style="{{ $td }}">Lun a Vie 09:00 - 18:00 · Sáb 09:00 - 13:00</td></tr>
+        <tr><td style="{{ $th }}">Lunes a Sábado</td><td style="{{ $td }}">08:00 AM - 5:00 PM</td></tr>
+        <tr><td style="{{ $th }}">Domingos</td><td style="{{ $td }}">Solo por transferencia o QR (no efectivo)</td></tr>
     </table>
 
     <p style="margin:26px 0 0 0; color:#374151; font-size:14px; line-height:1.6;">

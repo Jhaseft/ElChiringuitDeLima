@@ -13,7 +13,7 @@ const OFICINAS = [
   {
     nombre: "Oficina Cochabamba",
     direccion: "Av. Villazón, calle Los Paraisos – frente a UDABOL",
-    horario: "Lun–Vie 9:00–18:00 | Sáb 9:00–13:00",
+    horario: "Lun–Sáb 8:00–17:00 | Dom solo transferencia/QR",
     linkMapa: "https://maps.app.goo.gl/EnjPUumyYn7hSRxH7",
   },
 ];
