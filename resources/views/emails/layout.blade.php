@@ -1,7 +1,7 @@
 @php
     $appName = config('app.name', 'TransferCash');
     $appUrl  = config('app.site_url', config('app.url'));
-    $logo    = 'https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png';
+    $logo    = rtrim($appUrl, '/').'/images/Logo_web_03.webp';
 @endphp
 <!DOCTYPE html>
 <html lang="es">
@@ -23,8 +23,8 @@
                     </tr>
 
                     <tr>
-                        <td style="padding:28px 32px 4px 32px;">
-                            <img src="{{ $logo }}" alt="{{ $appName }}" width="150" style="display:block; width:150px; height:auto; border:0;">
+                        <td align="center" style="padding:28px 32px 8px 32px; background-color:#ffffff;">
+                            <img src="{{ $logo }}" alt="{{ $appName }}" width="170" style="display:block; margin:0 auto; width:170px; height:auto; border:0;">
                         </td>
                     </tr>
 
