@@ -47,6 +47,12 @@ class AuthController extends Controller
             return redirect()->route('complete-profile');
         }
 
+        // Usuario bloqueado por el admin: no se le abre sesión.
+        if ($user->isBlocked()) {
+            return redirect()->route('welcome')
+                ->with('error', 'Tu cuenta ha sido bloqueada. Comunícate con soporte.');
+        }
+
         // Si  tiene perfil incompleto, redirigir
         if (empty($user->nationality) || empty($user->phone) || empty($user->document_number)) {
             Auth::login($user);

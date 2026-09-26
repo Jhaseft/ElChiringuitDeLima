@@ -41,7 +41,7 @@ Route::get('/banners', function () {
 // Rutas protegidas con token Sanctum. El límite GLOBAL (150 acciones/min por
 // usuario, sumando todas las rutas) frena el abuso tipo "spam de refresh": al
 // superarlo se bloquea TODA la app y el bloqueo escala (5→15→30→... min).
-Route::middleware(['auth:sanctum', 'globalratelimit:100,1'])->group(function () {
+Route::middleware(['auth:sanctum', 'notblocked', 'globalratelimit:100,1'])->group(function () {
     Route::post('/logout', [AppNative::class, 'logout']);
     Route::get('/userapp', [AppNative::class, 'user']);
 

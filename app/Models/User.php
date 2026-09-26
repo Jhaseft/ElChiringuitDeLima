@@ -46,7 +46,20 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'blocked_at' => 'datetime',
     ];
+
+    // OJO: 'blocked_at' y 'blocked_reason' NO son mass-assignable a propósito
+    // (como 'kyc_status'): el bloqueo se asigna explícitamente desde el panel
+    // admin, para que ningún update($request->all()) pueda bloquear/desbloquear.
+
+    /**
+     * true si el admin bloqueó la cuenta: no puede iniciar sesión ni usar la app.
+     */
+    public function isBlocked(): bool
+    {
+        return !is_null($this->blocked_at);
+    }
 
     /**
      * Atributos calculados que se agregan a la serialización.

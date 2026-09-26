@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'ratelimit'       => \App\Http\Middleware\RateLimit::class,
             'globalratelimit' => \App\Http\Middleware\GlobalRateLimit::class,
+            'notblocked'      => \App\Http\Middleware\EnsureUserNotBlocked::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

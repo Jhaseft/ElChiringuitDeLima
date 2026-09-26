@@ -69,5 +69,32 @@ public function showUsers(User $user)
     return response()->json($accounts);
 }
 
+    // Bloquea el acceso del usuario a la app: marca blocked_at y revoca todos sus
+    // tokens Sanctum para cerrarle la sesión activa de inmediato (no solo logins
+    // futuros). blocked_at/blocked_reason se asignan explícitamente (no via update
+    // masivo) a propósito.
+    public function block(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'reason' => 'nullable|string|max:255',
+        ]);
 
+        $user->blocked_at = now();
+        $user->blocked_reason = $data['reason'] ?? null;
+        $user->save();
+
+        $user->tokens()->delete();
+
+        return back()->with('success', 'Usuario bloqueado.');
+    }
+
+    // Reactiva el acceso del usuario.
+    public function unblock(User $user)
+    {
+        $user->blocked_at = null;
+        $user->blocked_reason = null;
+        $user->save();
+
+        return back()->with('success', 'Usuario desbloqueado.');
+    }
 }

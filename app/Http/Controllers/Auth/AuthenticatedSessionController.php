@@ -27,6 +27,16 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        // Usuario bloqueado por el admin: no se le abre sesión.
+        if (Auth::user()->isBlocked()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('welcome')
+                ->with('error', 'Tu cuenta ha sido bloqueada. Comunícate con soporte.');
+        }
+
         $request->session()->regenerate();
 
        return redirect()->route('welcome');

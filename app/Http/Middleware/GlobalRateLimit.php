@@ -45,6 +45,8 @@ class GlobalRateLimit
 
         if ($request->expectsJson()) {
             return response()->json([
+                'code'        => 'rate_limited',
+                'blocked'     => true,
                 'message'     => $message,
                 'retry_after' => $seconds,
             ], 429)->header('Retry-After', $seconds);

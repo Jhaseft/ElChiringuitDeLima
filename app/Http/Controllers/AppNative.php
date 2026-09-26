@@ -144,6 +144,15 @@ class AppNative extends Controller
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
+
+        // Usuario bloqueado por el admin: no se le entrega token (403).
+        if ($user->isBlocked()) {
+            return response()->json([
+                'message' => 'Tu cuenta ha sido bloqueada. Comunícate con soporte.',
+                'blocked' => true,
+            ], 403);
+        }
+
         $user->tokens()->delete();
         $token = $user->createToken('mobile-app')->plainTextToken;
     
@@ -160,8 +169,21 @@ class AppNative extends Controller
     // Logout
     public function logout(Request $request)
     {
-        PushToken::where('user_id', $request->user()->id)->delete();
+        $userId = $request->user()->id;
+
+        PushToken::where('user_id', $userId)->delete();
+
+        // Libera el caché per-usuario en Redis para no dejar info del usuario tras
+        // cerrar sesión (igual expiran por TTL y solo se leen con token válido, que
+        // aquí se borra; esto es limpieza inmediata). No se toca el rate-limit para
+        // no permitir saltarse un bloqueo cerrando/abriendo sesión.
+        Cache::forget("resumen:user:{$userId}");
+        Cache::forget("cuentas:user:{$userId}:bank");
+        Cache::forget("cuentas:user:{$userId}:qr");
+        Cache::forget("tcpuntos_saldo:user:{$userId}");
+
         $request->user()->currentAccessToken()->delete();
+
         return response()->json(['message' => 'Sesión cerrada']);
     }
 
@@ -332,6 +354,14 @@ public function loginGoogle(Request $request)
         ]);
     }
 
+    // Usuario bloqueado por el admin: no se le entrega token (403).
+    if ($user->isBlocked()) {
+        return response()->json([
+            'message' => 'Tu cuenta ha sido bloqueada. Comunícate con soporte.',
+            'blocked' => true,
+        ], 403);
+    }
+
     // Revocar sesiones anteriores (una sola sesión activa por usuario)
     $user->tokens()->delete();
 
@@ -412,6 +442,14 @@ public function loginApple(Request $request)
             'email'      => $email,
             'password'   => null,
         ]);
+    }
+
+    // Usuario bloqueado por el admin: no se le entrega token (403).
+    if ($user->isBlocked()) {
+        return response()->json([
+            'message' => 'Tu cuenta ha sido bloqueada. Comunícate con soporte.',
+            'blocked' => true,
+        ], 403);
     }
 
     // Revocar sesiones anteriores (una sola sesión activa por usuario)

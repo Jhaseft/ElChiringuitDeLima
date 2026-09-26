@@ -86,7 +86,7 @@ Route::get('/App', function () {
 // porque opera sobre cuentas/transferencias del usuario autenticado.
 Route::get('/operacion/listar-bancos', [OperacionController::class, 'listarBancos'])->name('operacion.listarBancos');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'notblocked'])->group(function () {
     //listar cuentas del usuario autenticado (el {user_id} se ignora por seguridad)
     Route::get('/operacion/listar-cuentas/{user_id}/{method_type}', [OperacionController::class, 'listarCuentas'])->name('operacion.listarCuentas');
     //guardar una cuenta
@@ -96,7 +96,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Perfil y KYC
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'notblocked'])->group(function () {
     //completar perfil si viene de google
     Route::get('/complete-profile', [CompleteProfileController::class, 'index'])->name('complete-profile');
     Route::post('/complete-profile', [CompleteProfileController::class, 'store'])->name('complete-profile.store');
@@ -197,6 +197,9 @@ Route::prefix('admin')->group(function () {
         //usuarios
         Route::get('/users/{user}/detail/info', [AdminUserMediaController::class, 'showUsers']);
         Route::get('/users/{user}/detail/accounts', [AdminUserMediaController::class, 'showAccounts']);
+        //bloquear / desbloquear acceso del usuario a la app
+        Route::post('/users/{user}/block', [AdminUserMediaController::class, 'block']);
+        Route::post('/users/{user}/unblock', [AdminUserMediaController::class, 'unblock']);
 
 
         //ver tranferencia especifica de usuario

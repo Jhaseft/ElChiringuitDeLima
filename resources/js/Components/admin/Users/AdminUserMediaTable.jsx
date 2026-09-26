@@ -3,7 +3,7 @@ import { router } from "@inertiajs/react";
 import axios from "axios";
 import DetailModalUser from "./DetailModalUsers";
 import DetailModalAccount from "./DetailModalAccount";
-import { Eye, Wallet, Search } from "lucide-react";
+import { Eye, Wallet, Search, Ban, ShieldCheck } from "lucide-react";
 import AdminOverlay from "../AdminOverlay";
 
 const kycBadge = {
@@ -72,6 +72,20 @@ export default function AdminUserMediaTable({ users, filters = {} }) {
     }
   };
 
+  const toggleBlock = (r) => {
+    const blocked = !!r.blocked_at;
+    const url = `/admin/users/${r.id}/${blocked ? "unblock" : "block"}`;
+    const msg = blocked
+      ? `¿Desbloquear a ${r.first_name} ${r.last_name}?`
+      : `¿Bloquear a ${r.first_name} ${r.last_name}? No podrá iniciar sesión en la app.`;
+    if (!window.confirm(msg)) return;
+    router.post(url, {}, {
+      preserveScroll: true,
+      onStart: () => setLoading(true),
+      onFinish: () => setLoading(false),
+    });
+  };
+
   const busy = overlay === "loading" || loading;
 
   return (
@@ -126,6 +140,11 @@ export default function AdminUserMediaTable({ users, filters = {} }) {
                 <tr key={r.id} className="hover:bg-blue-50/30 transition">
                   <td className="py-3 px-4 font-medium text-gray-800">
                     {r.first_name} {r.last_name}
+                    {r.blocked_at && (
+                      <span className="ml-2 inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700 align-middle">
+                        Bloqueado
+                      </span>
+                    )}
                     <div className="sm:hidden text-xs text-gray-400 mt-0.5">{r.email}</div>
                   </td>
                   <td className="py-3 px-4 text-gray-600 hidden sm:table-cell">{r.email}</td>
@@ -153,6 +172,18 @@ export default function AdminUserMediaTable({ users, filters = {} }) {
                         className="p-1.5 rounded-lg bg-amber-400 text-white hover:bg-amber-500 transition disabled:opacity-50"
                       >
                         <Wallet size={15} />
+                      </button>
+                      <button
+                        onClick={() => toggleBlock(r)}
+                        title={r.blocked_at ? "Desbloquear" : "Bloquear"}
+                        disabled={busy}
+                        className={`p-1.5 rounded-lg text-white transition disabled:opacity-50 ${
+                          r.blocked_at
+                            ? "bg-green-600 hover:bg-green-700"
+                            : "bg-red-600 hover:bg-red-700"
+                        }`}
+                      >
+                        {r.blocked_at ? <ShieldCheck size={15} /> : <Ban size={15} />}
                       </button>
                     </div>
                   </td>
