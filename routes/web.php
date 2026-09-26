@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\AdminProductosTcController;
 use App\Http\Controllers\Admin\AdminCanjesTcController;
 use App\Http\Controllers\Admin\AdminNotificacionesController;
 use App\Http\Controllers\Admin\AdminBannersController;
+use App\Http\Controllers\Admin\AdminAccountsController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\ChatController;
 use App\Models\Bank;
@@ -133,82 +134,106 @@ Route::prefix('admin')->group(function () {
 
     Route::middleware('auth:admin')->group(function () {
 
-        //primera pantalla
+        // Inicio: accesible a cualquier admin logueado (pantalla de aterrizaje).
         Route::get('/dashboard', [AdminControllerDashboard::class, 'Dashboard']);
-        //segunda pantalla
-        Route::get('/dashboard/tipo-cambio', [AdminControllerDashboard::class, 'tipoCambio']);
 
-        Route::get('/dashboard/notificaciones', [AdminNotificacionesController::class, 'index']);
-        Route::post('/dashboard/notificaciones/send', [AdminNotificacionesController::class, 'send']);
+        // Tipo de Cambio
+        Route::middleware('admin.can:tipo-cambio')->group(function () {
+            Route::get('/dashboard/tipo-cambio', [AdminControllerDashboard::class, 'tipoCambio']);
+            Route::post('/tipo-cambio', [AdminControllerDashboard::class, 'update']);
+            Route::get('/tipo-cambio/preview', [AdminControllerDashboard::class, 'previewTipoCambio']);
+        });
 
-        //tercera pantalla
-        Route::get('/dashboard/usuarios', [AdminUserMediaController::class, 'index']);
-        //cuarta pantalla
-        Route::get('/dashboard/transferencias', [AdminTransfers::class, 'index']);
+        // Notificaciones
+        Route::middleware('admin.can:notificaciones')->group(function () {
+            Route::get('/dashboard/notificaciones', [AdminNotificacionesController::class, 'index']);
+            Route::post('/dashboard/notificaciones/send', [AdminNotificacionesController::class, 'send']);
+        });
 
-        //quinta pantalla
-        Route::get('/dashboard/efectivo', [AdminTransfersEfectivo::class, 'index']);
+        // Transferencias
+        Route::middleware('admin.can:transferencias')->group(function () {
+            Route::get('/dashboard/transferencias', [AdminTransfers::class, 'index']);
+            Route::get('/transfers/user/{id}', [AdminTransfers::class, 'showUser']);
+            Route::get('/transfers/detail/{id}', [AdminTransfers::class, 'transferDetail']);
+            Route::put('/transfers/{id}', [AdminTransfers::class, 'update']);
+            Route::delete('/transfers/{id}', [AdminTransfers::class, 'destroy']);
+        });
 
-        //pantalla QR
-        Route::get('/dashboard/qr', [AdminTransfersQr::class, 'index']);
+        // Efectivo
+        Route::middleware('admin.can:efectivo')->group(function () {
+            Route::get('/dashboard/efectivo', [AdminTransfersEfectivo::class, 'index']);
+        });
 
-        //sexta pantalla
-        Route::get('/dashboard/metodos', [TransferMethodController::class, 'index']);
-        Route::post('/dashboard/metodos/store', [TransferMethodController::class, 'store']);
-        Route::post('/dashboard/metodos/{id}/update', [TransferMethodController::class, 'update']);
-        Route::delete('/dashboard/metodos/{id}', [TransferMethodController::class, 'destroy']);
+        // QR
+        Route::middleware('admin.can:qr')->group(function () {
+            Route::get('/dashboard/qr', [AdminTransfersQr::class, 'index']);
+        });
 
+        // Metodos de Pago
+        Route::middleware('admin.can:metodos')->group(function () {
+            Route::get('/dashboard/metodos', [TransferMethodController::class, 'index']);
+            Route::post('/dashboard/metodos/store', [TransferMethodController::class, 'store']);
+            Route::post('/dashboard/metodos/{id}/update', [TransferMethodController::class, 'update']);
+            Route::delete('/dashboard/metodos/{id}', [TransferMethodController::class, 'destroy']);
+        });
 
-        //septima pantalla
-        Route::get('/dashboard/reportes', [ReportesController::class, 'index']);
-        Route::get('/dashboard/reportes/datos', [ReportesController::class, 'datos']);
-        Route::get('/dashboard/reportes/excel', [ReportesController::class, 'exportarExcel']);
+        // Usuarios
+        Route::middleware('admin.can:usuarios')->group(function () {
+            Route::get('/dashboard/usuarios', [AdminUserMediaController::class, 'index']);
+            Route::get('/users/{user}/detail/info', [AdminUserMediaController::class, 'showUsers']);
+            Route::get('/users/{user}/detail/accounts', [AdminUserMediaController::class, 'showAccounts']);
+            Route::post('/users/{user}/block', [AdminUserMediaController::class, 'block']);
+            Route::post('/users/{user}/unblock', [AdminUserMediaController::class, 'unblock']);
+        });
 
-        //octava pantalla configuracion
-        Route::get('/dashboard/configuracion', [ConfiguracionController::class, 'index']);
-        Route::post('/dashboard/configuracion', [ConfiguracionController::class, 'update']);
+        // Reportes
+        Route::middleware('admin.can:reportes')->group(function () {
+            Route::get('/dashboard/reportes', [ReportesController::class, 'index']);
+            Route::get('/dashboard/reportes/datos', [ReportesController::class, 'datos']);
+            Route::get('/dashboard/reportes/excel', [ReportesController::class, 'exportarExcel']);
+        });
 
-        // productos TC puntos
-        Route::get('/dashboard/productos-tc', [AdminProductosTcController::class, 'index']);
-        Route::post('/dashboard/productos-tc/categorias/store', [AdminProductosTcController::class, 'storeCategoria']);
-        Route::post('/dashboard/productos-tc/categorias/{id}/update', [AdminProductosTcController::class, 'updateCategoria']);
-        Route::delete('/dashboard/productos-tc/categorias/{id}', [AdminProductosTcController::class, 'destroyCategoria']);
-        Route::post('/dashboard/productos-tc/productos/store', [AdminProductosTcController::class, 'storeProducto']);
-        Route::post('/dashboard/productos-tc/productos/{id}/update', [AdminProductosTcController::class, 'updateProducto']);
-        Route::delete('/dashboard/productos-tc/productos/{id}', [AdminProductosTcController::class, 'destroyProducto']);
- 
-        // canjes TC puntos
-        Route::get('/dashboard/canjes-tc', [AdminCanjesTcController::class, 'index']);
-        Route::post('/dashboard/canjes-tc/{id}/status', [AdminCanjesTcController::class, 'updateStatus']);
+        // Configuracion
+        Route::middleware('admin.can:configuracion')->group(function () {
+            Route::get('/dashboard/configuracion', [ConfiguracionController::class, 'index']);
+            Route::post('/dashboard/configuracion', [ConfiguracionController::class, 'update']);
+        });
 
-        // banners del home
-        Route::get('/dashboard/banners', [AdminBannersController::class, 'index']);
-        Route::post('/dashboard/banners/store', [AdminBannersController::class, 'store']);
-        Route::post('/dashboard/banners/{id}/update', [AdminBannersController::class, 'update']);
-        Route::delete('/dashboard/banners/{id}', [AdminBannersController::class, 'destroy']);
+        // Productos TC puntos
+        Route::middleware('admin.can:productos-tc')->group(function () {
+            Route::get('/dashboard/productos-tc', [AdminProductosTcController::class, 'index']);
+            Route::post('/dashboard/productos-tc/categorias/store', [AdminProductosTcController::class, 'storeCategoria']);
+            Route::post('/dashboard/productos-tc/categorias/{id}/update', [AdminProductosTcController::class, 'updateCategoria']);
+            Route::delete('/dashboard/productos-tc/categorias/{id}', [AdminProductosTcController::class, 'destroyCategoria']);
+            Route::post('/dashboard/productos-tc/productos/store', [AdminProductosTcController::class, 'storeProducto']);
+            Route::post('/dashboard/productos-tc/productos/{id}/update', [AdminProductosTcController::class, 'updateProducto']);
+            Route::delete('/dashboard/productos-tc/productos/{id}', [AdminProductosTcController::class, 'destroyProducto']);
+        });
 
-        //tipo de cambio
-        Route::post('/tipo-cambio', [AdminControllerDashboard::class, 'update']);
-        Route::get('/tipo-cambio/preview', [AdminControllerDashboard::class, 'previewTipoCambio']);
+        // Canjes TC puntos
+        Route::middleware('admin.can:canjes-tc')->group(function () {
+            Route::get('/dashboard/canjes-tc', [AdminCanjesTcController::class, 'index']);
+            Route::post('/dashboard/canjes-tc/{id}/status', [AdminCanjesTcController::class, 'updateStatus']);
+        });
 
-        //metodos de pago
+        // Banners del home
+        Route::middleware('admin.can:banners')->group(function () {
+            Route::get('/dashboard/banners', [AdminBannersController::class, 'index']);
+            Route::post('/dashboard/banners/store', [AdminBannersController::class, 'store']);
+            Route::post('/dashboard/banners/{id}/update', [AdminBannersController::class, 'update']);
+            Route::delete('/dashboard/banners/{id}', [AdminBannersController::class, 'destroy']);
+        });
 
-
-        //usuarios
-        Route::get('/users/{user}/detail/info', [AdminUserMediaController::class, 'showUsers']);
-        Route::get('/users/{user}/detail/accounts', [AdminUserMediaController::class, 'showAccounts']);
-        //bloquear / desbloquear acceso del usuario a la app
-        Route::post('/users/{user}/block', [AdminUserMediaController::class, 'block']);
-        Route::post('/users/{user}/unblock', [AdminUserMediaController::class, 'unblock']);
-
-
-        //ver tranferencia especifica de usuario
-        Route::get('/transfers/user/{id}', [AdminTransfers::class, 'showUser']);
-        Route::get('/transfers/detail/{id}', [AdminTransfers::class, 'transferDetail']);
-        //actualizar transferemcia
-        Route::put('/transfers/{id}', [AdminTransfers::class, 'update']);
-        //elimianr tranferencia
-        Route::delete('/transfers/{id}', [AdminTransfers::class, 'destroy']);
+        // Administradores y roles: solo roles con acceso total (is_super).
+        Route::middleware('admin.can:administradores')->group(function () {
+            Route::get('/dashboard/administradores', [AdminAccountsController::class, 'index']);
+            Route::post('/dashboard/administradores/admins/store', [AdminAccountsController::class, 'storeAdmin']);
+            Route::post('/dashboard/administradores/admins/{id}/update', [AdminAccountsController::class, 'updateAdmin']);
+            Route::delete('/dashboard/administradores/admins/{id}', [AdminAccountsController::class, 'destroyAdmin']);
+            Route::post('/dashboard/administradores/roles/store', [AdminAccountsController::class, 'storeRole']);
+            Route::post('/dashboard/administradores/roles/{id}/update', [AdminAccountsController::class, 'updateRole']);
+            Route::delete('/dashboard/administradores/roles/{id}', [AdminAccountsController::class, 'destroyRole']);
+        });
     });
 });
 

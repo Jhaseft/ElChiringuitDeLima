@@ -34,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'ratelimit'       => \App\Http\Middleware\RateLimit::class,
             'globalratelimit' => \App\Http\Middleware\GlobalRateLimit::class,
             'notblocked'      => \App\Http\Middleware\EnsureUserNotBlocked::class,
+            'admin.can'       => \App\Http\Middleware\EnsureAdminAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

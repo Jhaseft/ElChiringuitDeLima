@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\AdminRole;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -30,6 +32,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $admin = Auth::guard('admin')->user();
 
         return [
             ...parent::share($request),
@@ -40,7 +43,16 @@ class HandleInertiaRequests extends Middleware
                 'chat_session' => $user
                     ? hash_hmac('sha256', 'chat-session:' . $user->id, config('app.key'))
                     : null,
+                // Admin del panel + permisos de su rol. El sidebar filtra por esto
+                // (solo UX; el acceso real lo corta el middleware admin.can).
+                'admin' => $admin ? [
+                    'username'    => $admin->username,
+                    'is_super'    => $admin->isSuper(),
+                    'role_name'   => optional($admin->role)->name,
+                    'permissions' => optional($admin->role)->permissions ?? [],
+                ] : null,
             ],
+            'adminModules' => $admin ? AdminRole::MODULES : null,
         ];
     }
 }
