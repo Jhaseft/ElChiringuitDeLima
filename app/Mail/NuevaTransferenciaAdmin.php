@@ -18,6 +18,7 @@ class NuevaTransferenciaAdmin extends Mailable implements ShouldQueue
     public function build(){
 
     return $this->subject("Nueva transferencia: {$this->data['transferNumber']}")
-                ->markdown('emails.transfer.admin');
+                ->replyTo('no-reply@transfercash.click', config('app.name').' (no responder)')
+                ->view('emails.transfer.admin');
     }
 }

@@ -1,118 +1,59 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Operación registrada</title>
-</head>
-<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f5f5f5;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5; padding:40px 0;">
-        <tr>
-            <td align="center">
-                <!-- Contenedor principal -->
-                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+@extends('emails.layout', ['title' => 'Operación registrada'])
 
-                    <!-- Logo -->
-                    <tr>
-                        <td align="center" style="padding:30px 0;">
-                            <img src="https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png" alt="{{ config('app.name') }}" style="width:150px; height:auto;">
-                        </td>
-                    </tr>
+@section('content')
+    @php
+        $slug       = $data['paymentMethodSlug'] ?? 'bank_transfer';
+        $methodName = $data['paymentMethodName'] ?? 'Transferencia Bancaria';
+        $th         = 'text-align:left; padding:10px 12px; background-color:#F9FAFB; border:1px solid #E5E7EB; color:#374151; font-weight:700; font-size:13px; width:45%;';
+        $td         = 'padding:10px 12px; border:1px solid #E5E7EB; color:#111827; font-size:13px;';
+        $h2         = 'margin:26px 0 12px 0; color:#111827; font-size:16px; font-weight:700;';
+    @endphp
 
-                    <!-- Encabezado -->
-                    <tr>
-                        <td style="padding:0 30px 20px 30px; text-align:center;">
-                            <h1 style="color:#333333;">📌 Estimado cliente</h1>
-                            <p style="color:#555555; font-size:14px; line-height:1.5;">
-                                Le informamos que su operación ha sido registrada correctamente con el número de operación <strong>{{ $data['transferNumber'] }}</strong>.
-                            </p>
-                        </td>
-                    </tr>
+    <h1 style="margin:8px 0 12px 0; color:#111827; font-size:24px; font-weight:800; line-height:1.3;">
+        Operación registrada
+    </h1>
 
-                    <!-- Resumen de la operación -->
-                    <tr>
-                        <td style="padding:0 30px 20px 30px;">
-                            @php
-                                $slug       = $data['paymentMethodSlug'] ?? 'bank_transfer';
-                                $methodName = $data['paymentMethodName'] ?? 'Transferencia Bancaria';
-                            @endphp
+    <p style="margin:0 0 6px 0; color:#374151; font-size:15px; line-height:1.6;">
+        Tu operación fue registrada correctamente con el número
+        <strong style="color:#111827;">{{ $data['transferNumber'] }}</strong>.
+    </p>
 
-                            <h2 style="color:#333333;">📊 Resumen de la operación</h2>
-                            <table style="width:100%; border-collapse: collapse; margin-top:10px; margin-bottom:20px;">
-                                <tr>
-                                    <td style="border:1px solid #ddd; padding:8px; font-weight:bold;">Método de pago</td>
-                                    <td style="border:1px solid #ddd; padding:8px;">{{ $methodName }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="border:1px solid #ddd; padding:8px; font-weight:bold;">Monto registrado</td>
-                                    <td style="border:1px solid #ddd; padding:8px;">{{ number_format($data['transfer']->amount, 2) }} {{ $data['depositCurrency'] }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="border:1px solid #ddd; padding:8px; font-weight:bold;">Recibirá</td>
-                                    <td style="border:1px solid #ddd; padding:8px;">{{ number_format($data['convertedAmount'], 2) }} {{ $data['receiveCurrency'] }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="border:1px solid #ddd; padding:8px; font-weight:bold;">Tipo de cambio</td>
-                                    <td style="border:1px solid #ddd; padding:8px;">{{ $data['transfer']->exchange_rate }}</td>
-                                </tr>
-                                <tr>
-                                    <td style="border:1px solid #ddd; padding:8px; font-weight:bold;">Fecha de operación</td>
-                                    <td style="border:1px solid #ddd; padding:8px;">{{ $data['transfer']->created_at->format('d/m/Y H:i') }}</td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-
-                    {{-- Indicación según método --}}
-                    <tr>
-                        <td style="padding:0 30px 20px 30px; color:#555555; font-size:14px; line-height:1.5;">
-                            @if($slug === 'cash')
-                                <p>💵 <strong>Pago en efectivo:</strong><br>
-                                Acérquese a nuestra oficina o punto autorizado para completar el depósito en efectivo. Un asesor coordinará la entrega y validación del monto.</p>
-                            @elseif($slug === 'qr')
-                                <p>📱 <strong>Pago vía QR:</strong><br>
-                                Realice el pago escaneando el QR proporcionado. Una vez confirmado el depósito, procesaremos el envío correspondiente.</p>
-                            @else
-                                <p>🏦 <strong>Transferencia bancaria:</strong><br>
-                                Realice la transferencia a la cuenta bancaria indicada. Una vez acreditado el depósito, procesaremos el envío.</p>
-                            @endif
-                        </td>
-                    </tr>
-
-                    <!-- Nota importante -->
-                    <tr>
-                        <td style="padding:0 30px 20px 30px; color:#555555; font-size:14px; line-height:1.5;">
-                            <p>⚠️ <strong>Nota importante:</strong><br>
-                            Las operaciones realizadas fuera de horario serán atendidas al siguiente día hábil.</p>
-
-                            <h3 style="color:#333333;">⏰ Horarios de atención</h3>
-                            <ul style="padding-left:20px; list-style-type:disc;">
-                                <li><strong>Perú:</strong> Lunes a Viernes 09:00 - 18:00, Sábados 09:00 - 13:00</li>
-                                <li><strong>Bolivia:</strong> Lunes a Viernes 09:00 - 18:00, Sábados 09:00 - 13:00</li>
-                            </ul>
-                        </td>
-                    </tr>
-
-                    <!-- Mensaje final -->
-                    <tr>
-                        <td style="padding:0 30px 30px 30px; color:#555555; font-size:14px; line-height:1.5;">
-                            <p>📩 En breve recibirá un nuevo correo con el <strong>comprobante de depósito correspondiente</strong>.</p>
-                            <p>Si tiene alguna consulta o necesita asistencia adicional, no dude en contactarnos.</p>
-                            <p>Atentamente,<br>
-                            <strong>Equipo de Atención al Cliente</strong><br>
-                            {{ config('app.name') }}</p>
-                        </td>
-                    </tr>
-
-                    <!-- Footer -->
-                    <tr>
-                        <td align="center" style="background-color:#f0f0f0; color:#888888; font-size:12px; padding:15px;">
-                            © {{ date('Y') }} {{ config('app.name') }}. Todos los derechos reservados.
-                        </td>
-                    </tr>
-
-                </table>
-            </td>
-        </tr>
+    <h2 style="{{ $h2 }}">Resumen de la operación</h2>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <tr><td style="{{ $th }}">Método de pago</td><td style="{{ $td }}">{{ $methodName }}</td></tr>
+        <tr><td style="{{ $th }}">Monto registrado</td><td style="{{ $td }}">{{ number_format($data['transfer']->amount, 2) }} {{ $data['depositCurrency'] }}</td></tr>
+        <tr><td style="{{ $th }}">Recibirás</td><td style="{{ $td }}">{{ number_format($data['convertedAmount'], 2) }} {{ $data['receiveCurrency'] }}</td></tr>
+        <tr><td style="{{ $th }}">Tipo de cambio</td><td style="{{ $td }}">{{ $data['transfer']->exchange_rate }}</td></tr>
+        <tr><td style="{{ $th }}">Fecha de operación</td><td style="{{ $td }}">{{ $data['transfer']->created_at->format('d/m/Y H:i') }}</td></tr>
     </table>
-</body>
-</html>
+
+    @if($slug === 'cash')
+        <h2 style="{{ $h2 }}">Pago en efectivo</h2>
+        <p style="margin:0; color:#374151; font-size:14px; line-height:1.6;">Acércate a nuestra oficina o punto autorizado para completar el depósito en efectivo. Un asesor coordinará la entrega y validación del monto.</p>
+    @elseif($slug === 'qr')
+        <h2 style="{{ $h2 }}">Pago vía QR</h2>
+        <p style="margin:0; color:#374151; font-size:14px; line-height:1.6;">Realiza el pago escaneando el QR proporcionado. Una vez confirmado el depósito, procesaremos el envío correspondiente.</p>
+    @else
+        <h2 style="{{ $h2 }}">Transferencia bancaria</h2>
+        <p style="margin:0; color:#374151; font-size:14px; line-height:1.6;">Realiza la transferencia a la cuenta bancaria indicada. Una vez acreditado el depósito, procesaremos el envío.</p>
+    @endif
+
+    <div style="margin:24px 0; padding:14px 16px; background-color:#FEF9C3; border:1px solid #EAB308; border-radius:12px;">
+        <p style="margin:0 0 6px 0; color:#854D0E; font-size:14px; font-weight:700;">Nota importante</p>
+        <p style="margin:0; color:#854D0E; font-size:13px; line-height:1.6;">Las operaciones realizadas fuera de horario serán atendidas al siguiente día hábil.</p>
+    </div>
+
+    <h2 style="{{ $h2 }}">Horarios de atención</h2>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <tr><td style="{{ $th }}">Perú</td><td style="{{ $td }}">Lun a Vie 09:00 - 18:00 · Sáb 09:00 - 13:00</td></tr>
+        <tr><td style="{{ $th }}">Bolivia</td><td style="{{ $td }}">Lun a Vie 09:00 - 18:00 · Sáb 09:00 - 13:00</td></tr>
+    </table>
+
+    <p style="margin:26px 0 0 0; color:#374151; font-size:14px; line-height:1.6;">
+        En breve recibirás un nuevo correo con el comprobante de depósito correspondiente.
+    </p>
+    <p style="margin:14px 0 0 0; color:#374151; font-size:14px; line-height:1.6;">
+        Atentamente,<br>
+        <strong style="color:#111827;">Equipo de Atención al Cliente · {{ config('app.name') }}</strong>
+    </p>
+@endsection

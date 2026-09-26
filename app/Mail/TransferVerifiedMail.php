@@ -46,6 +46,7 @@ class TransferVerifiedMail extends Mailable implements ShouldQueue
             ->all();
 
         return $this->subject('Tu transferencia ha sido verificada')
+                    ->replyTo('no-reply@transfercash.click', config('app.name').' (no responder)')
                     ->view('emails.transfer_verified')
                     ->with([
                         'transfer'            => $this->transfer,

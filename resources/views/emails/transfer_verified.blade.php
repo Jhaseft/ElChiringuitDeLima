@@ -1,136 +1,78 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Transferencia realizada</title>
-</head>
-<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color:#f5f5f5;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5; padding:40px 0;">
-        <tr>
-            <td align="center">
-                <!-- Contenedor principal -->
-                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.05);">
+@extends('emails.layout', ['title' => 'Transferencia verificada'])
 
-                    <!-- Logo -->
-                    <tr>
-                        <td align="center" style="padding:30px 0;">
-                            <img src="https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png" 
-                                 alt="{{ config('app.name') }}" style="width:150px; height:auto;">
-                        </td>
-                    </tr>
+@section('content')
+    @php
+        $slug       = $paymentMethodSlug ?? 'bank_transfer';
+        $methodName = $paymentMethodName ?? 'Transferencia Bancaria';
+        $depCur     = $depositCurrency ?? '';
+        $recCur     = $receiveCurrency ?? '';
+        $th         = 'text-align:left; padding:10px 12px; background-color:#F9FAFB; border:1px solid #E5E7EB; color:#374151; font-weight:700; font-size:13px; width:45%;';
+        $td         = 'padding:10px 12px; border:1px solid #E5E7EB; color:#111827; font-size:13px;';
+        $h2         = 'margin:26px 0 12px 0; color:#111827; font-size:16px; font-weight:700;';
+    @endphp
 
-                    <!-- Encabezado -->
-                    <tr>
-                        <td style="padding:20px; text-align:center;">
-                            <h1 style="color:#10b981;">✅ Tu transferencia ha sido realizada</h1>
-                        </td>
-                    </tr>
+    <div style="display:inline-block; background-color:#DCFCE7; color:#16A34A; font-size:12px; font-weight:700; padding:6px 12px; border-radius:999px; margin-bottom:14px;">
+        Operación verificada
+    </div>
 
-                    <!-- Detalles de la operación -->
-                    <tr>
-                        <td style="padding:0 30px 20px 30px; color:#555555; font-size:14px; line-height:1.6;">
-                            @php
-                                $slug       = $paymentMethodSlug ?? 'bank_transfer';
-                                $methodName = $paymentMethodName ?? 'Transferencia Bancaria';
-                                $depCur     = $depositCurrency ?? '';
-                                $recCur     = $receiveCurrency ?? '';
-                            @endphp
+    <h1 style="margin:0 0 14px 0; color:#111827; font-size:26px; font-weight:800; line-height:1.25;">
+        Tu transferencia ha sido realizada
+    </h1>
 
-                            <h2 style="color:#333333;">📝 Detalles de la transferencia</h2>
-                            <ul style="padding-left:20px; list-style-type:disc;">
-                                <li><strong>Método de pago:</strong> {{ $methodName }}</li>
-                                <li><strong>Monto enviado:</strong> {{ number_format($amount, 2) }} {{ $depCur }}</li>
-                                <li><strong>Monto convertido:</strong> {{ number_format($converted_amount ?? 0, 2) }} {{ $recCur }}</li>
-                                <li><strong>Tipo de cambio:</strong> {{ $exchange_rate ?? '-' }}</li>
-                                <li><strong>Modo de transferencia:</strong> {{ $transfer->modo ?? '-' }}</li>
-                            </ul>
+    <p style="margin:0 0 8px 0; color:#374151; font-size:15px; line-height:1.6;">
+        Confirmamos que tu operación fue procesada correctamente. Aquí tienes el detalle:
+    </p>
 
-                            {{-- Cuentas involucradas según método --}}
-                            @if($slug === 'cash')
-                                <h2 style="color:#333333;">💵 Entrega en efectivo</h2>
-                                <p>Su operación con pago en efectivo ha sido completada. Si aún no ha retirado el monto convertido, acérquese a la oficina / punto autorizado con su documento de identidad.</p>
-                            @elseif($slug === 'qr')
-                                <h2 style="color:#333333;">📱 Operación vía QR</h2>
-                                <ul style="padding-left:20px; list-style-type:disc;">
-                                    @if($origin_account?->qr_value)
-                                        <li><strong>QR origen:</strong> país {{ $origin_account->qr_country }}</li>
-                                    @endif
-                                    @if($destination_account?->qr_value)
-                                        <li><strong>QR destino:</strong> país {{ $destination_account->qr_country }}</li>
-                                    @endif
-                                </ul>
-                            @else
-                                <h2 style="color:#333333;">🏦 Cuentas involucradas</h2>
-                                <ul style="padding-left:20px; list-style-type:disc;">
-                                    @if($origin_account || $destination_account)
-                                        <li><strong>Cuenta origen:</strong>
-                                            {{ $origin_account?->bank?->name ? $origin_account->bank->name.' — ' : '' }}
-                                            {{ $origin_account?->account_number ?? 'N/A' }}
-                                        </li>
-                                        <li><strong>Cuenta destino:</strong>
-                                            {{ $destination_account?->bank?->name ? $destination_account->bank->name.' — ' : '' }}
-                                            {{ $destination_account?->account_number ?? 'N/A' }}
-                                        </li>
-                                    @else
-                                        <li>Información de cuentas no disponible.</li>
-                                    @endif
-                                </ul>
-                            @endif
-
-                            @php
-                                $receiptsList = !empty($adminReceipts)
-                                    ? $adminReceipts
-                                    : (!empty($adminReceipt) ? [$adminReceipt] : []);
-                            @endphp
-
-                            @if(count($receiptsList) > 0)
-                                <h2 style="color:#333333;">
-                                    📎 {{ count($receiptsList) > 1 ? 'Comprobantes aprobados' : 'Comprobante aprobado' }}
-                                </h2>
-                                <p>
-                                    @if(count($receiptsList) > 1)
-                                        Puedes visualizar tus comprobantes oficiales haciendo clic en los siguientes botones:
-                                    @else
-                                        Puedes visualizar tu comprobante oficial haciendo clic en el siguiente botón:
-                                    @endif
-                                </p>
-
-                                <div style="margin:20px 0; text-align:center;">
-                                    @foreach($receiptsList as $idx => $url)
-                                        <a href="{{ $url }}"
-                                            target="_blank"
-                                            style="background-color:#10b981;
-                                                    color:#ffffff;
-                                                    padding:12px 25px;
-                                                    text-decoration:none;
-                                                    border-radius:6px;
-                                                    font-weight:bold;
-                                                    display:inline-block;
-                                                    margin:5px;">
-                                            Ver comprobante {{ count($receiptsList) > 1 ? ($idx + 1) : '' }}
-                                        </a>
-                                    @endforeach
-                                </div>
-                            @endif
-
-
-                            <p style="color:#555555; font-size:14px; line-height:1.5; margin-top:20px;">
-                                Gracias por usar nuestro servicio,<br>
-                                <strong>{{ config('app.name') }}</strong>
-                            </p>
-                        </td>
-                    </tr>
-
-                    <!-- Footer -->
-                    <tr>
-                        <td align="center" style="background-color:#f0f0f0; color:#888888; font-size:12px; padding:15px;">
-                            © {{ date('Y') }} {{ config('app.name') }}. Todos los derechos reservados.
-                        </td>
-                    </tr>
-
-                </table>
-            </td>
-        </tr>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-top:12px;">
+        <tr><td style="{{ $th }}">Método de pago</td><td style="{{ $td }}">{{ $methodName }}</td></tr>
+        <tr><td style="{{ $th }}">Monto enviado</td><td style="{{ $td }}">{{ number_format($amount, 2) }} {{ $depCur }}</td></tr>
+        <tr><td style="{{ $th }}">Monto convertido</td><td style="{{ $td }}">{{ number_format($converted_amount ?? 0, 2) }} {{ $recCur }}</td></tr>
+        <tr><td style="{{ $th }}">Tipo de cambio</td><td style="{{ $td }}">{{ $exchange_rate ?? '-' }}</td></tr>
+        <tr><td style="{{ $th }}">Modo de transferencia</td><td style="{{ $td }}">{{ $transfer->modo ?? '-' }}</td></tr>
     </table>
-</body>
-</html>
+
+    @if($slug === 'cash')
+        <h2 style="{{ $h2 }}">Entrega en efectivo</h2>
+        <p style="margin:0; color:#374151; font-size:14px; line-height:1.6;">Tu operación con pago en efectivo ha sido completada. Si aún no has retirado el monto convertido, acércate a la oficina / punto autorizado con tu documento de identidad.</p>
+    @elseif($slug === 'qr')
+        <h2 style="{{ $h2 }}">Operación vía QR</h2>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+            @if($origin_account?->qr_value)
+                <tr><td style="{{ $th }}">QR origen</td><td style="{{ $td }}">País {{ $origin_account->qr_country }}</td></tr>
+            @endif
+            @if($destination_account?->qr_value)
+                <tr><td style="{{ $th }}">QR destino</td><td style="{{ $td }}">País {{ $destination_account->qr_country }}</td></tr>
+            @endif
+        </table>
+    @else
+        <h2 style="{{ $h2 }}">Cuentas involucradas</h2>
+        @if($origin_account || $destination_account)
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                <tr><td style="{{ $th }}">Cuenta origen</td><td style="{{ $td }}">{{ $origin_account?->bank?->name ? $origin_account->bank->name.' — ' : '' }}{{ $origin_account?->account_number ?? 'N/A' }}</td></tr>
+                <tr><td style="{{ $th }}">Cuenta destino</td><td style="{{ $td }}">{{ $destination_account?->bank?->name ? $destination_account->bank->name.' — ' : '' }}{{ $destination_account?->account_number ?? 'N/A' }}</td></tr>
+            </table>
+        @else
+            <p style="margin:0; color:#6B7280; font-size:14px;">Información de cuentas no disponible.</p>
+        @endif
+    @endif
+
+    @php
+        $receiptsList = !empty($adminReceipts) ? $adminReceipts : (!empty($adminReceipt) ? [$adminReceipt] : []);
+    @endphp
+
+    @if(count($receiptsList) > 0)
+        <h2 style="{{ $h2 }}">{{ count($receiptsList) > 1 ? 'Comprobantes aprobados' : 'Comprobante aprobado' }}</h2>
+        <p style="margin:0 0 8px 0; color:#374151; font-size:14px; line-height:1.6;">
+            {{ count($receiptsList) > 1 ? 'Puedes visualizar tus comprobantes oficiales aquí:' : 'Puedes visualizar tu comprobante oficial aquí:' }}
+        </p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding-top:8px;">
+            @foreach($receiptsList as $idx => $url)
+                @include('emails.partials.button', ['url' => $url, 'label' => 'Ver comprobante '.(count($receiptsList) > 1 ? ($idx + 1) : '')])
+            @endforeach
+        </td></tr></table>
+    @endif
+
+    <p style="margin:26px 0 0 0; color:#374151; font-size:14px; line-height:1.6;">
+        Gracias por confiar en {{ config('app.name') }}.
+    </p>
+@endsection

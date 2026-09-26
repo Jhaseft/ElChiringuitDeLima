@@ -21,6 +21,7 @@ class VerifyCodeEmail extends Mailable implements ShouldQueue
     public function build()
     {
         return $this->subject('Código de verificación')
+                    ->replyTo('no-reply@transfercash.click', config('app.name').' (no responder)')
                     ->view('emails.verify_code')
                     ->with([
                         'code' => $this->code,

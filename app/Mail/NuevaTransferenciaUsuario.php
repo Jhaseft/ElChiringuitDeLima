@@ -18,6 +18,7 @@ class NuevaTransferenciaUsuario extends Mailable implements ShouldQueue
     public function build()
     {
         return $this->subject("Tu operación fue registrada: {$this->data['transferNumber']}")
-                    ->markdown('emails.transfer.usuario');
+                    ->replyTo('no-reply@transfercash.click', config('app.name').' (no responder)')
+                    ->view('emails.transfer.usuario');
     }
 }
