@@ -33,7 +33,7 @@
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         <tr>
             <td align="center">
-                @include('emails.partials.button', ['url' => config('app.url'), 'label' => 'Ir al sitio'])
+                @include('emails.partials.button', ['url' => config('app.site_url', config('app.url')), 'label' => 'Ir al sitio'])
             </td>
         </tr>
     </table>

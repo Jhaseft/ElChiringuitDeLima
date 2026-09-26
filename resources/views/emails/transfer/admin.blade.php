@@ -101,6 +101,6 @@
     </td></tr></table>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:18px 0 4px 0;">
-        @include('emails.partials.button', ['url' => url('/admin/login'), 'label' => 'Ir al panel de administración', 'variant' => 'dark'])
+        @include('emails.partials.button', ['url' => rtrim(config('app.site_url', config('app.url')), '/').'/admin/login', 'label' => 'Ir al panel de administración', 'variant' => 'dark'])
     </td></tr></table>
 @endsection

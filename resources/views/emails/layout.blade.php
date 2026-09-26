@@ -1,6 +1,6 @@
 @php
     $appName = config('app.name', 'TransferCash');
-    $appUrl  = config('app.url');
+    $appUrl  = config('app.site_url', config('app.url'));
     $logo    = 'https://res.cloudinary.com/dnbklbswg/image/upload/v1772202747/logo_n6nqqr__2_-removebg-preview_qngiau.png';
 @endphp
 <!DOCTYPE html>

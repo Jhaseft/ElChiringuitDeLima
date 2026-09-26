@@ -54,6 +54,11 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // URL pública de marca usada en los correos. Debe coincidir con el dominio
+    // del remitente (transfercash.click); si los enlaces apuntan a otro dominio
+    // (p. ej. el host de pruebas de easypanel), el filtro anti-spam los rechaza.
+    'site_url' => env('APP_SITE_URL', 'https://transfercash.click'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
