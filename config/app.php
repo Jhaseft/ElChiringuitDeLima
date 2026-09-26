@@ -130,9 +130,7 @@ return [
 
 
 
-    'version_app' => env('VERSION_APP', '1.0.0'),
-
-    'version_app_android' => env('VERSION_APP_ANDROID', env('VERSION_APP', '1.0.0')),
+    'version_app_android' => env('VERSION_APP_ANDROID', '1.0.0'),
 
     'version_app_ios' => env('VERSION_APP_IOS', '1.0.0'),
 ];
